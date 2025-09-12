@@ -16,6 +16,7 @@ import {
   Bell,
   LogOut
 } from "lucide-react";
+import mannMitraLogo from "@/assets/mann-mitra-logo.png";
 import MoodTracker from "./MoodTracker";
 import ChatBot from "./ChatBot";
 import AppointmentBooking from "./AppointmentBooking";
@@ -200,7 +201,11 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-8">
               <div className="flex items-center">
-                <Heart className="w-8 h-8 text-primary mr-2" />
+                <img 
+                  src={mannMitraLogo} 
+                  alt="MANN MITRA"
+                  className="h-8 w-8 object-contain mr-3"
+                />
                 <span className="text-xl font-bold bg-gradient-to-r from-primary to-wellness bg-clip-text text-transparent">
                   MANN MITRA
                 </span>

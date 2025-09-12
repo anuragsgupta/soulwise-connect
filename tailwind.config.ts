@@ -37,6 +37,10 @@ export default {
           foreground: "hsl(var(--support-foreground))",
           light: "hsl(var(--support-light))",
         },
+        sky: {
+          DEFAULT: "hsl(var(--sky))",
+          foreground: "hsl(var(--sky-foreground))",
+        },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",

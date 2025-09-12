@@ -6,34 +6,38 @@
 
 @layer base {
   :root {
-    /* Mental Health Palette - Calming & Professional */
-    --background: 210 100% 98%;
-    --foreground: 215 25% 15%;
+    /* MANN MITRA Brand Colors - Warm & Trustworthy */
+    --background: 200 100% 98%;
+    --foreground: 200 25% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 20% 20%;
+    --card-foreground: 200 20% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 20% 20%;
+    --popover-foreground: 200 20% 20%;
 
-    /* Primary - Calming Teal for Mental Health */
-    --primary: 180 65% 45%;
+    /* Primary - Teal Blue for Trust */
+    --primary: 194 38% 38%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 180 80% 65%;
+    --primary-glow: 194 50% 55%;
 
-    /* Secondary - Soft Lavender for Wellness */
-    --secondary: 260 25% 90%;
-    --secondary-foreground: 260 20% 25%;
+    /* Secondary - Warm Peach for Comfort */
+    --secondary: 35 65% 82%;
+    --secondary-foreground: 194 38% 38%;
 
-    /* Wellness Green for Positive Actions */
-    --wellness: 150 60% 50%;
+    /* Wellness - Mustard Gold for Positive Actions */
+    --wellness: 35 58% 52%;
     --wellness-foreground: 0 0% 100%;
-    --wellness-light: 150 40% 95%;
+    --wellness-light: 35 65% 95%;
 
-    /* Calming Blue for Support */
-    --support: 210 75% 60%;
+    /* Support - Coral Pink for Empathy */
+    --support: 0 45% 66%;
     --support-foreground: 0 0% 100%;
-    --support-light: 210 50% 97%;
+    --support-light: 0 45% 97%;
+
+    /* Sky Blue for Calm */
+    --sky: 195 85% 91%;
+    --sky-foreground: 194 38% 38%;
 
     --muted: 210 25% 96%;
     --muted-foreground: 215 15% 55%;
@@ -91,20 +95,23 @@
     --popover: 215 25% 12%;
     --popover-foreground: 210 40% 95%;
 
-    --primary: 180 70% 55%;
+    --primary: 194 50% 65%;
     --primary-foreground: 215 30% 8%;
-    --primary-glow: 180 85% 70%;
+    --primary-glow: 194 65% 75%;
 
-    --secondary: 215 20% 20%;
+    --secondary: 35 55% 75%;
     --secondary-foreground: 210 40% 90%;
 
-    --wellness: 150 55% 55%;
+    --wellness: 35 50% 60%;
     --wellness-foreground: 0 0% 100%;
-    --wellness-light: 150 25% 15%;
+    --wellness-light: 35 25% 15%;
 
-    --support: 210 70% 65%;
+    --support: 0 35% 75%;
     --support-foreground: 0 0% 100%;
-    --support-light: 210 25% 15%;
+    --support-light: 0 25% 15%;
+
+    --sky: 195 75% 80%;
+    --sky-foreground: 194 38% 38%;
 
     --muted: 215 20% 18%;
     --muted-foreground: 215 15% 65%;
