@@ -1,8 +1,11 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense, lazy } from 'react';
 import { Button } from '@/components/ui/button';
 import heroFallbackLg from '@/assets/hero-fallback-lg.png';
 import heroFallbackSm from '@/assets/hero-fallback-sm.png';
 import { analytics } from '@/lib/analytics';
+
+// Lazy load Spline component
+const Spline = lazy(() => import('@splinetool/react-spline'));
 
 interface HeroSplineProps {
   variant?: 'A' | 'B';
@@ -83,13 +86,18 @@ export const HeroSpline = ({ variant = 'A', onCtaClick }: HeroSplineProps) => {
         aria-hidden={reducedMotion ? "false" : "true"}
       >
         {!reducedMotion && splineLoaded ? (
-          <div className="w-full h-full">
-            {/* Placeholder for Spline component */}
-            {/* <Spline scene="https://prod.spline.design/your-hero-scene.splinecode" /> */}
-            <div className="w-full h-full bg-gradient-to-br from-primary/10 to-wellness/10 flex items-center justify-center">
-              <div className="text-primary/20 text-lg font-medium">Spline Scene Placeholder</div>
+          <Suspense fallback={
+            <div className="w-full h-full bg-gradient-to-br from-secondary/20 to-wellness/20 flex items-center justify-center animate-pulse">
+              <div className="text-foreground/30 text-lg font-medium">Loading 3D Scene...</div>
             </div>
-          </div>
+          }>
+            <Spline
+              scene="https://prod.spline.design/FV-brkGLIlHBDVYA/scene.splinecode"
+              className="w-full h-full"
+              onLoad={() => analytics.track('spline_loaded')}
+              onError={(error) => analytics.track('spline_failed', { error: error.toString() })}
+            />
+          </Suspense>
         ) : (
           <picture className="w-full h-full object-cover">
             <source media="(max-width: 768px)" srcSet={heroFallbackSm} />

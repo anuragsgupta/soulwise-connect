@@ -8,6 +8,7 @@ export type AnalyticsEvent =
   | 'appointment_booked'
   | 'feature_card_clicked'
   | 'signup_started'
+  | 'final_cta_click'
   | 'reduced_motion_enabled';
 
 export interface AnalyticsData {

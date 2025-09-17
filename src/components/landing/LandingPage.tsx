@@ -5,6 +5,7 @@ import { HeroSpline } from './HeroSpline';
 import { FeatureCard } from './FeatureCard';
 import { TestimonialCarousel } from './TestimonialCarousel';
 import { MessageCircle, Calendar, BookOpen, Users, TrendingUp, Phone, Shield, Heart, CheckCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import logoMannMitra from '@/assets/logo-mann-mitra.png';
 import { analytics } from '@/lib/analytics';
 
@@ -66,9 +67,11 @@ export const LandingPage = () => {
     if (cta === 'primary') {
       // Navigate to mood check or signup
       analytics.track('signup_started', { source: 'hero', variant: abVariant });
+      window.location.href = '/login';
     } else {
       // Navigate to peer support or chat
       analytics.track('chat_opened', { source: 'hero', variant: abVariant });
+      document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
@@ -78,7 +81,7 @@ export const LandingPage = () => {
       <HeroSpline variant={abVariant} onCtaClick={handleCtaClick} />
 
       {/* Features Section */}
-      <section className="py-16 px-6">
+      <section id="features" className="py-16 px-6">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center text-foreground mb-12 animate-fade-up">
             Comprehensive Mental Health Support
@@ -162,13 +165,26 @@ export const LandingPage = () => {
               <img 
                 src={logoMannMitra} 
                 alt="MANN MITRA - Mental Health Support"
-                className="h-12 w-12 object-contain mr-3"
+                className="h-12 w-12 object-contain mr-3 hover-scale"
               />
               <span className="text-2xl font-bold text-foreground">MANN MITRA</span>
             </div>
             <p className="text-muted-foreground mb-6 max-w-2xl">
               Built with care for students • Privacy-first
             </p>
+            
+            {/* Final CTA */}
+            <div className="mb-8">
+              <Link to="/login">
+                <Button 
+                  size="lg" 
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover-scale"
+                  onClick={() => analytics.track('final_cta_click')}
+                >
+                  Start Your Journey
+                </Button>
+              </Link>
+            </div>
             
             {/* Quick Links */}
             <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
