@@ -6,38 +6,38 @@
 
 @layer base {
   :root {
-    /* MANN MITRA Brand Colors - Warm & Trustworthy */
-    --background: 200 100% 98%;
-    --foreground: 200 25% 15%;
+    /* MANN MITRA Brand Colors - Exact HEX Values */
+    --background: 0 0% 100%;
+    --foreground: 195 76% 17%; /* #0F3B45 - Dark text/heading */
 
     --card: 0 0% 100%;
-    --card-foreground: 200 20% 20%;
+    --card-foreground: 195 76% 17%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 200 20% 20%;
+    --popover-foreground: 195 76% 17%;
 
-    /* Primary - Teal Blue for Trust */
-    --primary: 194 38% 38%;
+    /* Primary - Teal Blue #3E7E88 */
+    --primary: 186 39% 39%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 194 50% 55%;
+    --primary-glow: 186 50% 55%;
 
-    /* Secondary - Warm Peach for Comfort */
-    --secondary: 35 65% 82%;
-    --secondary-foreground: 194 38% 38%;
+    /* Secondary - Warm Peach #F6D7A7 */
+    --secondary: 39 73% 82%;
+    --secondary-foreground: 195 76% 17%;
 
-    /* Wellness - Mustard Gold for Positive Actions */
-    --wellness: 35 58% 52%;
+    /* Wellness - Mustard Gold #D19A3C */
+    --wellness: 39 71% 53%;
     --wellness-foreground: 0 0% 100%;
-    --wellness-light: 35 65% 95%;
+    --wellness-light: 39 73% 95%;
 
-    /* Support - Coral Pink for Empathy */
-    --support: 0 45% 66%;
+    /* Support - Coral Pink #D97A7A */
+    --support: 0 52% 67%;
     --support-foreground: 0 0% 100%;
-    --support-light: 0 45% 97%;
+    --support-light: 0 52% 97%;
 
-    /* Sky Blue for Calm */
-    --sky: 195 85% 91%;
-    --sky-foreground: 194 38% 38%;
+    /* Sky Blue #CFEFF8 */
+    --sky: 192 74% 90%;
+    --sky-foreground: 195 76% 17%;
 
     --muted: 210 25% 96%;
     --muted-foreground: 215 15% 55%;
@@ -64,9 +64,11 @@
     --shadow-card: 0 4px 20px -4px hsl(215 25% 15% / 0.08);
     --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.3);
 
-    /* Animations */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Animations - UX Optimized */
+    --transition-smooth: all 0.3s cubic-bezier(0.22, 0.9, 0.36, 1);
     --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --transition-card-hover: all 0.2s cubic-bezier(0.22, 0.9, 0.36, 1);
+    --transition-reveal: all 0.55s cubic-bezier(0.22, 0.9, 0.36, 1);
 
     --sidebar-background: 0 0% 98%;
 
@@ -95,23 +97,24 @@
     --popover: 215 25% 12%;
     --popover-foreground: 210 40% 95%;
 
-    --primary: 194 50% 65%;
+    /* Dark Mode Adaptations */
+    --primary: 186 50% 65%;
     --primary-foreground: 215 30% 8%;
-    --primary-glow: 194 65% 75%;
+    --primary-glow: 186 65% 75%;
 
-    --secondary: 35 55% 75%;
+    --secondary: 39 60% 75%;
     --secondary-foreground: 210 40% 90%;
 
-    --wellness: 35 50% 60%;
+    --wellness: 39 55% 60%;
     --wellness-foreground: 0 0% 100%;
-    --wellness-light: 35 25% 15%;
+    --wellness-light: 39 25% 15%;
 
-    --support: 0 35% 75%;
+    --support: 0 40% 75%;
     --support-foreground: 0 0% 100%;
     --support-light: 0 25% 15%;
 
-    --sky: 195 75% 80%;
-    --sky-foreground: 194 38% 38%;
+    --sky: 192 65% 80%;
+    --sky-foreground: 195 76% 17%;
 
     --muted: 215 20% 18%;
     --muted-foreground: 215 15% 65%;
@@ -182,6 +185,21 @@
     50% { background-position: 100% 50%; }
   }
 
+  @keyframes breathing {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+  }
+
+  @keyframes fade-up {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes card-hover {
+    0% { transform: translateY(0px); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+    100% { transform: translateY(-6px); box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); }
+  }
+
   .animate-float {
     animation: float 3s ease-in-out infinite;
   }
@@ -193,5 +211,45 @@
   .animate-gradient {
     background-size: 200% 200%;
     animation: gradient-shift 4s ease infinite;
+  }
+
+  .animate-breathing {
+    animation: breathing 3s ease-in-out infinite;
+  }
+
+  .animate-fade-up {
+    animation: fade-up 0.55s cubic-bezier(0.22, 0.9, 0.36, 1) both;
+  }
+
+  .animate-card-hover {
+    animation: card-hover 0.2s cubic-bezier(0.22, 0.9, 0.36, 1) both;
+  }
+
+  /* Reduced Motion Support */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-float,
+    .animate-pulse-soft,
+    .animate-gradient,
+    .animate-breathing,
+    .animate-fade-up,
+    .animate-card-hover {
+      animation: none;
+    }
+    
+    .group:hover .group-hover\:scale-110 {
+      transform: none;
+    }
+    
+    .hover\:animate-card-hover:hover {
+      animation: none;
+      transform: translateY(-2px);
+    }
+  }
+
+  /* Focus Visible Support */
+  .focus\:ring-2:focus-visible {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px hsl(var(--primary));
   }
 }

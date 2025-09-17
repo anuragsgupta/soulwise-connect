@@ -98,6 +98,18 @@ export default {
           "0%, 100%": { backgroundPosition: "0% 50%" },
           "50%": { backgroundPosition: "100% 50%" },
         },
+        "breathing": {
+          "0%, 100%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.03)" },
+        },
+        "fade-up": {
+          "0%": { opacity: "0", transform: "translateY(20px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "card-hover": {
+          "0%": { transform: "translateY(0px)", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" },
+          "100%": { transform: "translateY(-6px)", boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -105,6 +117,9 @@ export default {
         "float": "float 3s ease-in-out infinite",
         "pulse-soft": "pulse-soft 2s ease-in-out infinite",
         "gradient-shift": "gradient-shift 4s ease infinite",
+        "breathing": "breathing 3s ease-in-out infinite",
+        "fade-up": "fade-up 0.55s cubic-bezier(0.22, 0.9, 0.36, 1)",
+        "card-hover": "card-hover 0.2s cubic-bezier(0.22, 0.9, 0.36, 1)",
       },
     },
   },

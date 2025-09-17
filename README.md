@@ -1,18 +1,16 @@
-# Welcome to your Lovable project
+# MANN MITRA - Digital Mental Health Companion
 
-## Project info
+A stigma-free digital mental health platform for college students with mobile-first design, 3D integration ready, and comprehensive accessibility features.
 
-**URL**: https://lovable.dev/projects/a8fbb2ce-9b17-4f6d-bad0-161d4dabadc5
+## 🎨 Brand Colors (Exact HEX)
+- Warm Peach: #F6D7A7 | Mustard Gold: #D19A3C | Coral Pink: #D97A7A | Teal Blue: #3E7E88 | Sky Blue: #CFEFF8
 
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/a8fbb2ce-9b17-4f6d-bad0-161d4dabadc5) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
+## ✨ Features Built
+- Responsive landing page with hero, features, testimonials, crisis support
+- Spline integration placeholders with fallbacks  
+- Analytics tracking & A/B testing ready
+- Full accessibility & reduced motion support
+- Mobile-first design with exact brand colors
 
 **Use your preferred IDE**
 
