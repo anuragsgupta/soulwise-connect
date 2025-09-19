@@ -90,7 +90,7 @@ export const HeroSpline = ({ variant = 'B', onCtaClick }: HeroSplineProps) => {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-secondary via-sky to-secondary/50">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-secondary via-sky to-secondary/50 pt-24 md:pt-20">
       {/* Floating Background Shapes */}
       <div className="absolute inset-0 overflow-hidden">
         <div 

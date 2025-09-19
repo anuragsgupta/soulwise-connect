@@ -48,6 +48,22 @@ const config: Config = {
           DEFAULT: "hsl(var(--sky))",
           foreground: "hsl(var(--sky-foreground))",
         },
+        // Custom theme colors for feature cards
+        coral: {
+          400: "#f87171", // red-400 equivalent
+          500: "#ef4444", // red-500 equivalent  
+          600: "#dc2626", // red-600 equivalent
+        },
+        mustard: {
+          400: "#fbbf24", // amber-400 equivalent
+          500: "#f59e0b", // amber-500 equivalent
+          600: "#d97706", // amber-600 equivalent
+        },
+        peach: {
+          400: "#fb923c", // orange-400 equivalent
+          500: "#f97316", // orange-500 equivalent
+          600: "#ea580c", // orange-600 equivalent
+        },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",

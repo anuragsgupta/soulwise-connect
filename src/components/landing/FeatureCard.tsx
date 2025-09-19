@@ -20,6 +20,24 @@ export const FeatureCard = ({ icon: Icon, title, description, gradient, index }:
     analytics.track('feature_card_clicked', { feature: title, index });
   };
 
+  const getIconColorAndShadow = (gradient: string) => {
+    // Enhanced icon styling for each gradient with consistent white color but unique shadows
+    switch (gradient) {
+      case "from-teal-500 to-teal-600":
+        return "text-white filter drop-shadow-lg"; 
+      case "from-coral-500 to-pink-500":
+        return "text-white filter drop-shadow-lg"; 
+      case "from-peach-400 to-mustard-500":
+        return "text-white filter drop-shadow-lg"; 
+      case "from-sky-400 to-teal-500":
+        return "text-white filter drop-shadow-lg"; 
+      case "from-mustard-500 to-coral-500":
+        return "text-white filter drop-shadow-lg"; 
+      default:
+        return "text-white filter drop-shadow-lg";
+    }
+  };
+
   const getAnimatedIconClass = (title: string) => {
     switch (title) {
       case "AI First-Aid Chat":
@@ -64,7 +82,7 @@ export const FeatureCard = ({ icon: Icon, title, description, gradient, index }:
       <CardHeader className="pb-4 relative z-10">
         <div className={`p-4 rounded-xl bg-gradient-to-r ${gradient} w-fit mb-4 group-hover:scale-110 transition-transform shadow-lg relative`}>
           <Icon 
-            className={`w-7 h-7 text-white ${isHovered ? getAnimatedIconClass(title) : ''}`} 
+            className={`w-7 h-7 ${getIconColorAndShadow(gradient)} ${isHovered ? getAnimatedIconClass(title) : ''}`} 
             aria-hidden="true" 
           />
           {/* Glowing effect for calendar icon */}
