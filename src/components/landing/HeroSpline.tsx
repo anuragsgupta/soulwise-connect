@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, Suspense, lazy } from 'react';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 import heroFallbackLg from '@/assets/hero-fallback-lg.png';
 import heroFallbackSm from '@/assets/hero-fallback-sm.png';
 import { analytics } from '@/lib/analytics';
@@ -15,6 +16,7 @@ interface HeroSplineProps {
 export const HeroSpline = ({ variant = 'B', onCtaClick }: HeroSplineProps) => {
   const [splineLoaded, setSplineLoaded] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
   const splineRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -30,8 +32,18 @@ export const HeroSpline = ({ variant = 'B', onCtaClick }: HeroSplineProps) => {
       setReducedMotion(e.matches);
     };
 
+    // Scroll tracking for parallax effect
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+
     mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    window.addEventListener('scroll', handleScroll);
+    
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange);
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
   useEffect(() => {
@@ -143,15 +155,16 @@ export const HeroSpline = ({ variant = 'B', onCtaClick }: HeroSplineProps) => {
             />
           </Suspense>
         ) : (
-          <picture className="w-full h-full object-cover">
-            <source media="(max-width: 768px)" srcSet={heroFallbackSm} />
-            <img 
+          <div className="w-full h-full relative">
+            <Image
               src={heroFallbackLg}
               alt="Mental health support illustration with protective hands and heart-brain symbol"
-              className="w-full h-full object-cover"
-              loading="eager"
+              fill
+              className="object-cover"
+              priority
+              sizes="(max-width: 768px) 100vw, 50vw"
             />
-          </picture>
+          </div>
         )}
       </div>
 

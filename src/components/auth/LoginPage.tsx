@@ -1,4 +1,7 @@
+"use client";
+
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,11 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Heart, Brain, Shield, Users } from "lucide-react";
 
-interface LoginPageProps {
-  onLogin: (userType: 'student' | 'admin') => void;
-}
-
-const LoginPage = ({ onLogin }: LoginPageProps) => {
+const LoginPage = () => {
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [signupData, setSignupData] = useState({ 
     name: '', 
@@ -19,10 +18,48 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     college: '',
     year: '' 
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
-  const handleLogin = (userType: 'student' | 'admin') => {
+  const handleLogin = async (userType: 'student' | 'admin') => {
+    if (!loginData.email || !loginData.password) {
+      alert("Please fill in all fields");
+      return;
+    }
+
+    setIsLoading(true);
     // Mock authentication - in real app would validate credentials
-    onLogin(userType);
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+    
+    // Store user data in localStorage for demo
+    localStorage.setItem('user', JSON.stringify({
+      email: loginData.email,
+      userType: userType
+    }));
+    
+    router.push('/dashboard');
+    setIsLoading(false);
+  };
+
+  const handleSignup = async (userType: 'student' | 'admin') => {
+    if (!signupData.email || !signupData.password || !signupData.name) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    setIsLoading(true);
+    // Mock signup - in real app would create account
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+    
+    // Store user data in localStorage for demo
+    localStorage.setItem('user', JSON.stringify({
+      email: signupData.email,
+      userType: userType,
+      name: signupData.name
+    }));
+    
+    router.push('/dashboard');
+    setIsLoading(false);
   };
 
   return (
@@ -55,39 +92,46 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
 
             <TabsContent value="login" className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="login-email">Email</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
-                  id="login-email"
+                  id="email"
                   type="email"
-                  placeholder="student@college.edu"
                   value={loginData.email}
-                  onChange={(e) => setLoginData({...loginData, email: e.target.value})}
+                  onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="your.email@college.edu"
+                  disabled={isLoading}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="login-password">Password</Label>
+                <Label htmlFor="password">Password</Label>
                 <Input
-                  id="login-password"
+                  id="password"
                   type="password"
                   value={loginData.password}
-                  onChange={(e) => setLoginData({...loginData, password: e.target.value})}
+                  onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))}
+                  placeholder="••••••••"
+                  disabled={isLoading}
                 />
               </div>
-              <div className="space-y-2">
+              
+              <div className="grid grid-cols-2 gap-3 mt-6">
                 <Button 
-                  onClick={() => handleLogin('student')} 
-                  className="w-full bg-gradient-to-r from-primary to-wellness hover:from-primary/90 hover:to-wellness/90 transition-all duration-300"
+                  variant="outline" 
+                  className="flex items-center gap-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+                  onClick={() => handleLogin('student')}
+                  disabled={isLoading}
                 >
-                  <Users className="w-4 h-4 mr-2" />
-                  Sign in as Student
+                  <Brain className="w-4 h-4" />
+                  {isLoading ? "Signing in..." : "Student"}
                 </Button>
                 <Button 
-                  onClick={() => handleLogin('admin')} 
-                  variant="outline"
-                  className="w-full border-primary text-primary hover:bg-primary hover:text-white transition-all duration-300"
+                  variant="outline" 
+                  className="flex items-center gap-2 border-wellness text-wellness hover:bg-wellness hover:text-wellness-foreground transition-all duration-300"
+                  onClick={() => handleLogin('admin')}
+                  disabled={isLoading}
                 >
-                  <Shield className="w-4 h-4 mr-2" />
-                  Admin Access
+                  <Shield className="w-4 h-4" />
+                  {isLoading ? "Signing in..." : "Admin"}
                 </Button>
               </div>
             </TabsContent>
@@ -97,9 +141,10 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                 <Label htmlFor="signup-name">Full Name</Label>
                 <Input
                   id="signup-name"
-                  placeholder="Your Name"
                   value={signupData.name}
-                  onChange={(e) => setSignupData({...signupData, name: e.target.value})}
+                  onChange={(e) => setSignupData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Your full name"
+                  disabled={isLoading}
                 />
               </div>
               <div className="space-y-2">
@@ -107,27 +152,10 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                 <Input
                   id="signup-email"
                   type="email"
-                  placeholder="student@college.edu"
                   value={signupData.email}
-                  onChange={(e) => setSignupData({...signupData, email: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="signup-college">College/University</Label>
-                <Input
-                  id="signup-college"
-                  placeholder="Your Institution"
-                  value={signupData.college}
-                  onChange={(e) => setSignupData({...signupData, college: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="signup-year">Academic Year</Label>
-                <Input
-                  id="signup-year"
-                  placeholder="1st Year, 2nd Year, etc."
-                  value={signupData.year}
-                  onChange={(e) => setSignupData({...signupData, year: e.target.value})}
+                  onChange={(e) => setSignupData(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="your.email@college.edu"
+                  disabled={isLoading}
                 />
               </div>
               <div className="space-y-2">
@@ -136,22 +164,58 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                   id="signup-password"
                   type="password"
                   value={signupData.password}
-                  onChange={(e) => setSignupData({...signupData, password: e.target.value})}
+                  onChange={(e) => setSignupData(prev => ({ ...prev, password: e.target.value }))}
+                  placeholder="••••••••"
+                  disabled={isLoading}
                 />
               </div>
-              <Button 
-                onClick={() => handleLogin('student')} 
-                className="w-full bg-gradient-to-r from-wellness to-support hover:from-wellness/90 hover:to-support/90 transition-all duration-300"
-              >
-                <Brain className="w-4 h-4 mr-2" />
-                Create Account
-              </Button>
+              <div className="space-y-2">
+                <Label htmlFor="college">College/University</Label>
+                <Input
+                  id="college"
+                  value={signupData.college}
+                  onChange={(e) => setSignupData(prev => ({ ...prev, college: e.target.value }))}
+                  placeholder="Your institution"
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="year">Academic Year</Label>
+                <Input
+                  id="year"
+                  value={signupData.year}
+                  onChange={(e) => setSignupData(prev => ({ ...prev, year: e.target.value }))}
+                  placeholder="e.g., 2nd Year, Final Year"
+                  disabled={isLoading}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3 mt-6">
+                <Button 
+                  variant="outline" 
+                  className="flex items-center gap-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+                  onClick={() => handleSignup('student')}
+                  disabled={isLoading}
+                >
+                  <Brain className="w-4 h-4" />
+                  {isLoading ? "Creating..." : "Student"}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="flex items-center gap-2 border-wellness text-wellness hover:bg-wellness hover:text-wellness-foreground transition-all duration-300"
+                  onClick={() => handleSignup('admin')}
+                  disabled={isLoading}
+                >
+                  <Shield className="w-4 h-4" />
+                  {isLoading ? "Creating..." : "Admin"}
+                </Button>
+              </div>
             </TabsContent>
           </Tabs>
         </CardContent>
 
         <CardFooter className="text-center">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground w-full">
             Your mental health matters. Let's take this journey together. 💚
           </p>
         </CardFooter>

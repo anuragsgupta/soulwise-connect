@@ -2,15 +2,65 @@
 
 A stigma-free digital mental health platform for college students with mobile-first design, 3D integration ready, and comprehensive accessibility features.
 
+## 🚀 Project Structure
+
+This repository contains two versions of the MANN MITRA platform:
+
+### 📱 Next.js Version (Recommended)
+**Location:** `/mann-mitra-nextjs/`
+- **Framework:** Next.js 15.5.3 with App Router
+- **Features:** Enhanced dashboards, toast notifications, SSR support
+- **Status:** ✅ Production ready with enhanced user feedback
+
+### ⚡ React Version (Legacy)
+**Location:** `/react-soulwise/`  
+- **Framework:** React 18 with Vite
+- **Features:** Original implementation with Spline integration
+- **Status:** 📦 Archived for reference
+
 ## 🎨 Brand Colors (Exact HEX)
 - Warm Peach: #F6D7A7 | Mustard Gold: #D19A3C | Coral Pink: #D97A7A | Teal Blue: #3E7E88 | Sky Blue: #CFEFF8
 
 ## ✨ Features Built
-- Responsive landing page with hero, features, testimonials, crisis support
-- Spline integration placeholders with fallbacks  
-- Analytics tracking & A/B testing ready
-- Full accessibility & reduced motion support
-- Mobile-first design with exact brand colors
+- **Dashboard System:** Student & Admin dashboards with full functionality
+- **Enhanced UX:** Toast notifications and comprehensive user feedback  
+- **Mental Health Tools:** Mood tracking, AI chatbot, peer forum, resource hub
+- **Appointment System:** Counselor booking with session management
+- **Analytics:** Real-time tracking & A/B testing ready
+- **Accessibility:** Full accessibility & reduced motion support
+- **Responsive Design:** Mobile-first approach with exact brand colors
+
+## 🛠️ Getting Started
+
+### For Next.js Version (Recommended):
+```sh
+# Navigate to Next.js project
+cd mann-mitra-nextjs
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+### For React Version (Legacy):
+```sh
+# Navigate to React project  
+cd react-soulwise
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+```
 
 **Use your preferred IDE**
 

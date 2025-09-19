@@ -5,7 +5,8 @@ import { HeroSpline } from './HeroSpline';
 import { FeatureCard } from './FeatureCard';
 import { TestimonialCarousel } from './TestimonialCarousel';
 import { MessageCircle, Calendar, BookOpen, Users, TrendingUp, Phone, Shield, Heart, CheckCircle, Github, Twitter, Instagram, Mail } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
+import Image from 'next/image';
 import logoMannMitra from '@/assets/logo-mann-mitra.png';
 import { analytics } from '@/lib/analytics';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
@@ -145,7 +146,7 @@ export const LandingPage = () => {
           <div className={`mt-12 transition-all duration-700 ${
             howItWorksVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`} style={{ transitionDelay: '800ms' }}>
-            <Link to="/login">
+            <Link href="/auth/login">
               <Button 
                 size="lg" 
                 className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white px-8 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
@@ -202,10 +203,12 @@ export const LandingPage = () => {
         <div className="max-w-6xl mx-auto relative z-10">
           <div className="flex flex-col items-center text-center mb-12">
             <div className="flex items-center mb-6 group">
-              <img 
+              <Image 
                 src={logoMannMitra} 
                 alt="MANN MITRA - Mental Health Support"
                 className="h-16 w-16 object-contain mr-4 transition-transform duration-300 group-hover:scale-110"
+                width={64}
+                height={64}
               />
               <span className="text-3xl font-bold text-white">MANN MITRA</span>
             </div>
@@ -244,7 +247,7 @@ export const LandingPage = () => {
             
             {/* Final CTA */}
             <div className="mb-12">
-              <Link to="/login">
+              <Link href="/auth/login">
                 <Button 
                   size="lg" 
                   className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-400 hover:to-teal-500 text-white px-12 py-4 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 text-lg font-semibold"

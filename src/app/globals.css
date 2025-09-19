@@ -1,0 +1,168 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* MANN MITRA Design System - Mental Health & Wellness Platform */
+
+@layer base {
+  :root {
+    /* MANN MITRA Brand Colors - Exact HEX Values */
+    --background: 0 0% 100%;
+    --foreground: 195 76% 17%; /* #0F3B45 - Dark text/heading */
+
+    --card: 0 0% 100%;
+    --card-foreground: 195 76% 17%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 195 76% 17%;
+
+    /* Primary - Teal Blue #3E7E88 */
+    --primary: 186 39% 39%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 186 50% 55%;
+
+    /* Secondary - Warm Peach #F6D7A7 */
+    --secondary: 39 73% 82%;
+    --secondary-foreground: 195 76% 17%;
+
+    /* Wellness - Mustard Gold #D19A3C */
+    --wellness: 39 71% 53%;
+    --wellness-foreground: 0 0% 100%;
+    --wellness-light: 39 73% 95%;
+
+    /* Support - Coral Pink #D97A7A */
+    --support: 0 52% 67%;
+    --support-foreground: 0 0% 100%;
+    --support-light: 0 52% 97%;
+
+    /* Sky Blue #CFEFF8 */
+    --sky: 192 74% 90%;
+    --sky-foreground: 195 76% 17%;
+
+    --muted: 210 25% 96%;
+    --muted-foreground: 215 15% 55%;
+
+    --accent: 200 50% 92%;
+    --accent-foreground: 200 30% 25%;
+
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 20% 90%;
+    --input: 210 20% 92%;
+    --ring: 180 65% 45%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 215 30% 8%;
+    --foreground: 210 40% 95%;
+
+    --card: 215 25% 12%;
+    --card-foreground: 210 40% 95%;
+
+    --popover: 215 25% 12%;
+    --popover-foreground: 210 40% 95%;
+
+    --primary: 186 50% 65%;
+    --primary-foreground: 215 30% 8%;
+
+    --secondary: 39 60% 75%;
+    --secondary-foreground: 210 40% 90%;
+
+    --wellness: 39 55% 60%;
+    --wellness-foreground: 0 0% 100%;
+    --wellness-light: 39 25% 15%;
+
+    --support: 0 40% 75%;
+    --support-foreground: 0 0% 100%;
+    --support-light: 0 25% 15%;
+
+    --sky: 192 65% 80%;
+    --sky-foreground: 195 76% 17%;
+
+    --muted: 215 20% 18%;
+    --muted-foreground: 215 15% 65%;
+
+    --accent: 215 20% 22%;
+    --accent-foreground: 210 40% 90%;
+
+    --destructive: 0 70% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 215 20% 22%;
+    --input: 215 20% 20%;
+    --ring: 180 70% 55%;
+    
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+    font-weight: 700;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.3);
+    border-radius: 3px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.5);
+  }
+}
+
+@layer components {
+  /* Enhanced Glassmorphism Effects */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+  }
+  
+  .glass-button {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+}

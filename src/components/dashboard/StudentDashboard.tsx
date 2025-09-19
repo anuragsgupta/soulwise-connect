@@ -1,4 +1,7 @@
+"use client";
+
 import { useState } from "react";
+import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -86,7 +89,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                       Welcome back, Student! 👋
                     </CardTitle>
                     <CardDescription className="text-lg mt-2">
-                      How are you feeling today? Let's check in on your wellness journey.
+                      How are you feeling today? Let&apos;s check in on your wellness journey.
                     </CardDescription>
                   </div>
                   <div className="text-right">
@@ -98,8 +101,8 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                   <Progress value={wellnessScore} className="h-3" />
                   <p className="text-sm text-muted-foreground mt-2">
                     {wellnessScore >= 80 ? "Great job maintaining your mental health!" :
-                     wellnessScore >= 60 ? "You're doing well, keep it up!" :
-                     "Let's work together to improve your wellness."}
+                     wellnessScore >= 60 ? "You&apos;re doing well, keep it up!" :
+                     "Let&apos;s work together to improve your wellness."}
                   </p>
                 </div>
               </CardHeader>
@@ -113,7 +116,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                   className="group cursor-pointer hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-r overflow-hidden"
                   onClick={action.action}
                 >
-                  <div className={`absolute inset-0 bg-gradient-to-r ${action.color} opacity-5 group-hover:opacity-10 transition-opacity`} />
+                <div className={`absolute inset-0 bg-gradient-to-r ${action.color} opacity-5 group-hover:opacity-5 transition-opacity z-[-5]`} />
                   <CardHeader className="relative">
                     <div className="flex items-center space-x-4">
                       <div className={`p-3 rounded-xl bg-gradient-to-r ${action.color} shadow-lg group-hover:scale-110 transition-transform`}>
@@ -201,11 +204,14 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-8">
               <div className="flex items-center">
-                <img 
-                  src={mannMitraLogo} 
-                  alt="MANN MITRA"
-                  className="h-8 w-8 object-contain mr-3"
-                />
+                <div className="relative w-8 h-8 mr-3">
+                  <Image 
+                    src={mannMitraLogo} 
+                    alt="MANN MITRA"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
                 <span className="text-xl font-bold bg-gradient-to-r from-primary to-wellness bg-clip-text text-transparent">
                   MANN MITRA
                 </span>

@@ -1,9 +1,12 @@
+"use client";
+
 import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import { 
   MessageCircle, 
   Send, 
@@ -26,6 +29,7 @@ interface Message {
 }
 
 const ChatBot = () => {
+  const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -148,12 +152,45 @@ const ChatBot = () => {
     setInputMessage("");
     setIsTyping(true);
 
+    // Show confirmation toast
+    toast({
+      title: "Message sent",
+      description: "Your message has been received. Our AI is thinking...",
+      duration: 2000,
+    });
+
     // Simulate bot typing delay
     setTimeout(() => {
       const botResponse = generateBotResponse(inputMessage);
       setMessages(prev => [...prev, botResponse]);
       setIsTyping(false);
+      
+      // Show response notification
+      toast({
+        title: "AI Response Ready",
+        description: "Your mental health companion has responded.",
+        duration: 3000,
+      });
     }, 1500);
+  };
+
+  const handleQuickAction = (actionText: string) => {
+    setInputMessage(actionText);
+    
+    // Show feedback for quick action selection
+    toast({
+      title: "Quick Action Selected",
+      description: `"${actionText}" has been added to your message. Click send to continue.`,
+      duration: 3000,
+    });
+
+    // Auto-focus the input field
+    setTimeout(() => {
+      const inputElement = document.querySelector('input[placeholder="Share what\'s on your mind..."]') as HTMLInputElement;
+      if (inputElement) {
+        inputElement.focus();
+      }
+    }, 100);
   };
 
   const quickActions = [
@@ -253,8 +290,8 @@ const ChatBot = () => {
                   key={index}
                   variant="outline"
                   size="sm"
-                  onClick={() => setInputMessage(action.text)}
-                  className="text-xs hover:bg-primary/10 hover:text-primary hover:border-primary"
+                  onClick={() => handleQuickAction(action.text)}
+                  className="text-xs hover:bg-primary/10 hover:text-primary hover:border-primary transition-all duration-200 hover:scale-105"
                 >
                   <action.icon className="w-3 h-3 mr-1" />
                   {action.text}
@@ -269,15 +306,22 @@ const ChatBot = () => {
               placeholder="Share what's on your mind..."
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              className="flex-1"
+              onKeyPress={(e) => e.key === 'Enter' && !isTyping && handleSendMessage()}
+              className="flex-1 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+              disabled={isTyping}
             />
             <Button 
               onClick={handleSendMessage} 
               disabled={!inputMessage.trim() || isTyping}
-              className="bg-gradient-to-r from-primary to-wellness hover:from-primary/90 hover:to-wellness/90"
+              className={`bg-gradient-to-r from-primary to-wellness hover:from-primary/90 hover:to-wellness/90 transition-all duration-200 ${
+                isTyping ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
+              }`}
             >
-              <Send className="w-4 h-4" />
+              {isTyping ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
             </Button>
           </div>
         </CardContent>

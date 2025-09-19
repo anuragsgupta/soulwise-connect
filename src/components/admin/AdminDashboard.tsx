@@ -1,3 +1,5 @@
+"use client";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -293,7 +295,7 @@ const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Calendar className="w-5 h-5 mr-2 text-wellness" />
-                Today's Appointments
+                Today&apos;s Appointments
               </CardTitle>
               <CardDescription>Counseling sessions scheduled for today</CardDescription>
             </CardHeader>
