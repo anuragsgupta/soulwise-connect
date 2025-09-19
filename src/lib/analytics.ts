@@ -9,7 +9,9 @@ export type AnalyticsEvent =
   | 'feature_card_clicked'
   | 'signup_started'
   | 'final_cta_click'
-  | 'reduced_motion_enabled';
+  | 'reduced_motion_enabled'
+  | 'nav_item_clicked'
+  | 'navbar_cta_click';
 
 export interface AnalyticsData {
   event: AnalyticsEvent;
@@ -60,7 +62,7 @@ class Analytics {
     
     // Send to your analytics endpoint
     // Replace with your actual analytics service
-    if (typeof window !== 'undefined' && window.fetch) {
+    if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
       fetch('/api/analytics', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

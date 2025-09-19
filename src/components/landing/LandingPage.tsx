@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { HeroSpline } from './HeroSpline';
 import { FeatureCard } from './FeatureCard';
 import { TestimonialCarousel } from './TestimonialCarousel';
+import { Navbar } from './Navbar';
 import { MessageCircle, Calendar, BookOpen, Users, TrendingUp, Phone, Shield, Heart, CheckCircle, Github, Twitter, Instagram, Mail } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -80,6 +81,9 @@ export const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Navigation */}
+      <Navbar />
+      
       {/* Hero Section with Spline */}
       <HeroSpline variant={abVariant} onCtaClick={handleCtaClick} />
 
@@ -106,7 +110,7 @@ export const LandingPage = () => {
       </section>
 
       {/* How It Works */}
-      <section ref={howItWorksRef} className="py-16 px-6" style={{ backgroundColor: '#CFEFF820' }}>
+      <section id="how-it-works" ref={howItWorksRef} className="py-16 px-6" style={{ backgroundColor: '#CFEFF820' }}>
         <div className="max-w-4xl mx-auto text-center">
           <h2 className={`text-4xl font-bold mb-12 transition-all duration-700 ${
             howItWorksVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
@@ -162,7 +166,7 @@ export const LandingPage = () => {
       <TestimonialCarousel />
 
       {/* Crisis Support */}
-      <section className="py-16 px-6 bg-primary/5">
+      <section id="support" className="py-16 px-6 bg-primary/5">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-foreground mb-6 animate-fade-up">
             Need Immediate Help?
@@ -191,7 +195,7 @@ export const LandingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="py-16 px-6 relative overflow-hidden" style={{ backgroundColor: '#0F3B45' }}>
+      <footer id="contact" className="py-16 px-6 relative overflow-hidden" style={{ backgroundColor: '#0F3B45' }}>
         {/* Decorative background pattern */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute top-10 left-10 w-16 h-16 rounded-full bg-sky-400 animate-float" style={{ animationDelay: '0s' }} />
