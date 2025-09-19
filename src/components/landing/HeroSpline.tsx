@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useState, useRef, Suspense, lazy } from 'react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';

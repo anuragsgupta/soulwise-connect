@@ -1,7 +1,9 @@
+'use client';
+
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LucideIcon } from 'lucide-react';
 import { analytics } from '@/lib/analytics';
-import { useState } from 'react';
 
 interface FeatureCardProps {
   icon: LucideIcon;
