@@ -40,6 +40,7 @@
     "@splinetool/react-spline": "^4.1.0",
     "@splinetool/runtime": "^1.10.61",
     "@tanstack/react-query": "^5.83.0",
+    "@vitejs/plugin-react": "^5.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -59,6 +60,7 @@
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.9",
+    "vite": "^7.1.6",
     "zod": "^3.25.76"
   },
   "devDependencies": {
