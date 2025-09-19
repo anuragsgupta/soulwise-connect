@@ -52,33 +52,33 @@ async function main() {
 
   console.log(`✅ Created/Updated university: ${sampleUniversity.name}`);
 
-  // Create sample institute
-  console.log('Creating sample institute...');
-  const sampleInstitute = await prisma.institute.upsert({
-    where: { code: 'DU-COLLEGE-001' },
-    update: {},
-    create: {
-      universityId: sampleUniversity.id,
-      name: 'St. Stephen\'s College',
-      code: 'DU-COLLEGE-001',
-      address: 'University Enclave, Delhi, India',
-      contactEmail: 'admin@ststephens.edu',
-      contactPhone: '+91-11-27667271',
-      isActive: true,
-    },
-  });
+  // // Create sample institute
+  // console.log('Creating sample institute...');
+  // const sampleInstitute = await prisma.institute.upsert({
+  //   where: { code: 'DU-COLLEGE-001' },
+  //   update: {},
+  //   create: {
+  //     universityId: sampleUniversity.id,
+  //     name: 'St. Stephen\'s College',
+  //     code: 'DU-COLLEGE-001',
+  //     address: 'University Enclave, Delhi, India',
+  //     contactEmail: 'admin@ststephens.edu',
+  //     contactPhone: '+91-11-27667271',
+  //     isActive: true,
+  //   },
+  // });
 
-  console.log(`✅ Created/Updated institute: ${sampleInstitute.name}`);
+  // console.log(`✅ Created/Updated institute: ${sampleInstitute.name}`);
 
   // Create audit log entry
-  const auditLog = await prisma.auditLog.create({
-    data: {
-      action: 'DATABASE_SEEDED',
-      tableName: 'system',
-      userId: existingSuperAdmin?.id || (await prisma.user.findUnique({ where: { email: superAdminEmail } }))?.id || '',
-      details: { message: 'Database seeding completed successfully' },
-    },
-  });
+  // const auditLog = await prisma.auditLog.create({
+  //   data: {
+  //     action: 'DATABASE_SEEDED',
+  //     tableName: 'system',
+  //     userId: existingSuperAdmin?.id || (await prisma.user.findUnique({ where: { email: superAdminEmail } }))?.id || '',
+  //     details: { message: 'Database seeding completed successfully' },
+  //   },
+  // });
 
   console.log('🎉 Database seeding completed successfully!');
   console.log('\n📋 Summary:');
