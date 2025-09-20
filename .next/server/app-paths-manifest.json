@@ -1,10 +1,8 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
   "/api/analytics/route": "app/api/analytics/route.js",
-  "/api/auth/login/route": "app/api/auth/login/route.js",
-  "/api/universities/route": "app/api/universities/route.js",
+  "/api/chatbot/route": "app/api/chatbot/route.js",
   "/auth/login/page": "app/auth/login/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
   "/login/page": "app/login/page.js",
   "/page": "app/page.js"
 }

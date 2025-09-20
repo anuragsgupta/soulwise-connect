@@ -74,6 +74,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../src/app/mcp-test/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/mcp-test">> = Specific
+  const handler = {} as typeof import("../../src/app/mcp-test/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../src/app/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/">> = Specific
@@ -119,10 +128,28 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../src/app/api/chatbot/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/chatbot">> = Specific
+  const handler = {} as typeof import("../../src/app/api/chatbot/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../src/app/api/institutes/[id]/upload-students/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/institutes/[id]/upload-students">> = Specific
   const handler = {} as typeof import("../../src/app/api/institutes/[id]/upload-students/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/api/mcp/sms-alert/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/mcp/sms-alert">> = Specific
+  const handler = {} as typeof import("../../src/app/api/mcp/sms-alert/route.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check

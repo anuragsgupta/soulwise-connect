@@ -151,6 +151,8 @@ export const HeroSpline = ({ variant = 'B', onCtaClick }: HeroSplineProps) => {
           }>
             <Spline
               scene="https://prod.spline.design/FV-brkGLIlHBDVYA/scene.splinecode"
+
+            // scene="https://prod.spline.design/ub0yPCuxz8dmjMLF/scene.splinecode" 
               className="w-full h-full"
               onLoad={() => analytics.track('spline_loaded')}
               onError={(error) => analytics.track('spline_failed', { error: error.toString() })}

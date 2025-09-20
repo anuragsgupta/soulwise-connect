@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense, lazy } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import ChatMessages, { Message } from "./ChatMessages";
+import ChatInput from "./ChatInput";
+import QuickActions from "./QuickActions";
+import CrisisSupportCard from "./CrisisSupportCard";
+import { chatStorage, type ChatMessage } from "@/lib/chatStorage";
 import { 
   MessageCircle, 
   Send, 
@@ -17,46 +20,179 @@ import {
   Phone,
   AlertTriangle,
   Lightbulb,
-  Calendar
+  Calendar,
+  Trash2,
+  RefreshCw
 } from "lucide-react";
 
-interface Message {
-  id: string;
-  content: string;
-  sender: 'user' | 'bot';
-  timestamp: Date;
-  type?: 'suggestion' | 'warning' | 'resource';
-}
+// Lazy load Spline component
+const Spline = lazy(() => import('@splinetool/react-spline/next'));
+
 
 const ChatBot = () => {
   const { toast } = useToast();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      content: "Hello! I'm your AI mental health companion. I'm here to listen, support, and guide you through any challenges you're facing. How are you feeling today?",
-      sender: 'bot',
-      timestamp: new Date(),
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [sessionId, setSessionId] = useState<string>("");
+  const [splineLoaded, setSplineLoaded] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Initialize chat storage and load existing messages
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-    }
-  }, [messages]);
+    const initializeChat = async () => {
+      try {
+        await chatStorage.initDB();
+        const currentSessionId = chatStorage.getCurrentSessionId();
+        setSessionId(currentSessionId);
+        
+        const savedMessages = await chatStorage.loadMessages(currentSessionId);
+        
+        if (savedMessages.length > 0) {
+          setMessages(savedMessages);
+        } else {
+          // Set initial welcome message if no saved messages
+          const welcomeMessage: Message = {
+            id: '1',
+            content: "**Hello! I'm Mann Mitra, your AI mental health companion.** 🤗\n\nI'm here to:\n\n• **Listen** to your concerns\n• **Support** you through challenges  \n• **Guide** you toward helpful resources\n\n**How are you feeling today?** ✨",
+            sender: 'bot',
+            timestamp: new Date(),
+          };
+          setMessages([welcomeMessage]);
+          await chatStorage.saveMessages(currentSessionId, [welcomeMessage]);
+        }
+      } catch (error) {
+        console.error('Failed to initialize chat storage:', error);
+        // Fallback to default welcome message
+        setMessages([{
+          id: '1',
+          content: "**Hello! I'm Mann Mitra, your AI mental health companion.** 🤗\n\nI'm here to:\n\n• **Listen** to your concerns\n• **Support** you through challenges  \n• **Guide** you toward helpful resources\n\n**How are you feeling today?** ✨",
+          sender: 'bot',
+          timestamp: new Date(),
+        }]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const generateBotResponse = (userMessage: string): Message => {
+    initializeChat();
+  }, []);
+
+  // Initialize Spline and motion preferences
+  useEffect(() => {
+    // Check for reduced motion preference
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mediaQuery.matches);
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      setReducedMotion(e.matches);
+    };
+
+    mediaQuery.addEventListener('change', handleChange);
+    
+    // Load Spline after component mount
+    if (!reducedMotion) {
+      const timer = setTimeout(() => {
+        setSplineLoaded(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange);
+    };
+  }, [reducedMotion]);
+
+  // Enhanced auto-scroll to bottom when new messages arrive
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'end',
+        inline: 'nearest'
+      });
+    }
+    // Fallback for scroll area
+    if (scrollAreaRef.current) {
+      setTimeout(() => {
+        scrollAreaRef.current!.scrollTop = scrollAreaRef.current!.scrollHeight;
+      }, 100);
+    }
+  };
+
+  // Auto-scroll on new messages and typing state changes
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isTyping]);
+
+  // Save messages to IndexedDB whenever messages change
+  useEffect(() => {
+    const saveMessages = async () => {
+      if (messages.length > 0 && sessionId && !isLoading) {
+        try {
+          await chatStorage.saveMessages(sessionId, messages);
+        } catch (error) {
+          console.error('Failed to save messages:', error);
+        }
+      }
+    };
+
+    saveMessages();
+  }, [messages, sessionId, isLoading]);
+
+  const generateBotResponse = async (userMessage: string): Promise<Message> => {
+    try {
+      // Call our enhanced chatbot API route with crisis detection
+      const response = await fetch('/api/chatbot', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          message: userMessage,
+          sessionId: sessionId 
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          // Show SMS alert notification if crisis detected
+          if (data.smsAlertSent && data.crisisLevel && ['high', 'critical'].includes(data.crisisLevel)) {
+            toast({
+              title: "🚨 Crisis Support Activated",
+              description: `Emergency alert sent to counselor. Crisis level: ${data.crisisLevel}. Help is on the way.`,
+              duration: 10000,
+            });
+          }
+
+          return {
+            id: Date.now().toString(),
+            content: data.message,
+            sender: 'bot',
+            timestamp: new Date(),
+            type: data.fallback ? 'warning' : 
+                  data.crisisLevel === 'critical' ? 'warning' :
+                  data.crisisLevel === 'high' ? 'warning' : 
+                  data.crisisLevel === 'medium' ? 'suggestion' : undefined,
+          };
+        }
+      }
+    } catch (error) {
+      console.error('Chatbot API error:', error);
+    }
+
+    // Enhanced fallback responses if API fails
     const lowerMessage = userMessage.toLowerCase();
     
-    // Analyze user message for keywords and provide appropriate responses
+    // Analyze user message for keywords and provide appropriate responses with formatting
     if (lowerMessage.includes('anxious') || lowerMessage.includes('anxiety') || lowerMessage.includes('worried')) {
       return {
         id: Date.now().toString(),
-        content: "I understand you're feeling anxious. Anxiety is a common experience, especially during college years. Here's a quick breathing exercise: Take a deep breath in for 4 counts, hold for 4, then exhale for 6. Try this 3 times. Would you like me to guide you through more coping strategies?",
+        content: "**I understand you're feeling anxious.** 💙\n\nAnxiety is common during college years. Here's a **quick breathing exercise**:\n\n1. **Breathe in** for 4 counts\n2. **Hold** for 4 counts  \n3. **Exhale** for 6 counts\n\nTry this 3 times. Would you like me to guide you through more **coping strategies**?",
         sender: 'bot',
         timestamp: new Date(),
         type: 'suggestion'
@@ -66,7 +202,7 @@ const ChatBot = () => {
     if (lowerMessage.includes('stressed') || lowerMessage.includes('overwhelmed') || lowerMessage.includes('pressure')) {
       return {
         id: Date.now().toString(),
-        content: "Feeling overwhelmed is completely normal when dealing with academic pressures. Let's break this down: What's the main source of your stress right now? Sometimes just talking about it can help us find manageable solutions together.",
+        content: "**Feeling overwhelmed is completely normal** when dealing with academic pressures. 🎓\n\nLet's break this down:\n\n• What's the **main source** of your stress right now?\n• Sometimes just **talking about it** helps us find manageable solutions\n\n**You're not alone** in feeling this way.",
         sender: 'bot',
         timestamp: new Date(),
       };
@@ -75,7 +211,7 @@ const ChatBot = () => {
     if (lowerMessage.includes('depressed') || lowerMessage.includes('sad') || lowerMessage.includes('hopeless')) {
       return {
         id: Date.now().toString(),
-        content: "I'm concerned about how you're feeling. These emotions are important and deserve attention. While I can offer support, I strongly recommend speaking with a professional counselor. Would you like me to help you schedule an appointment with our campus mental health services?",
+        content: "**I'm concerned about how you're feeling.** ❤️\n\nThese emotions are important and deserve attention. While I can offer support, I **strongly recommend** speaking with a professional counselor.\n\n**Would you like me to help you:**\n• Schedule an appointment with campus mental health services\n• Find crisis support resources\n\n**You deserve professional care.**",
         sender: 'bot',
         timestamp: new Date(),
         type: 'warning'
@@ -85,7 +221,7 @@ const ChatBot = () => {
     if (lowerMessage.includes('sleep') || lowerMessage.includes('insomnia') || lowerMessage.includes('tired')) {
       return {
         id: Date.now().toString(),
-        content: "Sleep issues can significantly impact your mental health. Here are some tips: 1) Set a consistent sleep schedule, 2) Avoid screens 1 hour before bed, 3) Try relaxation techniques like progressive muscle relaxation. Would you like me to share some guided sleep resources?",
+        content: "**Sleep issues can significantly impact your mental health.** 😴\n\n**Here are some tips:**\n\n1. Set a **consistent sleep schedule**\n2. **Avoid screens** 1 hour before bed\n3. Try **relaxation techniques** like progressive muscle relaxation\n\nWould you like me to share some **guided sleep resources**?",
         sender: 'bot',
         timestamp: new Date(),
         type: 'resource'
@@ -95,7 +231,7 @@ const ChatBot = () => {
     if (lowerMessage.includes('exam') || lowerMessage.includes('test') || lowerMessage.includes('study')) {
       return {
         id: Date.now().toString(),
-        content: "Academic stress is very common! Here are some strategies: 1) Break study sessions into 25-minute chunks, 2) Practice active recall instead of just re-reading, 3) Take regular breaks to prevent burnout. Remember, your worth isn't defined by grades. How can I help you create a study plan that feels manageable?",
+        content: "**Academic stress is very common!** 📚\n\n**Effective study strategies:**\n\n1. Break sessions into **25-minute chunks**\n2. Practice **active recall** instead of re-reading\n3. Take **regular breaks** to prevent burnout\n\n**Remember:** Your worth isn't defined by grades. How can I help you create a **manageable study plan**?",
         sender: 'bot',
         timestamp: new Date(),
         type: 'suggestion'
@@ -105,7 +241,7 @@ const ChatBot = () => {
     if (lowerMessage.includes('help') || lowerMessage.includes('counselor') || lowerMessage.includes('therapy')) {
       return {
         id: Date.now().toString(),
-        content: "I'm glad you're seeking help - that takes courage! Our campus has excellent mental health resources. I can help you: 1) Schedule a counseling appointment, 2) Find peer support groups, 3) Access crisis support if needed. What kind of support would be most helpful for you right now?",
+        content: "**I'm glad you're seeking help** - that takes courage! 🌟\n\nOur campus has **excellent mental health resources**. I can help you:\n\n1. **Schedule** a counseling appointment\n2. Find **peer support groups**\n3. Access **crisis support** if needed\n\n**What kind of support** would be most helpful for you right now?",
         sender: 'bot',
         timestamp: new Date(),
         type: 'resource'
@@ -115,18 +251,18 @@ const ChatBot = () => {
     if (lowerMessage.includes('good') || lowerMessage.includes('better') || lowerMessage.includes('fine') || lowerMessage.includes('okay')) {
       return {
         id: Date.now().toString(),
-        content: "That's wonderful to hear! I'm glad you're doing well. Remember, it's great to check in even when things are going smoothly. Is there anything specific that's been helping you maintain your positive mood? Sharing strategies can help other students too!",
+        content: "**That's wonderful to hear!** 🎉\n\nI'm glad you're doing well. Remember:\n\n• It's great to **check in** even when things are going smoothly\n• **Self-care** is important during good times too\n\nIs there anything specific that's been helping you maintain your **positive mood**? Sharing strategies can help other students too! ✨",
         sender: 'bot',
         timestamp: new Date(),
       };
     }
 
-    // Default supportive response
+    // Default supportive responses with formatting
     const defaultResponses = [
-      "Thank you for sharing that with me. Your feelings are valid and important. Can you tell me more about what's been on your mind?",
-      "I appreciate you opening up. Mental health is a journey, and I'm here to support you through it. What would be most helpful for you right now?",
-      "It sounds like you're going through something important. Would you like to explore some coping strategies, or would you prefer to talk about what's bothering you?",
-      "I'm here to listen and support you. Every step you take towards caring for your mental health matters, no matter how small it might seem."
+      "**Thank you for sharing that with me.** 💙\n\nYour feelings are **valid and important**. Can you tell me more about what's been on your mind?\n\n• I'm here to listen\n• Your mental health matters\n• You're not alone",
+      "**I appreciate you opening up.** 🌟\n\nMental health is a journey, and I'm here to support you through it.\n\n**What would be most helpful for you right now?**\n• Coping strategies\n• Someone to listen\n• Professional resources",
+      "**It sounds like you're going through something important.** ❤️\n\nWould you like to:\n\n• Explore some **coping strategies**\n• Talk about what's bothering you\n• Learn about **support resources**\n\n**I'm here for you.**",
+      "**I'm here to listen and support you.** 🤗\n\nEvery step you take toward caring for your mental health matters, no matter how small it might seem.\n\n**You're taking a positive step** by reaching out today."
     ];
     
     return {
@@ -137,13 +273,15 @@ const ChatBot = () => {
     };
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
+
+    const messageContent = inputMessage.trim();
 
     // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: inputMessage,
+      content: messageContent,
       sender: 'user',
       timestamp: new Date(),
     };
@@ -151,6 +289,9 @@ const ChatBot = () => {
     setMessages(prev => [...prev, userMessage]);
     setInputMessage("");
     setIsTyping(true);
+
+    // Scroll to bottom after adding user message
+    setTimeout(() => scrollToBottom(), 50);
 
     // Show confirmation toast
     toast({
@@ -160,10 +301,22 @@ const ChatBot = () => {
     });
 
     // Simulate bot typing delay
-    setTimeout(() => {
-      const botResponse = generateBotResponse(inputMessage);
+    setTimeout(async () => {
+      // Get AI response with integrated crisis detection
+      const botResponse = await generateBotResponse(messageContent);
+
       setMessages(prev => [...prev, botResponse]);
       setIsTyping(false);
+      
+      // Save messages to storage
+      try {
+        await chatStorage.saveMessages(sessionId, [userMessage, botResponse]);
+      } catch (error) {
+        console.error('Failed to save messages:', error);
+      }
+      
+      // Scroll to bottom after bot response
+      setTimeout(() => scrollToBottom(), 100);
       
       // Show response notification
       toast({
@@ -172,6 +325,38 @@ const ChatBot = () => {
         duration: 3000,
       });
     }, 1500);
+  };
+
+  // Clear chat history and start new session
+  const clearChatHistory = async () => {
+    try {
+      const newSessionId = chatStorage.createNewSession();
+      setSessionId(newSessionId);
+      
+      const welcomeMessage: Message = {
+        id: Date.now().toString(),
+        content: "**Hello! I'm Mann Mitra, your AI mental health companion.** 🤗\n\nI'm here to:\n\n• **Listen** to your concerns\n• **Support** you through challenges  \n• **Guide** you toward helpful resources\n\n**How are you feeling today?** ✨",
+        sender: 'bot',
+        timestamp: new Date(),
+      };
+      
+      setMessages([welcomeMessage]);
+      await chatStorage.saveMessages(newSessionId, [welcomeMessage]);
+      
+      toast({
+        title: "Chat Cleared",
+        description: "Started a new conversation session.",
+        duration: 2000,
+      });
+    } catch (error) {
+      console.error('Failed to clear chat:', error);
+      toast({
+        title: "Error",
+        description: "Failed to clear chat history.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
   };
 
   const handleQuickAction = (actionText: string) => {
@@ -195,149 +380,171 @@ const ChatBot = () => {
 
   const quickActions = [
     { text: "I'm feeling anxious", icon: AlertTriangle },
-    { text: "I need study tips", icon: Lightbulb },
+    { text: "Suggest me songs", icon: Lightbulb },
+    { text: "Suggest me motivational movies", icon: Lightbulb },
+    { text: "Tell me a motivational quote", icon: Lightbulb },
     { text: "Book counselor appointment", icon: Calendar },
     { text: "Emergency support", icon: Phone }
   ];
 
   return (
-    <div className="space-y-6">
-      <Card>
+    <div className="relative space-y-6">
+      {/* Spline Background - Fixed positioning */}
+  <div className="fixed inset-0 -z-50 overflow-hidden">
+    {!reducedMotion ? (
+      <Suspense fallback={
+        <div className="w-full h-full bg-gradient-to-br from-blue-50/30 to-teal-50/30" />
+      }>
+        {splineLoaded ? (
+          <Spline
+            scene="https://prod.spline.design/ub0yPCuxz8dmjMLF/scene.splinecode"
+            className="w-full h-full"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              opacity: 0.15,
+              zIndex: -1
+            }}
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-blue-50/30 to-teal-50/30" />
+        )}
+      </Suspense>
+    ) : (
+      <div className="w-full h-full bg-gradient-to-br from-blue-50/30 to-teal-50/30" />
+    )}
+  </div>
+      
+      <Card className="backdrop-blur-sm bg-white/90 border-white/50 relative z-10">
         <CardHeader>
-          <CardTitle className="flex items-center text-2xl">
-            <MessageCircle className="w-6 h-6 mr-3 text-primary animate-pulse-soft" />
-            AI Mental Health Support
-          </CardTitle>
-          <CardDescription>
-            Your 24/7 mental health companion. Everything shared here is confidential and supportive.
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center text-2xl">
+                <MessageCircle className="w-6 h-6 mr-3 text-primary animate-pulse-soft" />
+                AI Mental Health Support
+              </CardTitle>
+              <CardDescription>
+                Your 24/7 mental health companion. Everything shared here is confidential and supportive.
+              </CardDescription>
+            </div>
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearChatHistory}
+                className="text-xs hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                title="Clear chat history"
+              >
+                <Trash2 className="w-3 h-3 mr-1" />
+                Clear
+              </Button>
+              {isLoading && (
+                <div className="flex items-center text-xs text-muted-foreground">
+                  <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                  Loading...
+                </div>
+              )}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          {/* Chat Messages */}
-          <ScrollArea className="h-96 mb-4 border rounded-lg p-4" ref={scrollAreaRef}>
-            <div className="space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div className={`flex items-start space-x-2 max-w-xs lg:max-w-md ${
-                    message.sender === 'user' ? 'flex-row-reverse space-x-reverse' : ''
-                  }`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      message.sender === 'user' 
-                        ? 'bg-primary text-white' 
-                        : 'bg-gradient-to-r from-wellness to-support text-white'
-                    }`}>
-                      {message.sender === 'user' ? (
-                        <User className="w-4 h-4" />
-                      ) : (
-                        <Bot className="w-4 h-4" />
-                      )}
-                    </div>
-                    <div className={`rounded-lg p-3 ${
-                      message.sender === 'user'
-                        ? 'bg-primary text-white ml-2'
-                        : 'bg-muted mr-2'
-                    }`}>
-                      <p className="text-sm">{message.content}</p>
-                      {message.type && (
-                        <Badge 
-                          variant="secondary" 
-                          className={`mt-2 text-xs ${
-                            message.type === 'warning' ? 'bg-red-100 text-red-800' :
-                            message.type === 'suggestion' ? 'bg-blue-100 text-blue-800' :
-                            'bg-green-100 text-green-800'
-                          }`}
-                        >
-                          {message.type === 'warning' ? 'Important' :
-                           message.type === 'suggestion' ? 'Suggestion' : 'Resource'}
-                        </Badge>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              
-              {isTyping && (
-                <div className="flex justify-start">
-                  <div className="flex items-start space-x-2">
-                    <div className="w-8 h-8 bg-gradient-to-r from-wellness to-support text-white rounded-full flex items-center justify-center">
-                      <Bot className="w-4 h-4" />
-                    </div>
-                    <div className="bg-muted rounded-lg p-3">
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+          {/* Loading State */}
+          {isLoading ? (
+            <div className="h-96 flex items-center justify-center">
+              <div className="text-center">
+                <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-primary" />
+                <p className="text-sm text-muted-foreground">Loading your chat history...</p>
+              </div>
             </div>
-          </ScrollArea>
+          ) : (
+            <>
+              {/* Chat Messages */}
+              <ScrollArea className="h-96 mb-4 border rounded-lg p-4" ref={scrollAreaRef}>
+                <ChatMessages messages={messages} isTyping={isTyping} messagesEndRef={messagesEndRef} />
+              </ScrollArea>
 
-          {/* Quick Actions */}
-          <div className="mb-4">
-            <p className="text-sm text-muted-foreground mb-2">Quick actions:</p>
-            <div className="flex flex-wrap gap-2">
-              {quickActions.map((action, index) => (
-                <Button
-                  key={index}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleQuickAction(action.text)}
-                  className="text-xs hover:bg-primary/10 hover:text-primary hover:border-primary transition-all duration-200 hover:scale-105"
-                >
-                  <action.icon className="w-3 h-3 mr-1" />
-                  {action.text}
-                </Button>
-              ))}
-            </div>
-          </div>
+              {/* Quick Actions */}
+              <QuickActions quickActions={quickActions} handleQuickAction={handleQuickAction} />
 
-          {/* Message Input */}
-          <div className="flex space-x-2">
-            <Input
-              placeholder="Share what's on your mind..."
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && !isTyping && handleSendMessage()}
-              className="flex-1 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-              disabled={isTyping}
-            />
-            <Button 
-              onClick={handleSendMessage} 
-              disabled={!inputMessage.trim() || isTyping}
-              className={`bg-gradient-to-r from-primary to-wellness hover:from-primary/90 hover:to-wellness/90 transition-all duration-200 ${
-                isTyping ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
-              }`}
-            >
-              {isTyping ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-            </Button>
-          </div>
+              {/* Message Input */}
+              <ChatInput
+                inputMessage={inputMessage}
+                setInputMessage={setInputMessage}
+                handleSendMessage={handleSendMessage}
+                isTyping={isTyping}
+              />
+            </>
+          )}
         </CardContent>
       </Card>
 
       {/* Crisis Support Card */}
-      <Card className="border-red-200 bg-red-50/50">
+      <Card className="border-primary/20 bg-gradient-to-br from-blue-50/80 to-green-50/80 backdrop-blur-sm shadow-md">
         <CardContent className="pt-6">
-          <div className="flex items-center space-x-3">
-            <Phone className="w-6 h-6 text-red-600" />
-            <div>
-              <h3 className="font-semibold text-red-800">Need immediate help?</h3>
-              <p className="text-sm text-red-700">
-                Crisis Helpline: <strong>1800-599-0019</strong> (KIRAN Mental Health)
+          <div className="flex items-start space-x-4">
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 bg-gradient-to-r from-primary to-wellness rounded-full flex items-center justify-center">
+                <Phone className="w-5 h-5 text-white" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-lg text-primary mb-3 flex items-center">
+                <Heart className="w-4 h-4 mr-2 text-red-500" />
+                You're Worth the Call
+              </h3>
+              
+              <p className="text-sm text-gray-700 mb-4 leading-relaxed">
+                Taking care of your mental health is one of the strongest things you can do. 
+                If you're struggling, reaching out is a sign of <strong>courage, not weakness</strong>.
               </p>
-              <p className="text-xs text-red-600 mt-1">Available 24/7 for emergency mental health support</p>
+
+              <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4 rounded-r-lg">
+                <div className="flex items-center mb-2">
+                  <AlertTriangle className="w-5 h-5 text-red-600 mr-2" />
+                  <span className="font-semibold text-red-800">Crisis Support - Available 24/7</span>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-lg font-bold text-red-700">
+                    📞 1800-599-0019
+                  </p>
+                  <p className="text-sm text-red-600">
+                    KIRAN Mental Health Helpline
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                      ✓ Free & Confidential
+                    </span>
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                      ✓ Trained Professionals
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="flex items-center mb-1">
+                    <Brain className="w-4 h-4 text-blue-600 mr-2" />
+                    <span className="font-medium text-blue-800 text-sm">Campus Counseling</span>
+                  </div>
+                  <p className="text-xs text-blue-600">Professional support on campus</p>
+                </div>
+                
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <div className="flex items-center mb-1">
+                    <Calendar className="w-4 h-4 text-green-600 mr-2" />
+                    <span className="font-medium text-green-800 text-sm">Book Appointment</span>
+                  </div>
+                  <p className="text-xs text-green-600">Schedule with a counselor</p>
+                </div>
+              </div>
+
+              <div className="bg-primary/5 rounded-lg p-3 border border-primary/20 text-center">
+                <p className="text-sm text-primary font-medium">
+                  💡 Remember: Every step toward getting help is a victory. You're not alone! 🌈
+                </p>
+              </div>
             </div>
           </div>
         </CardContent>

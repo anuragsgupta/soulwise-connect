@@ -32,7 +32,7 @@ interface StudentDashboardProps {
 
 const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'mood' | 'chat' | 'appointments' | 'resources' | 'forum'>('dashboard');
-  const [wellnessScore, setWellnessScore] = useState(75);
+  const [wellnessScore, setWellnessScore] = useState(15);
 
   const quickActions = [
     {
