@@ -85,7 +85,12 @@ export default function LoginPage() {
       description: `Logged in as ${role || userType}. Redirecting to dashboard...`,
     });
 
-    router.push('/dashboard');
+    // Redirect Faculty to their specific dashboard
+    if (role === 'Faculty') {
+      router.push('/faculty');
+    } else {
+      router.push('/dashboard');
+    }
   };
 
   return (

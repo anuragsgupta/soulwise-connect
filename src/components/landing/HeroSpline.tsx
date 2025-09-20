@@ -150,7 +150,8 @@ export const HeroSpline = ({ variant = 'B', onCtaClick }: HeroSplineProps) => {
             </div>
           }>
             <Spline
-              scene="https://prod.spline.design/FV-brkGLIlHBDVYA/scene.splinecode"
+              // scene="https://prod.spline.design/FV-brkGLIlHBDVYA/scene.splinecode"
+        scene="https://prod.spline.design/jKw8IAuFThD59RK9/scene.splinecode" 
 
             // scene="https://prod.spline.design/ub0yPCuxz8dmjMLF/scene.splinecode" 
               className="w-full h-full"
