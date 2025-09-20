@@ -3,12 +3,12 @@
 import { useState, useRef, useEffect, Suspense, lazy } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import ChatMessages, { Message } from "./ChatMessages";
 import ChatInput from "./ChatInput";
 import QuickActions from "./QuickActions";
-import CrisisSupportCard from "./CrisisSupportCard";
 import { chatStorage, type ChatMessage } from "@/lib/chatStorage";
 import { 
   MessageCircle, 
@@ -22,7 +22,9 @@ import {
   Lightbulb,
   Calendar,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  MapPin,
+  Navigation
 } from "lucide-react";
 
 // Lazy load Spline component
@@ -38,6 +40,13 @@ const ChatBot = () => {
   const [sessionId, setSessionId] = useState<string>("");
   const [splineLoaded, setSplineLoaded] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    address?: string;
+    timestamp: number;
+  } | null>(null);
+  const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt' | 'unknown'>('unknown');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -79,7 +88,189 @@ const ChatBot = () => {
     };
 
     initializeChat();
+    checkLocationPermission();
   }, []);
+
+  // Check and request location permission
+  const checkLocationPermission = async () => {
+    if ('geolocation' in navigator) {
+      try {
+        const permission = await navigator.permissions.query({ name: 'geolocation' });
+        setLocationPermission(permission.state);
+        
+        permission.addEventListener('change', () => {
+          setLocationPermission(permission.state);
+        });
+      } catch (error) {
+        console.log('Permission API not supported, will request directly');
+        setLocationPermission('prompt');
+      }
+    } else {
+      setLocationPermission('denied');
+      toast({
+        title: "Location Not Supported",
+        description: "Your browser doesn't support location services.",
+        variant: "destructive",
+        duration: 5000,
+      });
+    }
+  };
+
+  // Get user's current location
+  const getCurrentLocation = async (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (!('geolocation' in navigator)) {
+        reject(new Error('Geolocation not supported'));
+        return;
+      }
+
+      const options = {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000 // 5 minutes
+      };
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          const timestamp = Date.now();
+          
+          try {
+            // Reverse geocoding to get address
+            const address = await reverseGeocode(latitude, longitude);
+            
+            const locationData = {
+              latitude,
+              longitude,
+              address,
+              timestamp
+            };
+            
+            setUserLocation(locationData);
+            setLocationPermission('granted');
+            
+            toast({
+              title: "📍 Location Updated",
+              description: `Current location: ${address || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`}`,
+              duration: 5000,
+            });
+            
+            resolve();
+          } catch (error) {
+            console.error('Geocoding error:', error);
+            const locationData = {
+              latitude,
+              longitude,
+              timestamp
+            };
+            setUserLocation(locationData);
+            resolve();
+          }
+        },
+        (error) => {
+          console.error('Location error:', error);
+          setLocationPermission('denied');
+          
+          let errorMessage = "Unable to get your location.";
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = "Location access denied. Please enable location permissions.";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = "Location information unavailable.";
+              break;
+            case error.TIMEOUT:
+              errorMessage = "Location request timed out.";
+              break;
+          }
+          
+          toast({
+            title: "Location Error",
+            description: errorMessage,
+            variant: "destructive",
+            duration: 5000,
+          });
+          
+          reject(error);
+        },
+        options
+      );
+    });
+  };
+
+  // Reverse geocoding to get address from coordinates
+  const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
+    try {
+      // Using OpenStreetMap Nominatim API (free, no API key required)
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': 'Mann-Mitra-Mental-Health-App'
+          }
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.display_name) {
+          // Format the address nicely
+          const parts = data.display_name.split(', ');
+          return parts.slice(0, 3).join(', '); // Get first 3 parts for a concise address
+        }
+      }
+    } catch (error) {
+      console.error('Reverse geocoding failed:', error);
+    }
+    
+    return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  };
+
+  // Share location in chat
+  const shareLocationInChat = async () => {
+    try {
+      await getCurrentLocation();
+      
+      if (userLocation) {
+        const locationMessage: Message = {
+          id: Date.now().toString(),
+          content: `📍 **My Current Location**\n\n${userLocation.address || `Coordinates: ${userLocation.latitude.toFixed(4)}, ${userLocation.longitude.toFixed(4)}`}\n\n*Shared at ${new Date().toLocaleTimeString()}*`,
+          sender: 'user',
+          timestamp: new Date(),
+          type: 'resource'
+        };
+
+        setMessages(prev => [...prev, locationMessage]);
+
+        // Bot response with location-based services
+        setTimeout(async () => {
+          const botResponse: Message = {
+            id: (Date.now() + 1).toString(),
+            content: `**Thank you for sharing your location!** 📍\n\nI can now help you with:\n\n• **Nearby mental health services** 🏥\n• **Emergency contacts** in your area 📞\n• **Local support groups** 👥\n• **Crisis centers** near you 🆘\n\nWould you like me to find **mental health resources** in your area?`,
+            sender: 'bot',
+            timestamp: new Date(),
+            type: 'suggestion'
+          };
+
+          setMessages(prev => [...prev, botResponse]);
+          
+          try {
+            await chatStorage.saveMessages(sessionId, [locationMessage, botResponse]);
+          } catch (error) {
+            console.error('Failed to save location messages:', error);
+          }
+        }, 1000);
+
+        toast({
+          title: "📍 Location Shared",
+          description: "Your location has been shared securely in the chat.",
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to share location:', error);
+    }
+  };
 
   // Initialize Spline and motion preferences
   useEffect(() => {
@@ -241,7 +432,20 @@ const ChatBot = () => {
     if (lowerMessage.includes('help') || lowerMessage.includes('counselor') || lowerMessage.includes('therapy')) {
       return {
         id: Date.now().toString(),
-        content: "**I'm glad you're seeking help** - that takes courage! 🌟\n\nOur campus has **excellent mental health resources**. I can help you:\n\n1. **Schedule** a counseling appointment\n2. Find **peer support groups**\n3. Access **crisis support** if needed\n\n**What kind of support** would be most helpful for you right now?",
+        content: "**I'm glad you're seeking help** - that takes courage! 🌟\n\nOur campus has **excellent mental health resources**. I can help you:\n\n1. **Schedule** a counseling appointment\n2. Find **peer support groups**\n3. Access **crisis support** if needed\n4. **Find nearby services** with your location 📍\n\n**What kind of support** would be most helpful for you right now?",
+        sender: 'bot',
+        timestamp: new Date(),
+        type: 'resource'
+      };
+    }
+
+    if (lowerMessage.includes('nearby') || lowerMessage.includes('location') || lowerMessage.includes('near me') || lowerMessage.includes('find mental health')) {
+      return {
+        id: Date.now().toString(),
+        content: `**I can help you find nearby mental health services!** 📍\n\n${userLocation ? 
+          `Based on your location: **${userLocation.address || 'Current location'}**\n\n` : 
+          'To find services near you, please **share your location** first.\n\n'
+        }**Available nearby services:**\n\n• **Mental health clinics** 🏥\n• **Crisis intervention centers** 🆘\n• **Support groups** 👥\n• **Emergency services** 📞\n\n${!userLocation ? 'Click the **location button** below to share your location securely.' : 'Would you like specific contact information for any of these services?'}`,
         sender: 'bot',
         timestamp: new Date(),
         type: 'resource'
@@ -384,6 +588,7 @@ const ChatBot = () => {
     { text: "Suggest me motivational movies", icon: Lightbulb },
     { text: "Tell me a motivational quote", icon: Lightbulb },
     { text: "Book counselor appointment", icon: Calendar },
+    { text: "Find nearby mental health services", icon: MapPin },
     { text: "Emergency support", icon: Phone }
   ];
 
@@ -467,6 +672,47 @@ const ChatBot = () => {
               {/* Quick Actions */}
               <QuickActions quickActions={quickActions} handleQuickAction={handleQuickAction} />
 
+              {/* Location Sharing Section */}
+              <div className="mb-4 p-4 bg-blue-50/80 border border-blue-200 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <MapPin className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-800">
+                      {userLocation ? 'Location Shared' : 'Share Your Location'}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    {userLocation && (
+                      <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
+                        ✓ {userLocation.address ? userLocation.address.substring(0, 20) + '...' : 'Located'}
+                      </Badge>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={shareLocationInChat}
+                      disabled={locationPermission === 'denied'}
+                      className="text-xs hover:bg-blue-50"
+                    >
+                      <Navigation className="w-3 h-3 mr-1" />
+                      {userLocation ? 'Update' : 'Share'}
+                    </Button>
+                  </div>
+                </div>
+                
+                {locationPermission === 'denied' && (
+                  <p className="text-xs text-red-600 mt-2">
+                    ❌ Location access denied. Please enable location permissions in your browser settings to find nearby mental health services.
+                  </p>
+                )}
+                
+                {!userLocation && locationPermission !== 'denied' && (
+                  <p className="text-xs text-blue-600 mt-2">
+                    💡 Share your location to get personalized nearby mental health resources and emergency services.
+                  </p>
+                )}
+              </div>
+
               {/* Message Input */}
               <ChatInput
                 inputMessage={inputMessage}
@@ -511,6 +757,18 @@ const ChatBot = () => {
                   <p className="text-sm text-red-600">
                     KIRAN Mental Health Helpline
                   </p>
+                  
+                  {userLocation && (
+                    <div className="mt-2 p-2 bg-red-100 rounded">
+                      <p className="text-xs text-red-700 font-medium">
+                        📍 Your Location: {userLocation.address || `${userLocation.latitude.toFixed(4)}, ${userLocation.longitude.toFixed(4)}`}
+                      </p>
+                      <p className="text-xs text-red-600 mt-1">
+                        Emergency responders can be directed to your current location if needed.
+                      </p>
+                    </div>
+                  )}
+                  
                   <div className="flex flex-wrap gap-2 mt-2">
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
                       ✓ Free & Confidential
@@ -518,6 +776,11 @@ const ChatBot = () => {
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
                       ✓ Trained Professionals
                     </span>
+                    {userLocation && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
+                        ✓ Location Shared
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
