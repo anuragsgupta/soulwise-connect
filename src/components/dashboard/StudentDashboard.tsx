@@ -23,7 +23,9 @@ import {
   MapPin,
   Navigation,
   AlertTriangle,
-  Phone
+  Phone,
+  Menu,
+  X
 } from "lucide-react";
 import mannMitraLogo from "@/assets/mann-mitra-logo.png";
 import MoodTracker from "./MoodTracker";
@@ -40,6 +42,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'mood' | 'chat' | 'appointments' | 'resources' | 'forum'>('dashboard');
   const [wellnessScore, setWellnessScore] = useState(15);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -64,6 +67,32 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
 
     initializeLocation();
   }, []);
+
+  // Close mobile menu on window resize (when switching to desktop)
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
 
   // Auto-request location when permission is granted
   useEffect(() => {
@@ -249,6 +278,48 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
     });
   };
 
+  // Handle mobile menu toggle
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  // Handle tab change and close mobile menu
+  const handleTabChange = (tab: 'dashboard' | 'mood' | 'chat' | 'appointments' | 'resources' | 'forum') => {
+    setActiveTab(tab);
+    setIsMobileMenuOpen(false); // Close mobile menu on tab change
+  };
+
+  // Enhanced logout function with proper cleanup
+  const handleLogout = () => {
+    try {
+      // Close mobile menu if open
+      setIsMobileMenuOpen(false);
+      
+      // Clear any stored user data
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      localStorage.removeItem('studentSession');
+      
+      // Show confirmation toast
+      toast({
+        title: "Logged Out Successfully",
+        description: "You have been safely logged out. Thank you for using Mann Mitra!",
+        duration: 3000,
+      });
+      
+      // Call the parent logout function
+      onLogout();
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Logout Error",
+        description: "There was an issue logging out. Please try again.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  };
+
   const quickActions = [
     {
       title: "Daily Mood Check",
@@ -330,7 +401,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             </Card>
 
             {/* Quick Actions Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {quickActions.map((action, index) => (
                 <Card 
                   key={index}
@@ -338,16 +409,16 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                   onClick={action.action}
                 >
                 <div className={`absolute inset-0 bg-gradient-to-r ${action.color} opacity-5 group-hover:opacity-5 transition-opacity z-[-5]`} />
-                  <CardHeader className="relative">
-                    <div className="flex items-center space-x-4">
-                      <div className={`p-3 rounded-xl bg-gradient-to-r ${action.color} shadow-lg group-hover:scale-110 transition-transform`}>
-                        <action.icon className="w-6 h-6 text-white" />
+                  <CardHeader className="relative p-4 sm:p-6">
+                    <div className="flex items-center space-x-3 sm:space-x-4">
+                      <div className={`p-2 sm:p-3 rounded-xl bg-gradient-to-r ${action.color} shadow-lg group-hover:scale-110 transition-transform`}>
+                        <action.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                       </div>
                       <div>
-                        <CardTitle className="group-hover:text-primary transition-colors">
+                        <CardTitle className="group-hover:text-primary transition-colors text-sm sm:text-base">
                           {action.title}
                         </CardTitle>
-                        <CardDescription>{action.description}</CardDescription>
+                        <CardDescription className="text-xs sm:text-sm">{action.description}</CardDescription>
                       </div>
                     </div>
                   </CardHeader>
@@ -356,7 +427,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             </div>
 
             {/* Recent Activity & Insights */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -490,10 +561,11 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-wellness-light/20 to-support-light/20">
       {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-sm border-b shadow-sm sticky top-0 z-50">
+      <nav className="bg-white/95 backdrop-blur-sm border-b shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-8">
+            {/* Logo and Brand */}
+            <div className="flex items-center">
               <div className="flex items-center">
                 <div className="relative w-8 h-8 mr-3">
                   <Image 
@@ -507,35 +579,39 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                   MANN MITRA
                 </span>
               </div>
-              <div className="hidden md:flex space-x-4">
-                {[
-                  { id: 'dashboard', label: 'Dashboard', icon: Heart },
-                  { id: 'mood', label: 'Mood', icon: Smile },
-                  { id: 'chat', label: 'AI Chat', icon: MessageCircle },
-                  { id: 'appointments', label: 'Appointments', icon: Calendar },
-                  { id: 'resources', label: 'Resources', icon: BookOpen },
-                  { id: 'forum', label: 'Community', icon: Users }
-                ].map((item) => (
-                  <Button
-                    key={item.id}
-                    variant={activeTab === item.id ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setActiveTab(item.id as any)}
-                    className={`flex items-center space-x-2 ${
-                      activeTab === item.id 
-                        ? 'bg-primary text-white' 
-                        : 'hover:bg-primary/10 hover:text-primary'
-                    }`}
-                  >
-                    <item.icon className="w-4 h-4" />
-                    <span>{item.label}</span>
-                  </Button>
-                ))}
-              </div>
             </div>
-            <div className="flex items-center space-x-3">
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-4">
+              {[
+                { id: 'dashboard', label: 'Dashboard', icon: Heart },
+                { id: 'mood', label: 'Mood', icon: Smile },
+                { id: 'chat', label: 'AI Chat', icon: MessageCircle },
+                { id: 'appointments', label: 'Appointments', icon: Calendar },
+                { id: 'resources', label: 'Resources', icon: BookOpen },
+                { id: 'forum', label: 'Community', icon: Users }
+              ].map((item) => (
+                <Button
+                  key={item.id}
+                  variant={activeTab === item.id ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleTabChange(item.id as any)}
+                  className={`flex items-center space-x-2 ${
+                    activeTab === item.id 
+                      ? 'bg-primary text-white' 
+                      : 'hover:bg-primary/10 hover:text-primary'
+                  }`}
+                >
+                  <item.icon className="w-4 h-4" />
+                  <span>{item.label}</span>
+                </Button>
+              ))}
+            </div>
+
+            {/* Desktop Right Side */}
+            <div className="hidden md:flex items-center space-x-3">
               {/* Location Status Indicator */}
-              <div className="hidden sm:flex items-center space-x-2">
+              <div className="flex items-center space-x-2">
                 {userLocation ? (
                   <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
                     <MapPin className="w-3 h-3 mr-1" />
@@ -557,21 +633,131 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={onLogout}
+                onClick={handleLogout}
                 className="flex items-center space-x-2 border-destructive text-destructive hover:bg-destructive hover:text-white"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Logout</span>
               </Button>
             </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden flex items-center space-x-2">
+              {/* Mobile Location Indicator */}
+              <div className="flex items-center">
+                {userLocation ? (
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
+                    <MapPin className="w-3 h-3" />
+                  </Badge>
+                ) : locationPermission === 'denied' ? (
+                  <Badge variant="secondary" className="bg-red-100 text-red-800 text-xs">
+                    <AlertTriangle className="w-3 h-3" />
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 text-xs">
+                    <Navigation className="w-3 h-3" />
+                  </Badge>
+                )}
+              </div>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleMobileMenu}
+                className="p-2"
+              >
+                {isMobileMenuOpen ? (
+                  <X className="w-6 h-6" />
+                ) : (
+                  <Menu className="w-6 h-6" />
+                )}
+              </Button>
+            </div>
           </div>
+
+          {/* Mobile Navigation Menu */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden absolute top-16 left-0 right-0 bg-white/98 backdrop-blur-md border-b shadow-lg z-50">
+              <div className="px-4 py-2 space-y-1 max-h-screen overflow-y-auto">
+                {[
+                  { id: 'dashboard', label: 'Dashboard', icon: Heart },
+                  { id: 'mood', label: 'Mood Tracker', icon: Smile },
+                  { id: 'chat', label: 'AI Chat Support', icon: MessageCircle },
+                  { id: 'appointments', label: 'Appointments', icon: Calendar },
+                  { id: 'resources', label: 'Resources', icon: BookOpen },
+                  { id: 'forum', label: 'Community', icon: Users }
+                ].map((item) => (
+                  <Button
+                    key={item.id}
+                    variant={activeTab === item.id ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => handleTabChange(item.id as any)}
+                    className={`w-full justify-start flex items-center space-x-3 py-3 px-3 ${
+                      activeTab === item.id 
+                        ? 'bg-primary text-white' 
+                        : 'hover:bg-primary/10 hover:text-primary'
+                    }`}
+                  >
+                    <item.icon className="w-5 h-5" />
+                    <span className="font-medium">{item.label}</span>
+                  </Button>
+                ))}
+                
+                {/* Mobile Location Status */}
+                <div className="pt-3 pb-2 border-t border-gray-200 mt-2">
+                  <div className="flex items-center justify-between px-3 py-2">
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="w-4 h-4 text-gray-500" />
+                      <span className="text-sm font-medium text-gray-700">Location Status</span>
+                    </div>
+                    {userLocation ? (
+                      <Badge className="bg-green-100 text-green-800 text-xs">Active</Badge>
+                    ) : (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          requestLocationAccess();
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="text-xs px-2 py-1"
+                      >
+                        Enable
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Mobile Logout Button */}
+                <div className="pt-2 border-t border-gray-200">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleLogout}
+                    className="w-full justify-start flex items-center space-x-3 py-3 px-3 border-destructive text-destructive hover:bg-destructive hover:text-white"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    <span className="font-medium">Logout</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {renderContent()}
       </main>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30 md:hidden"
+          onClick={toggleMobileMenu}
+        />
+      )}
 
       {/* Location Permission Prompt Modal */}
       {showLocationPrompt && (

@@ -81,11 +81,11 @@ export const HeroSpline = ({ variant = 'B', onCtaClick }: HeroSplineProps) => {
   const headlines = {
     A: {
       main: "Your Mind. Your Safe Space.",
-      sub: "A stigma-free digital companion for student mental health — private, simple, and always there"
+      sub: "A stigma-free digital companion for student's mental health — private, simple, and always there"
     },
     B: {
       main: "Small steps. Big relief.",
-      sub: "Your stigma-free digital companion for student mental health."
+      sub: "A stigma-free digital companion for student's mental health."
     }
   };
 
