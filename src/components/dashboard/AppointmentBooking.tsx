@@ -28,7 +28,7 @@ const AppointmentBooking = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([
     {
       id: '1',
-      counselorName: 'Dr. Sarah Johnson',
+      counselorName: 'Dr. Ankita Rai',
       date: '2024-12-15',
       time: '14:00',
       type: 'In-Person',
@@ -36,7 +36,7 @@ const AppointmentBooking = () => {
     },
     {
       id: '2',
-      counselorName: 'Dr. Michael Chen',
+      counselorName: 'Dr. Ram Gupta',
       date: '2024-12-10',
       time: '10:30',
       type: 'Video Call',
@@ -46,10 +46,10 @@ const AppointmentBooking = () => {
   const { toast } = useToast();
 
   const counselors = [
-    { id: 'dr-sarah', name: 'Dr. Sarah Johnson', specialty: 'Anxiety & Depression', rating: 4.9 },
-    { id: 'dr-michael', name: 'Dr. Michael Chen', specialty: 'Academic Stress', rating: 4.8 },
+    { id: 'dr-sarah', name: 'Dr. Ankita Rai', specialty: 'Anxiety & Depression', rating: 4.9 },
+    { id: 'dr-michael', name: 'Dr. Ram Gupta', specialty: 'Academic Stress', rating: 4.8 },
     { id: 'dr-priya', name: 'Dr. Priya Sharma', specialty: 'Relationship Counseling', rating: 4.9 },
-    { id: 'dr-james', name: 'Dr. James Wilson', specialty: 'Trauma & PTSD', rating: 4.7 }
+    { id: 'dr-james', name: 'Dr. Rajesh Sharma', specialty: 'Trauma & PTSD', rating: 4.7 }
   ];
 
   const timeSlots = [
