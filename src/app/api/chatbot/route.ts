@@ -91,50 +91,40 @@ export async function POST(request: NextRequest) {
 
     // Call Google Gemini API
     console.log('🔗 Calling Gemini API...');
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', {
+    console.log('Model: gemini-2.5-flash');
+    console.log('Message length:', message.length);
+    console.log('API Key present:', !!apiKey);
+    console.log('API Key prefix:', apiKey?.substring(0, 10) + '...');
+    
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'X-goog-api-key': apiKey
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         contents: [
           {
             parts: [
               {
-                text: `You are a compassionate AI mental health companion for college students named "Mann Mitra". 
-              - always start with motivational quotes or funny anecdotes to lighten the mood.
-only implement when user mentions serious mental health concerns (depression, self-harm, suicidal thoughts), always recommend professional help and provide crisis resources.otherwise have casual friendly conversations with a little bit of funny element to cheer up the user.
-IMPORTANT FORMATTING RULES:
-- Use **bold** for important points and headings
-- Use numbered lists (1. 2. 3.) for step-by-step guidance
-- Use bullet points (•) for options or tips
-- Use line breaks for better readability
-- Keep responses under 200 words
-- Be empathetic and supportive with a little bit of funny element to cheer up the user
-- Avoid medical jargon; use simple language
+                text: `You are Mann Mitra, a compassionate AI mental health companion for college students.
 
-When responding to user messages, always include the following key points:
+RESPONSE STYLE:
+- Use **bold** for key points
+- Use numbered lists for guidance
+- Keep responses under 150 words
+- Be warm, empathetic, and supportive
+- Add light humor when appropriate
+- Respond in user's language if not English
 
-1. Acknowledge their feelings and validate their experience.
-2. Offer practical coping strategies or resources.
-3. Encourage seeking professional help if needed.
-4. Provide crisis helpline information if they mention serious mental health concerns.
+GUIDELINES:
+1. Validate feelings
+2. Offer practical coping tips
+3. Recommend professional help for serious concerns
+4. Provide crisis helpline: KIRAN 1800-599-0019
 
-Here are some example responses:
+User message: "${message}"
 
-User: "I'm feeling really anxious about my exams."
-Mann Mitra: 
-"**It's completely normal to feel anxious before exams.** Here are some tips to help you manage your anxiety:\n\n1. **Practice deep breathing exercises** to calm your mind.\n2. **Break your study sessions into manageable chunks** with regular breaks.\n3. **Stay hydrated and get enough sleep** to keep your energy levels up.\n\nRemember, doing your best is what matters most! If anxiety feels overwhelming, consider talking to a counselor at your campus health center."
-
-User: "I feel so lonely since moving to college."
-Mann Mitra:
-"**It's understandable to feel lonely after such a big change.** Here are some ways to help you connect with others:\n\n1. **Join clubs or organizations** that interest you to meet like-minded people.\n2. **Attend campus events** to socialize and make new friends.\n3. **Reach out to classmates** for study groups or casual hangouts.\n\nRemember, building connections takes time, and it's okay to feel this way. If loneliness persists, consider talking to a counselor for support."
-
-
-Respond to this message with proper formatting: "${message}"
-
-If the user mentions serious mental health concerns (depression, self-harm, suicidal thoughts), always recommend professional help and provide crisis resources.`
+Respond with empathy and helpful guidance.`
               }
             ]
           }
@@ -143,21 +133,57 @@ If the user mentions serious mental health concerns (depression, self-harm, suic
           temperature: 0.7,
           topK: 40,
           topP: 0.95,
-          maxOutputTokens: 300,
+          maxOutputTokens: 800,
         }
       })
     });
 
     if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
       console.log(`❌ Gemini API error: ${response.status}`);
+      console.log('Error details:', JSON.stringify(errorData, null, 2));
       throw new Error(`Gemini API error: ${response.status}`);
     }
 
     const data = await response.json();
+    console.log('📦 Raw API Response:', JSON.stringify(data, null, 2));
+    
     const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!aiResponse) {
       console.log('❌ No response from Gemini API');
+      console.log('Response structure:', JSON.stringify(data, null, 2));
+      console.log('Candidates:', data.candidates);
+      console.log('Finish reason:', data.candidates?.[0]?.finishReason);
+      
+      // Check if response was blocked by safety filters
+      if (data.candidates?.[0]?.finishReason === 'SAFETY') {
+        console.log('⚠️ Response blocked by safety filters');
+        const safetyResponse = "I'm here to support you. For your safety and well-being, I recommend speaking with a professional counselor. **Please contact your campus counseling center** or call the **KIRAN Mental Health helpline at 1800-599-0019** for immediate support.";
+        return NextResponse.json({
+          success: true,
+          message: safetyResponse,
+          timestamp: new Date().toISOString(),
+          crisisLevel: crisisDetection.level,
+          smsAlertSent: ['high', 'critical'].includes(crisisDetection.level),
+          safetyFiltered: true
+        });
+      }
+      
+      // Check if response was truncated due to max tokens
+      if (data.candidates?.[0]?.finishReason === 'MAX_TOKENS') {
+        console.log('⚠️ Response hit max tokens limit - using fallback');
+        const fallbackResponse = "**I'm here to listen and support you.** 💙\n\nLet me help you with that. Could you please rephrase your message or be a bit more specific? This will help me provide you with the most relevant support and guidance.\n\n**Need immediate help?**\nCall **KIRAN Mental Health: 1800-599-0019** (24/7)";
+        return NextResponse.json({
+          success: true,
+          message: fallbackResponse,
+          timestamp: new Date().toISOString(),
+          crisisLevel: crisisDetection.level,
+          smsAlertSent: ['high', 'critical'].includes(crisisDetection.level),
+          tokenLimitReached: true
+        });
+      }
+      
       throw new Error('No response from Gemini API');
     }
 
