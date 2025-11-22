@@ -9,7 +9,6 @@ import { useToast } from "@/hooks/use-toast";
 import ChatMessages, { Message } from "./ChatMessages";
 import ChatInput from "./ChatInput";
 import QuickActions from "./QuickActions";
-import { chatStorage, type ChatMessage } from "@/lib/chatStorage";
 import { 
   MessageCircle, 
   Send, 
@@ -54,24 +53,52 @@ const ChatBot = () => {
   useEffect(() => {
     const initializeChat = async () => {
       try {
-        await chatStorage.initDB();
-        const currentSessionId = chatStorage.getCurrentSessionId();
+        // TODO: Replace with dynamic user ID from authentication
+        // For now, using hardcoded user ID for testing
+        const currentSessionId = 'user-1763748214213';
+        console.log('👤 Using hardcoded user ID:', currentSessionId);
+        
         setSessionId(currentSessionId);
         
-        const savedMessages = await chatStorage.loadMessages(currentSessionId);
+        // Load existing messages from DynamoDB
+        const response = await fetch(`/api/chat-memory?userId=${currentSessionId}&action=recent&limit=50`);
         
-        if (savedMessages.length > 0) {
-          setMessages(savedMessages);
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.success && data.messages && data.messages.length > 0) {
+            // Convert DynamoDB messages to UI Message format
+            const loadedMessages: Message[] = data.messages.map((msg: any) => ({
+              id: msg.timestamp,
+              content: msg.message,
+              sender: msg.role === 'user' ? 'user' : 'bot',
+              timestamp: new Date(msg.created_at),
+              type: msg.risk_level === 'severe' || msg.risk_level === 'mild' ? 'warning' : undefined,
+            }));
+            setMessages(loadedMessages);
+          } else {
+            // Set initial welcome message if no saved messages
+            const welcomeMessage: Message = {
+              id: '1',
+              content: "**Hello! I'm Mann Mitra, your AI mental health companion.** 🤗\n\nI'm here to:\n\n• **Listen** to your concerns\n• **Support** you through challenges  \n• **Guide** you toward helpful resources\n\n**How are you feeling today?** ✨",
+              sender: 'bot',
+              timestamp: new Date(),
+            };
+            setMessages([welcomeMessage]);
+            
+            // Save welcome message to DynamoDB
+            await fetch('/api/chat-memory', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userId: currentSessionId,
+                role: 'assistant',
+                message: welcomeMessage.content,
+              }),
+            });
+          }
         } else {
-          // Set initial welcome message if no saved messages
-          const welcomeMessage: Message = {
-            id: '1',
-            content: "**Hello! I'm Mann Mitra, your AI mental health companion.** 🤗\n\nI'm here to:\n\n• **Listen** to your concerns\n• **Support** you through challenges  \n• **Guide** you toward helpful resources\n\n**How are you feeling today?** ✨",
-            sender: 'bot',
-            timestamp: new Date(),
-          };
-          setMessages([welcomeMessage]);
-          await chatStorage.saveMessages(currentSessionId, [welcomeMessage]);
+          throw new Error('Failed to load chat history');
         }
       } catch (error) {
         console.error('Failed to initialize chat storage:', error);
@@ -255,7 +282,26 @@ const ChatBot = () => {
           setMessages(prev => [...prev, botResponse]);
           
           try {
-            await chatStorage.saveMessages(sessionId, [locationMessage, botResponse]);
+            // Save location messages to DynamoDB
+            await fetch('/api/chat-memory', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userId: sessionId,
+                role: 'user',
+                message: locationMessage.content,
+              }),
+            });
+            
+            await fetch('/api/chat-memory', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userId: sessionId,
+                role: 'assistant',
+                message: botResponse.content,
+              }),
+            });
           } catch (error) {
             console.error('Failed to save location messages:', error);
           }
@@ -318,21 +364,6 @@ const ChatBot = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isTyping]);
-
-  // Save messages to IndexedDB whenever messages change
-  useEffect(() => {
-    const saveMessages = async () => {
-      if (messages.length > 0 && sessionId && !isLoading) {
-        try {
-          await chatStorage.saveMessages(sessionId, messages);
-        } catch (error) {
-          console.error('Failed to save messages:', error);
-        }
-      }
-    };
-
-    saveMessages();
-  }, [messages, sessionId, isLoading]);
 
   const generateBotResponse = async (userMessage: string): Promise<Message> => {
     try {
@@ -512,9 +543,30 @@ const ChatBot = () => {
       setMessages(prev => [...prev, botResponse]);
       setIsTyping(false);
       
-      // Save messages to storage
+      // Save messages to DynamoDB
       try {
-        await chatStorage.saveMessages(sessionId, [userMessage, botResponse]);
+        // Save user message
+        await fetch('/api/chat-memory', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: sessionId,
+            role: 'user',
+            message: messageContent,
+          }),
+        });
+        
+        // Save bot response
+        await fetch('/api/chat-memory', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: sessionId,
+            role: 'assistant',
+            message: botResponse.content,
+            risk_level: botResponse.type === 'warning' ? 'mild' : 'normal',
+          }),
+        });
       } catch (error) {
         console.error('Failed to save messages:', error);
       }
@@ -534,7 +586,13 @@ const ChatBot = () => {
   // Clear chat history and start new session
   const clearChatHistory = async () => {
     try {
-      const newSessionId = chatStorage.createNewSession();
+      // Delete old chat history from DynamoDB
+      await fetch(`/api/chat-memory?userId=${sessionId}`, {
+        method: 'DELETE',
+      });
+      
+      // Create new session ID
+      const newSessionId = `user-${Date.now()}`;
       setSessionId(newSessionId);
       
       const welcomeMessage: Message = {
@@ -545,7 +603,17 @@ const ChatBot = () => {
       };
       
       setMessages([welcomeMessage]);
-      await chatStorage.saveMessages(newSessionId, [welcomeMessage]);
+      
+      // Save welcome message to new session
+      await fetch('/api/chat-memory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: newSessionId,
+          role: 'assistant',
+          message: welcomeMessage.content,
+        }),
+      });
       
       toast({
         title: "Chat Cleared",
