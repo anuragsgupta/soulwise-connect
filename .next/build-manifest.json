@@ -1,4 +1,12 @@
 {
+<<<<<<< HEAD
+=======
+  "pages": {
+    "/_app": []
+  },
+  "devFiles": [],
+  "ampDevFiles": [],
+>>>>>>> 9d97c67 (feat: add ChatBotMobile component for enhanced user interaction and mental health support)
   "polyfillFiles": [
     "static/chunks/polyfills.js"
   ],
