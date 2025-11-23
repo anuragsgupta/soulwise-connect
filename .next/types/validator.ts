@@ -101,6 +101,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../src/app/api/ai/providers/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/ai/providers">> = Specific
+  const handler = {} as typeof import("../../src/app/api/ai/providers/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../src/app/api/analytics/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/analytics">> = Specific
@@ -141,6 +150,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/chat-memory">> = Specific
   const handler = {} as typeof import("../../src/app/api/chat-memory/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/api/chatbot-v2/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/chatbot-v2">> = Specific
+  const handler = {} as typeof import("../../src/app/api/chatbot-v2/route.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check

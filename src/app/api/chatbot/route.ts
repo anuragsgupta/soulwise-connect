@@ -5,6 +5,7 @@ import {
   generateSessionId 
 } from '@/lib/crisisDetection';
 import { sendDirectSMSAlert } from '@/lib/directSMSService';
+import { buildGeminiPromptToon } from '@/lib/ai/toon-prompts';
 
 export async function POST(request: NextRequest) {
   try {
@@ -106,40 +107,7 @@ export async function POST(request: NextRequest) {
           {
             parts: [
               {
-                text: `You are a compassionate AI mental health companion for college students named "Mann Mitra". 
-              - always start with motivational quotes or funny anecdotes to lighten the mood.
-only implement when user mentions serious mental health concerns (depression, self-harm, suicidal thoughts), always recommend professional help and provide crisis resources.otherwise have casual friendly conversations with a little bit of funny element to cheer up the user.
-if user talks in his/her native language, respond in the same language.
-IMPORTANT FORMATTING RULES:
-- Use **bold** for important points and headings
-- Use numbered lists (1. 2. 3.) for step-by-step guidance
-- Use bullet points (•) for options or tips
-- Use line breaks for better readability
-- Keep responses under 200 words
-- Be empathetic and supportive with a little bit of funny element to cheer up the user
-- Avoid medical jargon; use simple language
-
-When responding to user messages, always include the following key points:
-
-1. Acknowledge their feelings and validate their experience.
-2. Offer practical coping strategies or resources.
-3. Encourage seeking professional help if needed.
-4. Provide crisis helpline information if they mention serious mental health concerns.
-
-Here are some example responses:
-
-User: "I'm feeling really anxious about my exams."
-Mann Mitra: 
-"**It's completely normal to feel anxious before exams.** Here are some tips to help you manage your anxiety:\n\n1. **Practice deep breathing exercises** to calm your mind.\n2. **Break your study sessions into manageable chunks** with regular breaks.\n3. **Stay hydrated and get enough sleep** to keep your energy levels up.\n\nRemember, doing your best is what matters most! If anxiety feels overwhelming, consider talking to a counselor at your campus health center."
-
-User: "I feel so lonely since moving to college."
-Mann Mitra:
-"**It's understandable to feel lonely after such a big change.** Here are some ways to help you connect with others:\n\n1. **Join clubs or organizations** that interest you to meet like-minded people.\n2. **Attend campus events** to socialize and make new friends.\n3. **Reach out to classmates** for study groups or casual hangouts.\n\nRemember, building connections takes time, and it's okay to feel this way. If loneliness persists, consider talking to a counselor for support."
-
-
-Respond to this message with proper formatting: "${message}"
-
-If the user mentions serious mental health concerns (depression, self-harm, suicidal thoughts), always recommend professional help and provide crisis resources.`
+                text: buildGeminiPromptToon(message)
               }
             ]
           }
@@ -148,7 +116,7 @@ If the user mentions serious mental health concerns (depression, self-harm, suic
           temperature: 0.7,
           topK: 40,
           topP: 0.95,
-          maxOutputTokens: 800,
+          maxOutputTokens: 2048,
         }
       })
     });
@@ -163,16 +131,37 @@ If the user mentions serious mental health concerns (depression, self-harm, suic
     const data = await response.json();
     console.log('📦 Raw API Response:', JSON.stringify(data, null, 2));
     
-    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const candidate = data.candidates?.[0];
+    const finishReason = candidate?.finishReason;
+    const aiResponse = candidate?.content?.parts?.[0]?.text;
+
+    console.log('🔍 Response Analysis:');
+    console.log('   Finish Reason:', finishReason);
+    console.log('   Has Text:', !!aiResponse);
+    console.log('   Text Length:', aiResponse?.length || 0);
+
+    // Handle MAX_TOKENS case
+    if (finishReason === 'MAX_TOKENS') {
+      console.log('⚠️ Response hit token limit, but checking if we got partial response...');
+      if (aiResponse && aiResponse.length > 50) {
+        console.log('✅ Using partial response (sufficient content)');
+        return NextResponse.json({
+          success: true,
+          message: aiResponse,
+          timestamp: new Date().toISOString(),
+          crisisLevel: crisisDetection.level,
+          smsAlertSent: ['high', 'critical'].includes(crisisDetection.level),
+          truncated: true
+        });
+      }
+    }
 
     if (!aiResponse) {
       console.log('❌ No response from Gemini API');
       console.log('Response structure:', JSON.stringify(data, null, 2));
-      console.log('Candidates:', data.candidates);
-      console.log('Finish reason:', data.candidates?.[0]?.finishReason);
       
       // Check if response was blocked by safety filters
-      if (data.candidates?.[0]?.finishReason === 'SAFETY') {
+      if (finishReason === 'SAFETY') {
         console.log('⚠️ Response blocked by safety filters');
         const safetyResponse = "I'm here to support you. For your safety and well-being, I recommend speaking with a professional counselor. **Please contact your campus counseling center** or call the **KIRAN Mental Health helpline at 1800-599-0019** for immediate support.";
         return NextResponse.json({
@@ -185,7 +174,7 @@ If the user mentions serious mental health concerns (depression, self-harm, suic
         });
       }
       
-      throw new Error('No response from Gemini API');
+      throw new Error(`No response from Gemini API (finishReason: ${finishReason})`);
     }
 
     console.log('✅ Gemini API response received');

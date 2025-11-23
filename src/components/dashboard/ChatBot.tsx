@@ -46,6 +46,7 @@ const ChatBot = () => {
     timestamp: number;
   } | null>(null);
   const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt' | 'unknown'>('unknown');
+  const [crisisLevel, setCrisisLevel] = useState<'none' | 'low' | 'medium' | 'high' | 'critical'>('none');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -382,6 +383,11 @@ const ChatBot = () => {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
+          // Update crisis level state
+          if (data.crisisLevel) {
+            setCrisisLevel(data.crisisLevel);
+          }
+          
           // Show SMS alert notification if crisis detected
           if (data.smsAlertSent && data.crisisLevel && ['high', 'critical'].includes(data.crisisLevel)) {
             toast({
@@ -738,7 +744,7 @@ const ChatBot = () => {
               </ScrollArea>
 
               {/* Quick Actions */}
-              <QuickActions quickActions={quickActions} handleQuickAction={handleQuickAction} />
+              {/* <QuickActions quickActions={quickActions} handleQuickAction={handleQuickAction} /> */}
 
               {/* Location Sharing Section */}
               <div className="mb-4 p-4 bg-blue-50/80 border border-blue-200 rounded-lg">
@@ -793,8 +799,13 @@ const ChatBot = () => {
         </CardContent>
       </Card>
 
-      {/* Crisis Support Card */}
-      <Card className="border-primary/20 bg-gradient-to-br from-blue-50/80 to-green-50/80 backdrop-blur-sm shadow-md">
+      {/* Crisis Support Card - Only show when crisis level is medium or higher */}
+      {crisisLevel && ['medium', 'high', 'critical'].includes(crisisLevel) && (
+      <Card className={`backdrop-blur-sm shadow-md ${
+        crisisLevel === 'critical' || crisisLevel === 'high' 
+          ? 'border-red-300 bg-gradient-to-br from-red-50/80 to-orange-50/80 animate-pulse' 
+          : 'border-primary/20 bg-gradient-to-br from-blue-50/80 to-green-50/80'
+      }`}>
         <CardContent className="pt-6">
           <div className="flex items-start space-x-4">
             <div className="flex-shrink-0">
@@ -880,6 +891,7 @@ const ChatBot = () => {
           </div>
         </CardContent>
       </Card>
+      )}
     </div>
   );
 };
