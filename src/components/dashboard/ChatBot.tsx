@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 
 // Lazy load Spline component
-const Spline = lazy(() => import('@splinetool/react-spline/next'));
+// const Spline = lazy(() => import('@splinetool/react-spline/next'));
 
 
 const ChatBot = () => {
@@ -38,7 +38,7 @@ const ChatBot = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string>("");
   const [splineLoaded, setSplineLoaded] = useState(false);
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [isChatStarted, setIsChatStarted] = useState(false);
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -46,7 +46,9 @@ const ChatBot = () => {
     timestamp: number;
   } | null>(null);
   const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt' | 'unknown'>('unknown');
+  const [locationToastShown, setLocationToastShown] = useState(false);
   const [crisisLevel, setCrisisLevel] = useState<'none' | 'low' | 'medium' | 'high' | 'critical'>('none');
+  const [reducedMotion, setReducedMotion] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -177,11 +179,15 @@ const ChatBot = () => {
             setUserLocation(locationData);
             setLocationPermission('granted');
             
-            toast({
-              title: "📍 Location Updated",
-              description: `Current location: ${address || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`}`,
-              duration: 5000,
-            });
+            // Only show toast if it hasn't been shown before
+            if (!locationToastShown) {
+              toast({
+                title: "📍 Location Updated",
+                description: `Current location: ${address || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`}`,
+                duration: 5000,
+              });
+              setLocationToastShown(true);
+            }
             
             resolve();
           } catch (error) {
@@ -674,21 +680,7 @@ const ChatBot = () => {
       <Suspense fallback={
         <div className="w-full h-full bg-gradient-to-br from-blue-50/30 to-teal-50/30" />
       }>
-        {splineLoaded ? (
-          <Spline
-            scene="https://prod.spline.design/ub0yPCuxz8dmjMLF/scene.splinecode"
-            className="w-full h-full"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              opacity: 0.15,
-              zIndex: -1
-            }}
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-blue-50/30 to-teal-50/30" />
-        )}
+   
       </Suspense>
     ) : (
       <div className="w-full h-full bg-gradient-to-br from-blue-50/30 to-teal-50/30" />

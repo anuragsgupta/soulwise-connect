@@ -23,9 +23,7 @@ import {
   MapPin,
   Navigation,
   AlertTriangle,
-  Phone,
-  Menu,
-  X
+  Phone
 } from "lucide-react";
 import mannMitraLogo from "@/assets/mann-mitra-logo.png";
 import MoodTracker from "./MoodTracker";
@@ -42,7 +40,6 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'mood' | 'chat' | 'appointments' | 'resources' | 'forum'>('dashboard');
   const [wellnessScore, setWellnessScore] = useState(15);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -67,32 +64,6 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
 
     initializeLocation();
   }, []);
-
-  // Close mobile menu on window resize (when switching to desktop)
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 768) {
-        setIsMobileMenuOpen(false);
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Prevent body scroll when mobile menu is open
-  useEffect(() => {
-    if (isMobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-
-    // Cleanup on unmount
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isMobileMenuOpen]);
 
   // Auto-request location when permission is granted
   useEffect(() => {
@@ -278,23 +249,14 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
     });
   };
 
-  // Handle mobile menu toggle
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
-  // Handle tab change and close mobile menu
+  // Handle tab change
   const handleTabChange = (tab: 'dashboard' | 'mood' | 'chat' | 'appointments' | 'resources' | 'forum') => {
     setActiveTab(tab);
-    setIsMobileMenuOpen(false); // Close mobile menu on tab change
   };
 
   // Enhanced logout function with proper cleanup
   const handleLogout = () => {
     try {
-      // Close mobile menu if open
-      setIsMobileMenuOpen(false);
-      
       // Clear any stored user data
       localStorage.removeItem('user');
       localStorage.removeItem('token');
@@ -659,105 +621,52 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                   </Badge>
                 )}
               </div>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleMobileMenu}
-                className="p-2"
-              >
-                {isMobileMenuOpen ? (
-                  <X className="w-6 h-6" />
-                ) : (
-                  <Menu className="w-6 h-6" />
-                )}
-              </Button>
             </div>
           </div>
-
-          {/* Mobile Navigation Menu */}
-          {isMobileMenuOpen && (
-            <div className="md:hidden absolute top-16 left-0 right-0 bg-white/98 backdrop-blur-md border-b shadow-lg z-50">
-              <div className="px-4 py-2 space-y-1 max-h-screen overflow-y-auto">
-                {[
-                  { id: 'dashboard', label: 'Dashboard', icon: Heart },
-                  { id: 'mood', label: 'Mood Tracker', icon: Smile },
-                  { id: 'chat', label: 'AI Chat Support', icon: MessageCircle },
-                  { id: 'appointments', label: 'Appointments', icon: Calendar },
-                  { id: 'resources', label: 'Resources', icon: BookOpen },
-                  { id: 'forum', label: 'Community', icon: Users }
-                ].map((item) => (
-                  <Button
-                    key={item.id}
-                    variant={activeTab === item.id ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => handleTabChange(item.id as any)}
-                    className={`w-full justify-start flex items-center space-x-3 py-3 px-3 ${
-                      activeTab === item.id 
-                        ? 'bg-primary text-white' 
-                        : 'hover:bg-primary/10 hover:text-primary'
-                    }`}
-                  >
-                    <item.icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
-                  </Button>
-                ))}
-                
-                {/* Mobile Location Status */}
-                <div className="pt-3 pb-2 border-t border-gray-200 mt-2">
-                  <div className="flex items-center justify-between px-3 py-2">
-                    <div className="flex items-center space-x-2">
-                      <MapPin className="w-4 h-4 text-gray-500" />
-                      <span className="text-sm font-medium text-gray-700">Location Status</span>
-                    </div>
-                    {userLocation ? (
-                      <Badge className="bg-green-100 text-green-800 text-xs">Active</Badge>
-                    ) : (
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => {
-                          requestLocationAccess();
-                          setIsMobileMenuOpen(false);
-                        }}
-                        className="text-xs px-2 py-1"
-                      >
-                        Enable
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Mobile Logout Button */}
-                <div className="pt-2 border-t border-gray-200">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleLogout}
-                    className="w-full justify-start flex items-center space-x-3 py-3 px-3 border-destructive text-destructive hover:bg-destructive hover:text-white"
-                  >
-                    <LogOut className="w-5 h-5" />
-                    <span className="font-medium">Logout</span>
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 pb-20 md:pb-8">
         {renderContent()}
       </main>
 
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30 md:hidden"
-          onClick={toggleMobileMenu}
-        />
-      )}
+      {/* WhatsApp-Style Bottom Navigation Bar (Mobile Only) */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50 md:hidden safe-area-inset-bottom">
+        <div className="flex items-center justify-around px-2 py-2">
+          {[
+            { id: 'dashboard', label: 'Home', icon: Heart },
+            { id: 'mood', label: 'Mood', icon: Smile },
+            { id: 'chat', label: 'Chat', icon: MessageCircle },
+            { id: 'appointments', label: 'Book', icon: Calendar },
+            { id: 'resources', label: 'Learn', icon: BookOpen },
+            { id: 'forum', label: 'Community', icon: Users }
+          ].map((item) => (
+            <button
+              key={item.id}
+              onClick={() => handleTabChange(item.id as any)}
+              className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-all duration-200 ${
+                activeTab === item.id 
+                  ? 'text-primary' 
+                  : 'text-gray-500 hover:text-primary'
+              }`}
+            >
+              <item.icon 
+                className={`w-6 h-6 mb-1 transition-all duration-200 ${
+                  activeTab === item.id 
+                    ? 'fill-primary stroke-primary scale-110' 
+                    : 'stroke-current'
+                }`} 
+              />
+              <span className={`text-xs font-medium ${
+                activeTab === item.id ? 'text-primary' : 'text-gray-600'
+              }`}>
+                {item.label}
+              </span>
+            </button>
+          ))}
+        </div>
+      </nav>
 
       {/* Location Permission Prompt Modal */}
       {showLocationPrompt && (
