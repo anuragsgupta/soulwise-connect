@@ -79,6 +79,8 @@ const ChatBot = () => {
               type: msg.risk_level === 'severe' || msg.risk_level === 'mild' ? 'warning' : undefined,
             }));
             setMessages(loadedMessages);
+            // Scroll to bottom after messages load
+            setTimeout(() => scrollToBottom(), 300);
           } else {
             // Set initial welcome message if no saved messages
             const welcomeMessage: Message = {
@@ -352,6 +354,7 @@ const ChatBot = () => {
 
   // Enhanced auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
+    // Scroll using messagesEndRef first
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ 
         behavior: 'smooth',
@@ -359,17 +362,26 @@ const ChatBot = () => {
         inline: 'nearest'
       });
     }
-    // Fallback for scroll area
+    // Fallback for scroll area - ensure it scrolls to bottom
     if (scrollAreaRef.current) {
-      setTimeout(() => {
-        scrollAreaRef.current!.scrollTop = scrollAreaRef.current!.scrollHeight;
-      }, 100);
+      const scrollElement = scrollAreaRef.current;
+      const scrollToValue = scrollElement.scrollHeight;
+      
+      // Smooth scroll for better UX
+      scrollElement.scrollTo({
+        top: scrollToValue,
+        behavior: 'smooth'
+      });
     }
   };
 
-  // Auto-scroll on new messages and typing state changes
+  // Auto-scroll on new messages and typing state changes with slight delay
   useEffect(() => {
-    scrollToBottom();
+    const timer = setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, [messages, isTyping]);
 
   const generateBotResponse = async (userMessage: string): Promise<Message> => {
@@ -673,119 +685,120 @@ const ChatBot = () => {
   ];
 
   return (
-    <div className="relative space-y-6">
+    <div className="relative h-full w-full md:space-y-6">
       {/* Spline Background - Fixed positioning */}
-  <div className="fixed inset-0 -z-50 overflow-hidden">
-    {!reducedMotion ? (
-      <Suspense fallback={
-        <div className="w-full h-full bg-gradient-to-br from-blue-50/30 to-teal-50/30" />
-      }>
-   
-      </Suspense>
-    ) : (
-      <div className="w-full h-full bg-gradient-to-br from-blue-50/30 to-teal-50/30" />
-    )}
-  </div>
+      <div className="fixed inset-0 -z-50 overflow-hidden">
+        {!reducedMotion ? (
+          <Suspense fallback={
+            <div className="w-full h-full bg-gradient-to-br from-blue-50/30 to-teal-50/30" />
+          }>
+          </Suspense>
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-blue-50/30 to-teal-50/30" />
+        )}
+      </div>
       
-      <Card className="backdrop-blur-sm bg-white/90 border-white/50 relative z-10">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center text-2xl">
-                <MessageCircle className="w-6 h-6 mr-3 text-primary animate-pulse-soft" />
-                AI Mental Health Support
-              </CardTitle>
-              <CardDescription>
-                Your 24/7 mental health companion. Everything shared here is confidential and supportive.
-              </CardDescription>
+      {/* WhatsApp-Style Chat Container - Full screen on mobile */}
+      <Card className="backdrop-blur-sm bg-white/95 border-white/50 shadow-xl relative z-10 overflow-hidden h-full w-full md:h-auto flex flex-col md:border md:rounded-lg border-none rounded-none">
+        {/* WhatsApp-Style Header - Hidden on mobile (shown in navbar) */}
+        <div className="hidden md:flex bg-teal-700 text-white px-4 py-3 items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-500 rounded-full flex items-center justify-center shadow-md">
+              <Bot className="w-5 h-5 text-white" />
             </div>
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearChatHistory}
-                className="text-xs hover:bg-red-50 hover:text-red-600 hover:border-red-200"
-                title="Clear chat history"
-              >
-                <Trash2 className="w-3 h-3 mr-1" />
-                Clear
-              </Button>
-              {isLoading && (
-                <div className="flex items-center text-xs text-muted-foreground">
-                  <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
-                  Loading...
-                </div>
-              )}
+            <div>
+              <h3 className="font-semibold text-base">Mann Mitra</h3>
+              <p className="text-xs text-teal-100">Your AI mental health companion</p>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
+          <div className="flex space-x-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearChatHistory}
+              className="text-white hover:bg-teal-600 h-8 px-2 text-xs"
+              title="Clear chat history"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+            {isLoading && (
+              <div className="flex items-center text-xs text-teal-100">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <CardContent className="p-0 flex-1 flex flex-col h-full md:h-auto overflow-hidden">
           {/* Loading State */}
           {isLoading ? (
-            <div className="h-96 flex items-center justify-center">
+            <div className="h-full md:h-[500px] flex items-center justify-center bg-gradient-to-br from-teal-50/30 to-green-50/30">
               <div className="text-center">
-                <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-primary" />
-                <p className="text-sm text-muted-foreground">Loading your chat history...</p>
+                <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-teal-600" />
+                <p className="text-sm text-gray-600">Loading your conversation...</p>
               </div>
             </div>
           ) : (
             <>
-              {/* Chat Messages */}
-              <ScrollArea className="h-96 mb-4 border rounded-lg p-4" ref={scrollAreaRef}>
-                <ChatMessages messages={messages} isTyping={isTyping} messagesEndRef={messagesEndRef} />
-              </ScrollArea>
+              {/* Chat Messages Area with WhatsApp Background - Full screen on mobile */}
+              <div 
+                className="flex-1 overflow-y-auto bg-gradient-to-br from-teal-50/30 to-green-50/30 relative h-full"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2314b8a6' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+                  backgroundSize: '60px 60px'
+                }}
+                ref={scrollAreaRef}
+              >
+                {/* Floating Clear Chat Button - Mobile Only */}
+                <div className="md:hidden absolute top-2 right-2 z-10">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearChatHistory}
+                    className="bg-white/90 backdrop-blur-sm hover:bg-red-50 hover:text-red-600 hover:border-red-200 shadow-md h-8 px-2"
+                    title="Clear chat history"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+                
+                <div className="py-4">
+                  <ChatMessages messages={messages} isTyping={isTyping} messagesEndRef={messagesEndRef} />
+                </div>
+              </div>
 
-              {/* Quick Actions */}
-              {/* <QuickActions quickActions={quickActions} handleQuickAction={handleQuickAction} /> */}
-
-              {/* Location Sharing Section */}
-              <div className="mb-4 p-4 bg-blue-50/80 border border-blue-200 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm font-medium text-blue-800">
-                      {userLocation ? 'Location Shared' : 'Share Your Location'}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {userLocation && (
-                      <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
-                        ✓ {userLocation.address ? userLocation.address.substring(0, 20) + '...' : 'Located'}
-                      </Badge>
-                    )}
+              {/* Location Sharing Section - Compact */}
+              {!userLocation && locationPermission !== 'denied' && (
+                <div className="px-4 py-2 bg-blue-50/80 border-t border-blue-200 flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="w-4 h-4 text-blue-600" />
+                      <span className="text-xs font-medium text-blue-800">
+                        Share location for personalized support
+                      </span>
+                    </div>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={shareLocationInChat}
-                      disabled={locationPermission === 'denied'}
-                      className="text-xs hover:bg-blue-50"
+                      className="text-xs h-7 hover:bg-blue-50 border-blue-300"
                     >
                       <Navigation className="w-3 h-3 mr-1" />
-                      {userLocation ? 'Update' : 'Share'}
+                      Share
                     </Button>
                   </div>
                 </div>
-                
-                {locationPermission === 'denied' && (
-                  <p className="text-xs text-red-600 mt-2">
-                    ❌ Location access denied. Please enable location permissions in your browser settings to find nearby mental health services.
-                  </p>
-                )}
-                
-                {!userLocation && locationPermission !== 'denied' && (
-                  <p className="text-xs text-blue-600 mt-2">
-                    💡 Share your location to get personalized nearby mental health resources and emergency services.
-                  </p>
-                )}
-              </div>
+              )}
 
-              {/* Message Input */}
-              <ChatInput
-                inputMessage={inputMessage}
-                setInputMessage={setInputMessage}
-                handleSendMessage={handleSendMessage}
-                isTyping={isTyping}
-              />
+              {/* Message Input Area - WhatsApp Style */}
+              <div className="p-3 bg-gray-50 border-t border-gray-200 flex-shrink-0">
+                <ChatInput
+                  inputMessage={inputMessage}
+                  setInputMessage={setInputMessage}
+                  handleSendMessage={handleSendMessage}
+                  isTyping={isTyping}
+                />
+              </div>
             </>
           )}
         </CardContent>

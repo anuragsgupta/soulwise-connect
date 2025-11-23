@@ -1,8 +1,4 @@
 {
-  "/api/analytics/route": "app/api/analytics/route.js",
   "/api/chat-memory/route": "app/api/chat-memory/route.js",
-  "/auth/login/page": "app/auth/login/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/login/page": "app/login/page.js",
-  "/page": "app/page.js"
+  "/dashboard/page": "app/dashboard/page.js"
 }

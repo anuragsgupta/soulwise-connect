@@ -1,0 +1,838 @@
+"use client";
+
+import { useState, useRef, useEffect, Suspense, lazy } from "react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { Message } from "./ChatMessages";
+import { 
+  MessageCircle, 
+  Send, 
+  Bot, 
+  User, 
+  Heart, 
+  Phone,
+  AlertTriangle,
+  Lightbulb,
+  Calendar,
+  MapPin,
+  Navigation,
+  RefreshCw
+} from "lucide-react";
+
+// Lazy load Spline component
+const Spline = lazy(() => import('@splinetool/react-spline/next'));
+
+const ChatBotMobile = () => {
+  const { toast } = useToast();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputMessage, setInputMessage] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [sessionId, setSessionId] = useState<string>("");
+  const [splineLoaded, setSplineLoaded] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const [activeTab, setActiveTab] = useState<'chat' | 'resources' | 'crisis'>('chat');
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    address?: string;
+    timestamp: number;
+  } | null>(null);
+  const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt' | 'unknown'>('unknown');
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Initialize chat storage
+  useEffect(() => {
+    const initializeChat = async () => {
+      try {
+        const currentSessionId = 'user-1763748214213';
+        console.log('👤 Using hardcoded user ID:', currentSessionId);
+        setSessionId(currentSessionId);
+        
+        const response = await fetch(`/api/chat-memory?userId=${currentSessionId}&action=recent&limit=50`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.success && data.messages && data.messages.length > 0) {
+            const loadedMessages: Message[] = data.messages.map((msg: any) => ({
+              id: msg.timestamp,
+              content: msg.message,
+              sender: msg.role === 'user' ? 'user' : 'bot',
+              timestamp: new Date(msg.created_at),
+              type: msg.risk_level === 'severe' || msg.risk_level === 'mild' ? 'warning' : undefined,
+            }));
+            setMessages(loadedMessages);
+          } else {
+            const welcomeMessage: Message = {
+              id: '1',
+              content: "hey there! 👋 i'm mann mitra, ur mental health bestie ✨\n\ni'm here to:\n\n• **listen** without judgment 💜\n• **support** you through tough times 🤗\n• **guide** you to helpful resources 🌟\n\n**what's on your mind today?**",
+              sender: 'bot',
+              timestamp: new Date(),
+            };
+            setMessages([welcomeMessage]);
+            
+            await fetch('/api/chat-memory', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userId: currentSessionId,
+                role: 'assistant',
+                message: welcomeMessage.content,
+              }),
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to initialize chat:', error);
+        setMessages([{
+          id: '1',
+          content: "hey there! 👋 i'm mann mitra, ur mental health bestie ✨\n\n**what's on your mind today?**",
+          sender: 'bot',
+          timestamp: new Date(),
+        }]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeChat();
+    checkLocationPermission();
+  }, []);
+
+  // Check location permission
+  const checkLocationPermission = async () => {
+    if ('geolocation' in navigator) {
+      try {
+        const permission = await navigator.permissions.query({ name: 'geolocation' });
+        setLocationPermission(permission.state);
+        permission.addEventListener('change', () => {
+          setLocationPermission(permission.state);
+        });
+      } catch (error) {
+        setLocationPermission('prompt');
+      }
+    } else {
+      setLocationPermission('denied');
+    }
+  };
+
+  // Get location
+  const getCurrentLocation = async (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (!('geolocation' in navigator)) {
+        reject(new Error('Geolocation not supported'));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          const address = await reverseGeocode(latitude, longitude);
+          
+          const locationData = {
+            latitude,
+            longitude,
+            address,
+            timestamp: Date.now()
+          };
+          
+          setUserLocation(locationData);
+          setLocationPermission('granted');
+          
+          toast({
+            title: "📍 location updated!",
+            description: `found u at: ${address || 'your location'}`,
+            duration: 3000,
+          });
+          
+          resolve();
+        },
+        (error) => {
+          console.error('Location error:', error);
+          setLocationPermission('denied');
+          toast({
+            title: "couldn't get location 😅",
+            description: "pls enable location permissions",
+            variant: "destructive",
+            duration: 3000,
+          });
+          reject(error);
+        }
+      );
+    });
+  };
+
+  // Reverse geocode
+  const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16`,
+        { headers: { 'User-Agent': 'Mann-Mitra-App' } }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.display_name) {
+          const parts = data.display_name.split(', ');
+          return parts.slice(0, 3).join(', ');
+        }
+      }
+    } catch (error) {
+      console.error('Geocoding failed:', error);
+    }
+    return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  };
+
+  // Share location
+  const shareLocationInChat = async () => {
+    try {
+      await getCurrentLocation();
+      
+      if (userLocation) {
+        const locationMessage: Message = {
+          id: Date.now().toString(),
+          content: `📍 **my location**\n\n${userLocation.address || `${userLocation.latitude.toFixed(4)}, ${userLocation.longitude.toFixed(4)}`}\n\nshared at ${new Date().toLocaleTimeString()}`,
+          sender: 'user',
+          timestamp: new Date(),
+          type: 'resource'
+        };
+
+        setMessages(prev => [...prev, locationMessage]);
+
+        setTimeout(async () => {
+          const botResponse: Message = {
+            id: (Date.now() + 1).toString(),
+            content: `**got it!** 📍 thx for sharing\n\ni can now help u find:\n\n• **nearby mental health clinics** 🏥\n• **crisis support centers** 🆘\n• **support groups** in ur area 👥\n\nwant me to find resources near u?`,
+            sender: 'bot',
+            timestamp: new Date(),
+            type: 'suggestion'
+          };
+
+          setMessages(prev => [...prev, botResponse]);
+        }, 1000);
+      }
+    } catch (error) {
+      console.error('Failed to share location:', error);
+    }
+  };
+
+  // Spline and motion setup
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mediaQuery.matches);
+
+    if (!reducedMotion) {
+      const timer = setTimeout(() => setSplineLoaded(true), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [reducedMotion]);
+
+  // Auto-scroll
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    if (scrollAreaRef.current) {
+      setTimeout(() => {
+        scrollAreaRef.current!.scrollTop = scrollAreaRef.current!.scrollHeight;
+      }, 100);
+    }
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isTyping]);
+
+  // Generate bot response
+  const generateBotResponse = async (userMessage: string): Promise<Message> => {
+    try {
+      const response = await fetch('/api/chatbot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMessage, sessionId }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          if (data.smsAlertSent && ['high', 'critical'].includes(data.crisisLevel)) {
+            toast({
+              title: "🚨 crisis support activated",
+              description: `help is on the way. we're here for u 💜`,
+              duration: 10000,
+            });
+          }
+
+          return {
+            id: Date.now().toString(),
+            content: data.message,
+            sender: 'bot',
+            timestamp: new Date(),
+            type: data.crisisLevel === 'critical' || data.crisisLevel === 'high' ? 'warning' : undefined,
+          };
+        }
+      }
+    } catch (error) {
+      console.error('API error:', error);
+    }
+
+    return {
+      id: Date.now().toString(),
+      content: "**i'm here for u** 💜\n\nsorry, having some tech issues rn. but ur feelings matter & i'm listening 🤗\n\nwanna try again or talk about something else?",
+      sender: 'bot',
+      timestamp: new Date(),
+    };
+  };
+
+  // Send message
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim()) return;
+
+    const messageContent = inputMessage.trim();
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: messageContent,
+      sender: 'user',
+      timestamp: new Date(),
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage("");
+    setIsTyping(true);
+
+    setTimeout(async () => {
+      const botResponse = await generateBotResponse(messageContent);
+      setMessages(prev => [...prev, botResponse]);
+      setIsTyping(false);
+      
+      // Save to DynamoDB
+      try {
+        await fetch('/api/chat-memory', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: sessionId,
+            role: 'user',
+            message: messageContent,
+          }),
+        });
+        
+        await fetch('/api/chat-memory', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: sessionId,
+            role: 'assistant',
+            message: botResponse.content,
+          }),
+        });
+      } catch (error) {
+        console.error('Failed to save:', error);
+      }
+    }, 1500);
+  };
+
+  // Clear chat
+  const clearChatHistory = async () => {
+    try {
+      await fetch(`/api/chat-memory?userId=${sessionId}`, { method: 'DELETE' });
+      
+      const welcomeMessage: Message = {
+        id: Date.now().toString(),
+        content: "hey! fresh start ✨\n\n**what's on your mind?**",
+        sender: 'bot',
+        timestamp: new Date(),
+      };
+      
+      setMessages([welcomeMessage]);
+      
+      toast({
+        title: "chat cleared!",
+        description: "started a fresh convo 🌟",
+        duration: 2000,
+      });
+    } catch (error) {
+      console.error('Failed to clear:', error);
+    }
+  };
+
+  // Quick actions
+  const quickActions = [
+    { text: "feeling anxious rn", icon: AlertTriangle },
+    { text: "need song recs", icon: Lightbulb },
+    { text: "motivational movies?", icon: Lightbulb },
+    { text: "book counselor", icon: Calendar },
+    { text: "find help nearby", icon: MapPin },
+    { text: "urgent help", icon: Phone }
+  ];
+
+  const handleQuickAction = (actionText: string) => {
+    setInputMessage(actionText);
+  };
+
+  return (
+    <div className="relative h-screen flex flex-col overflow-hidden">
+      {/* Spline 3D Background */}
+      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+        {!reducedMotion ? (
+          <Suspense fallback={<div className="w-full h-full bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50" />}>
+            {splineLoaded ? (
+              <Spline
+                scene="https://prod.spline.design/ub0yPCuxz8dmjMLF/scene.splinecode"
+                className="w-full h-full scale-110"
+                style={{
+                  position: 'absolute',
+                  top: '-5%',
+                  left: '-5%',
+                  width: '110%',
+                  height: '110%',
+                  opacity: 0.3,
+                  filter: 'blur(0.3px)',
+                }}
+                onLoad={() => console.log('✨ Spline loaded!')}
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 animate-pulse" />
+            )}
+          </Suspense>
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50" />
+        )}
+      </div>
+
+      {/* Main Chat Container */}
+      <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full relative z-10 pb-20 md:pb-0">
+        
+        {/* Header */}
+        <div className="sticky top-0 z-20 backdrop-blur-xl bg-white/80 border-b border-purple-100/50 px-4 py-3 md:px-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-blue-400 flex items-center justify-center shadow-lg">
+                  <Bot className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white animate-pulse"></div>
+              </div>
+              <div>
+                <h2 className="text-lg md:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  mann mitra ✨
+                </h2>
+                <p className="text-xs text-gray-500 flex items-center">
+                  <span className="w-2 h-2 bg-green-400 rounded-full mr-1.5 animate-pulse"></span>
+                  always here for u
+                </p>
+              </div>
+            </div>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearChatHistory}
+              className="text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-full h-9 w-9 p-0"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'chat' && (
+          <>
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto px-3 py-4 md:px-6 space-y-4 mb-16 md:mb-0" ref={scrollAreaRef}>
+              {isLoading ? (
+                <div className="h-full flex items-center justify-center">
+                  <div className="text-center space-y-3">
+                    <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center animate-bounce">
+                      <MessageCircle className="w-8 h-8 text-white" />
+                    </div>
+                    <p className="text-sm text-gray-500 animate-pulse">loading ur safe space...</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {messages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex items-end space-x-2 ${
+                        msg.sender === 'user' ? 'flex-row-reverse space-x-reverse' : 'flex-row'
+                      }`}
+                    >
+                      {msg.sender === 'bot' && (
+                        <div className="flex-shrink-0 w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center shadow-md">
+                          <Bot className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                      
+                      <div
+                        className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-3 shadow-sm ${
+                          msg.sender === 'user'
+                            ? 'bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-br-md'
+                            : msg.type === 'warning'
+                            ? 'bg-gradient-to-br from-red-50 to-orange-50 text-gray-800 border border-red-200 rounded-bl-md'
+                            : msg.type === 'suggestion'
+                            ? 'bg-gradient-to-br from-blue-50 to-cyan-50 text-gray-800 border border-blue-200 rounded-bl-md'
+                            : 'bg-white/90 backdrop-blur-sm text-gray-800 border border-gray-100 rounded-bl-md'
+                        }`}
+                      >
+                        <div className="text-sm md:text-base leading-relaxed">
+                          {msg.content.split('\n').map((line, i) => (
+                            <p key={i} className="mb-1 last:mb-0">
+                              {line.split('**').map((part, j) =>
+                                j % 2 === 1 ? (
+                                  <strong key={j} className={msg.sender === 'user' ? 'font-bold' : 'text-purple-600 font-bold'}>
+                                    {part}
+                                  </strong>
+                                ) : (
+                                  part
+                                )
+                              )}
+                            </p>
+                          ))}
+                        </div>
+                        
+                        <div className={`text-xs mt-1.5 ${msg.sender === 'user' ? 'text-purple-100' : 'text-gray-400'}`}>
+                          {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+                      
+                      {msg.sender === 'user' && (
+                        <div className="flex-shrink-0 w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center shadow-md">
+                          <User className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {isTyping && (
+                    <div className="flex items-end space-x-2">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center">
+                        <Bot className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="bg-white/90 rounded-2xl rounded-bl-md px-5 py-3 border border-gray-100">
+                        <div className="flex space-x-1.5">
+                          <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                          <div className="w-2 h-2 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                          <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div ref={messagesEndRef} />
+                </>
+              )}
+            </div>
+
+            {/* Quick Actions */}
+            {!isLoading && (
+              <div className="px-3 py-2 md:px-6 border-t border-purple-100/50 bg-white/50 backdrop-blur-sm">
+                <div className="flex overflow-x-auto space-x-2 pb-2 scrollbar-hide">
+                  {quickActions.map((action, index) => {
+                    const Icon = action.icon;
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => handleQuickAction(action.text)}
+                        className="flex-shrink-0 flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border border-purple-200 rounded-full text-xs font-medium text-purple-700 transition-all hover:scale-105 active:scale-95"
+                      >
+                        <Icon className="w-3.5 h-3.5" />
+                        <span className="whitespace-nowrap">{action.text}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Location Card */}
+            {!isLoading && (
+              <div className="px-3 md:px-6 pb-2">
+                <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-2xl p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="w-4 h-4 text-blue-500" />
+                      <span className="text-xs font-medium text-blue-700">
+                        {userLocation ? '📍 location shared' : 'share location for nearby help'}
+                      </span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant={locationPermission === 'granted' ? 'secondary' : 'default'}
+                      onClick={shareLocationInChat}
+                      className="h-7 text-xs rounded-full px-3"
+                      disabled={isTyping}
+                    >
+                      {locationPermission === 'granted' ? (
+                        <><Navigation className="w-3 h-3 mr-1" /> update</>
+                      ) : (
+                        <><MapPin className="w-3 h-3 mr-1" /> share</>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Mobile Input Sheet */}
+            {!isLoading && (
+              <div className="md:hidden fixed inset-x-0 bottom-16 z-40 bg-white/95 backdrop-blur-xl border-t border-purple-100 p-3 shadow-2xl">
+                <div className="flex items-end space-x-2 max-w-4xl mx-auto">
+                  <div className="flex-1 relative">
+                    <textarea
+                      value={inputMessage}
+                      onChange={(e) => {
+                        setInputMessage(e.target.value);
+                        e.target.style.height = 'auto';
+                        e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
+                      }}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      placeholder="type a message... 💭"
+                      disabled={isTyping}
+                      rows={1}
+                      className="w-full px-4 py-3 bg-gradient-to-r from-purple-50/80 to-pink-50/80 border-2 border-purple-200 rounded-2xl text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-200 transition-all resize-none disabled:opacity-50"
+                      style={{ minHeight: '44px', maxHeight: '100px' }}
+                    />
+                    
+                    {!inputMessage && (
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-lg animate-pulse pointer-events-none">
+                        ✨
+                      </div>
+                    )}
+                  </div>
+                  
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={!inputMessage.trim() || isTyping}
+                    className="h-11 w-11 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg disabled:opacity-50 transition-all hover:scale-105 active:scale-95 flex items-center justify-center"
+                  >
+                    <Send className="w-5 h-5 text-white" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Desktop Input */}
+            {!isLoading && (
+              <div className="hidden md:block sticky bottom-0 px-3 py-3 md:px-6 md:py-4 bg-white/80 backdrop-blur-xl border-t border-purple-100/50">
+                <div className="flex items-end space-x-2">
+                  <div className="flex-1 relative">
+                    <textarea
+                      value={inputMessage}
+                      onChange={(e) => {
+                        setInputMessage(e.target.value);
+                        e.target.style.height = 'auto';
+                        e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                      }}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      placeholder="what's on your mind? 💭"
+                      disabled={isTyping}
+                      rows={1}
+                      className="w-full px-4 py-3 pr-12 bg-gradient-to-r from-purple-50/80 to-pink-50/80 border-2 border-purple-200 rounded-2xl text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-200 transition-all resize-none disabled:opacity-50"
+                      style={{ minHeight: '48px', maxHeight: '120px' }}
+                    />
+                    
+                    {!inputMessage && (
+                      <div className="absolute right-12 top-1/2 -translate-y-1/2 text-lg animate-pulse">
+                        ✨
+                      </div>
+                    )}
+                  </div>
+                  
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={!inputMessage.trim() || isTyping}
+                    className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg disabled:opacity-50 transition-all hover:scale-105 active:scale-95"
+                  >
+                    <Send className="w-5 h-5 text-white" />
+                  </Button>
+                </div>
+                
+                <div className="flex items-center justify-between mt-2 px-1">
+                  <p className="text-xs text-gray-400">
+                    {isTyping ? '✨ thinking...' : 'shift + enter for new line'}
+                  </p>
+                  {inputMessage && (
+                    <p className="text-xs text-gray-400">{inputMessage.length} chars</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Resources Tab */}
+        {activeTab === 'resources' && (
+          <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 mb-16 md:mb-0">
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+              💡 helpful resources
+            </h2>
+            
+            <div className="space-y-3">
+              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-2xl p-4">
+                <div className="flex items-start space-x-3">
+                  <Lightbulb className="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-bold text-blue-900 mb-1">guided meditation</h3>
+                    <p className="text-sm text-blue-700">calm ur mind with 5-min meditation sessions 🧘‍♀️</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-4">
+                <div className="flex items-start space-x-3">
+                  <Calendar className="w-5 h-5 text-purple-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-bold text-purple-900 mb-1">book counselor</h3>
+                    <p className="text-sm text-purple-700">schedule a session with certified professionals 👨‍⚕️</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-4">
+                <div className="flex items-start space-x-3">
+                  <MapPin className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-bold text-green-900 mb-1">find help nearby</h3>
+                    <p className="text-sm text-green-700">locate mental health clinics in ur area 📍</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-4">
+                <div className="flex items-start space-x-3">
+                  <Heart className="w-5 h-5 text-orange-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-bold text-orange-900 mb-1">self-care tips</h3>
+                    <p className="text-sm text-orange-700">daily wellness activities & mood tracking 💜</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Crisis Tab */}
+        {activeTab === 'crisis' && (
+          <div className="flex-1 overflow-y-auto px-4 py-6 mb-16 md:mb-0">
+            <h2 className="text-2xl font-bold text-red-600 mb-4 flex items-center">
+              <Heart className="w-6 h-6 mr-2" />
+              urgent help 24/7
+            </h2>
+            
+            <div className="space-y-4">
+              <div className="bg-gradient-to-br from-red-50 via-pink-50 to-orange-50 border-2 border-red-300 rounded-2xl p-5 shadow-lg">
+                <div className="flex items-start space-x-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-red-400 to-pink-500 rounded-full flex items-center justify-center shadow-lg flex-shrink-0">
+                    <Phone className="w-6 h-6 text-white animate-pulse" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-lg text-red-600 mb-3">KIRAN Mental Health Helpline</h3>
+                    <a 
+                      href="tel:18005990019" 
+                      className="inline-block bg-gradient-to-r from-red-500 to-pink-500 text-white font-bold text-xl px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
+                    >
+                      📞 1800-599-0019
+                    </a>
+                    <p className="text-sm text-gray-600 mt-3">💜 toll-free • 24/7 support • confidential</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-4">
+                <h3 className="font-bold text-orange-900 mb-2">🚨 emergency services</h3>
+                <p className="text-sm text-orange-700 mb-3">in case of immediate danger:</p>
+                <a href="tel:112" className="text-orange-600 font-bold text-lg">📞 112 (emergency)</a>
+              </div>
+
+              <div className="bg-white/90 border border-gray-200 rounded-2xl p-4">
+                <h3 className="font-bold text-gray-900 mb-2">💬 crisis text support</h3>
+                <p className="text-sm text-gray-700">text "HELLO" to get instant support via SMS</p>
+              </div>
+
+              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-2xl p-4">
+                <h3 className="font-bold text-blue-900 mb-2">🏥 find nearest hospital</h3>
+                <button 
+                  onClick={shareLocationInChat}
+                  className="text-blue-600 font-semibold text-sm flex items-center mt-2 hover:underline"
+                >
+                  <MapPin className="w-4 h-4 mr-1" />
+                  share location to find help
+                </button>
+              </div>
+
+              <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-2xl">
+                <p className="text-sm text-gray-700 text-center">
+                  <strong className="text-purple-600">remember:</strong> reaching out is brave 💜<br/>
+                  you're never alone in this journey
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile Bottom Navigation (WhatsApp style) */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200">
+        <div className="flex items-center justify-around h-16 max-w-4xl mx-auto">
+          <button
+            onClick={() => setActiveTab('chat')}
+            className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
+              activeTab === 'chat' 
+                ? 'text-purple-600' 
+                : 'text-gray-500'
+            }`}
+          >
+            <MessageCircle className={`w-6 h-6 mb-1 ${activeTab === 'chat' ? 'fill-purple-600' : ''}`} />
+            <span className="text-xs font-medium">chats</span>
+            {activeTab === 'chat' && (
+              <div className="absolute bottom-0 w-12 h-0.5 bg-purple-600 rounded-t-full"></div>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('resources')}
+            className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
+              activeTab === 'resources' 
+                ? 'text-purple-600' 
+                : 'text-gray-500'
+            }`}
+          >
+            <Lightbulb className={`w-6 h-6 mb-1 ${activeTab === 'resources' ? 'fill-purple-600' : ''}`} />
+            <span className="text-xs font-medium">resources</span>
+            {activeTab === 'resources' && (
+              <div className="absolute bottom-0 w-12 h-0.5 bg-purple-600 rounded-t-full"></div>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('crisis')}
+            className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
+              activeTab === 'crisis' 
+                ? 'text-red-600' 
+                : 'text-gray-500'
+            }`}
+          >
+            <Phone className={`w-6 h-6 mb-1 ${activeTab === 'crisis' ? 'fill-red-600 animate-pulse' : ''}`} />
+            <span className="text-xs font-medium">urgent</span>
+            {activeTab === 'crisis' && (
+              <div className="absolute bottom-0 w-12 h-0.5 bg-red-600 rounded-t-full"></div>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ChatBotMobile;
