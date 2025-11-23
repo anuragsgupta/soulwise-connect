@@ -173,6 +173,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../src/app/api/community-memory/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/community-memory">> = Specific
+  const handler = {} as typeof import("../../src/app/api/community-memory/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../src/app/api/institutes/[id]/upload-students/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/institutes/[id]/upload-students">> = Specific
