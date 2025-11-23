@@ -688,6 +688,7 @@ const ChatBot = () => {
   return (
     <div className="relative h-full w-full md:space-y-6">
       {/* Spline Background - Fixed positioning */}
+<<<<<<< HEAD
       <div className="fixed inset-0 -z-50 overflow-hidden">
         {!reducedMotion ? (
           <Suspense fallback={
@@ -698,6 +699,19 @@ const ChatBot = () => {
           <div className="w-full h-full bg-gradient-to-br from-blue-50/30 to-teal-50/30" />
         )}
       </div>
+=======
+  <div className="fixed inset-0 -z-50 overflow-hidden">
+    {!reducedMotion ? (
+      <Suspense fallback={
+        <div className="w-full h-full bg-gradient-to-br from-blue-50/30 to-teal-50/30" />
+      }>
+   
+      </Suspense>
+    ) : (
+      <div className="w-full h-full bg-gradient-to-br from-blue-50/30 to-teal-50/30" />
+    )}
+  </div>
+>>>>>>> 33ab2b9 (add bottom navbar)
       
       {/* WhatsApp-Style Chat Container - Full screen on mobile */}
       <Card className="backdrop-blur-sm bg-white/95 border-white/50 shadow-xl relative z-10 overflow-hidden h-full w-full md:h-auto flex flex-col md:border md:rounded-lg border-none rounded-none">

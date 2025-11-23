@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+<<<<<<< HEAD
 import withPWAInit from '@ducanh2912/next-pwa';
 
 const withPWA = withPWAInit({
@@ -83,7 +84,11 @@ const withPWA = withPWAInit({
   }
 });
 
+=======
+import withPWA from "next-pwa";
+>>>>>>> 33ab2b9 (add bottom navbar)
 const nextConfig: NextConfig = {
+  reactStrictMode: true,
   eslint: {
     ignoreDuringBuilds: true,
   },
