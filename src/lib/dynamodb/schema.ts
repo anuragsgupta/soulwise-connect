@@ -42,8 +42,8 @@ export interface ChatMemoryInput {
 
 // DynamoDB Table Configuration
 export const CHAT_MEMORY_TABLE_CONFIG = {
-  tableName: process.env.DYNAMODB_CHAT_MEMORY_TABLE || 'ChatMemory',
-  region: process.env.AWS_REGION || 'us-east-1',
+  tableName: process.env.NEXT_PUBLIC_DYNAMODB_TABLE || 'ChatMemory',
+  region: process.env.NEXT_PUBLIC_AWS_REGION || 'ap-south-1',
   partitionKey: 'user_id',
   sortKey: 'timestamp',
 };

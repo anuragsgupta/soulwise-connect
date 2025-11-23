@@ -14,10 +14,10 @@ async function testDynamoDBConnection() {
   console.log('🔍 Testing DynamoDB Connection...\n');
   
   // Check if credentials are set
-  const region = process.env.AWS_REGION;
-  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
-  const tableName = process.env.DYNAMODB_CHAT_MEMORY_TABLE;
+  const region = process.env.NEXT_PUBLIC_AWS_REGION;
+  const accessKeyId = process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY;
+  const tableName = process.env.NEXT_PUBLIC_DYNAMODB_TABLE;
   
   console.log('📋 Configuration:');
   console.log(`   Region: ${region}`);
@@ -26,13 +26,13 @@ async function testDynamoDBConnection() {
   console.log(`   Secret Access Key: ${secretAccessKey ? '****** ✓' : '❌ Missing'}\n`);
   
   if (!accessKeyId || accessKeyId.includes('your-aws-access-key')) {
-    console.log('❌ Error: Please update AWS_ACCESS_KEY_ID in .env.local');
+    console.log('❌ Error: Please update NEXT_PUBLIC_AWS_ACCESS_KEY_ID in .env.local');
     console.log('   Current value looks like a placeholder\n');
     return;
   }
   
   if (!secretAccessKey || secretAccessKey.includes('your-aws-secret-access-key')) {
-    console.log('❌ Error: Please update AWS_SECRET_ACCESS_KEY in .env.local');
+    console.log('❌ Error: Please update NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY in .env.local');
     console.log('   Current value looks like a placeholder\n');
     return;
   }
