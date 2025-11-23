@@ -1,0 +1,30 @@
+<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="whatsapp-pattern" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+      <rect width="60" height="60" fill="#e5ddd5"/>
+      <g opacity="0.08">
+        <!-- Decorative shapes similar to WhatsApp background -->
+        <circle cx="15" cy="15" r="2" fill="#14b8a6"/>
+        <circle cx="45" cy="15" r="2" fill="#14b8a6"/>
+        <circle cx="15" cy="45" r="2" fill="#14b8a6"/>
+        <circle cx="45" cy="45" r="2" fill="#14b8a6"/>
+        
+        <path d="M30 20 L30 40 M20 30 L40 30" stroke="#14b8a6" stroke-width="0.5" fill="none"/>
+        
+        <rect x="25" y="25" width="10" height="10" fill="none" stroke="#14b8a6" stroke-width="0.5"/>
+      </g>
+    </pattern>
+  </defs>
+  
+  <rect width="400" height="400" fill="url(#whatsapp-pattern)"/>
+  
+  <!-- Optional: Add subtle gradient overlay -->
+  <rect width="400" height="400" fill="url(#gradient-overlay)" opacity="0.3"/>
+  
+  <defs>
+    <linearGradient id="gradient-overlay" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#14b8a6;stop-opacity:0.05" />
+      <stop offset="100%" style="stop-color:#10b981;stop-opacity:0.05" />
+    </linearGradient>
+  </defs>
+</svg>

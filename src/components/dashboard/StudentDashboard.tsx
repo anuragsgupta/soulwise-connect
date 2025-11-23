@@ -627,7 +627,11 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 pb-20 md:pb-8">
+      <main className={`max-w-7xl mx-auto ${
+        activeTab === 'chat' 
+          ? 'h-[calc(100vh-64px-76px)] flex flex-col p-0 w-full max-w-full md:px-4 md:py-8 md:pb-8 md:h-auto md:max-w-7xl' 
+          : 'px-4 sm:px-6 lg:px-8 py-4 sm:py-8 pb-20 md:pb-8'
+      }`}>
         {renderContent()}
       </main>
 
