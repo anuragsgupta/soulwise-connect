@@ -58,3 +58,58 @@ export const DEFAULT_EMOTIONS: EmotionScores = {
   trust: 0,
   surprise: 0,
 };
+
+
+// -------------------------------
+// COMMUNITY FORUM MEMORY SCHEMA
+// -------------------------------
+
+// /lib/dynamodb/schema.ts
+
+// DB shape for a community post
+export interface CommunityPostDB {
+  id: string;                // PK in DynamoDB
+  type: "post";
+  title: string;
+  content: string;
+  authorId: string;
+  author: string;
+  category: string;
+  isAnonymous: boolean;
+  likes: number;
+  repliesCount: number;
+  createdAt: string;         // ISO date string
+  updatedAt: string;         // ISO date string
+}
+
+// DB shape for a community reply
+export interface CommunityReplyDB {
+  id: string;                // PK in DynamoDB
+  type: "reply";
+  postId: string;
+  content: string;
+  authorId: string;
+  author: string;
+  isAnonymous: boolean;
+  likes: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Inputs from the frontend
+export interface CommunityPostInput {
+  title: string;
+  content: string;
+  category?: string;
+  isAnonymous?: boolean;
+  authorId: string;
+  author: string;
+}
+
+export interface CommunityReplyInput {
+  postId: string;
+  content: string;
+  isAnonymous?: boolean;
+  authorId: string;
+  author: string;
+}
