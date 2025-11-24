@@ -2,13 +2,17 @@
   "pages": {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 
+=======
+>>>>>>> 42f522b (feat: Add PWA support with install prompt and button)
     "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
+<<<<<<< HEAD
     "/auth/login/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -34,11 +38,14 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/admins/route.js"
     ],
+=======
+>>>>>>> 42f522b (feat: Add PWA support with install prompt and button)
     "/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
     ],
+<<<<<<< HEAD
     "/login/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -170,6 +177,17 @@
 >>>>>>> 0128f28 (feat: Implement content moderation and admin moderation endpoints)
 =======
 >>>>>>> 9d97c67 (feat: add ChatBotMobile component for enhanced user interaction and mental health support)
+=======
+    "/api/analytics/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/analytics/route.js"
+    ],
+    "/_not-found/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/_not-found/page.js"
+>>>>>>> 42f522b (feat: Add PWA support with install prompt and button)
     ]
   }
 }

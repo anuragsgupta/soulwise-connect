@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 42f522b (feat: Add PWA support with install prompt and button)
 import withPWAInit from '@ducanh2912/next-pwa';
 
 const withPWA = withPWAInit({
@@ -85,13 +88,15 @@ const withPWA = withPWAInit({
   }
 });
 
+<<<<<<< HEAD
 =======
 import withPWA from "next-pwa";
 >>>>>>> 33ab2b9 (add bottom navbar)
 =======
 >>>>>>> 33f0d3d (added sentimental analysis for each chat)
+=======
+>>>>>>> 42f522b (feat: Add PWA support with install prompt and button)
 const nextConfig: NextConfig = {
-  
   eslint: {
     ignoreDuringBuilds: true,
   },

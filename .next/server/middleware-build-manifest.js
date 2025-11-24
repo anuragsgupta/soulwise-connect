@@ -1,5 +1,6 @@
 globalThis.__BUILD_MANIFEST = {
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
   "pages": {
     "/_app": [
@@ -34,6 +35,8 @@ globalThis.__BUILD_MANIFEST = {
   "devFiles": [],
   "ampDevFiles": [],
 >>>>>>> 9d97c67 (feat: add ChatBotMobile component for enhanced user interaction and mental health support)
+=======
+>>>>>>> 42f522b (feat: Add PWA support with install prompt and button)
   "polyfillFiles": [
     "static/chunks/polyfills.js"
   ],
