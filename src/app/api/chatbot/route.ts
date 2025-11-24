@@ -6,14 +6,18 @@ import {
 } from '@/lib/crisisDetection';
 import { sendDirectSMSAlert } from '@/lib/directSMSService';
 import { buildGeminiPromptToon } from '@/lib/ai/toon-prompts';
+import { analyzeSentiment, detectEmotions, assessRiskLevel } from '@/lib/ai/sentiment-analyzer';
+import { saveChatMessage } from '@/lib/dynamodb/chatMemory';
+import type { SentimentLabel, RiskLevel, EmotionScores } from '@/lib/ai/types';
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, sessionId } = await request.json();
+    const { message, sessionId, userId } = await request.json();
     
     console.log('=== CHATBOT API REQUEST ===');
     console.log('Message received:', message);
     console.log('Session ID:', sessionId);
+    console.log('User ID:', userId);
     console.log('Timestamp:', new Date().toISOString());
 
     if (!message || typeof message !== 'string') {
@@ -24,7 +28,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // CRISIS DETECTION AND SMS ALERT SYSTEM
+    // Generate user ID if not provided (for anonymous users)
+    const effectiveUserId = userId || sessionId || generateSessionId();
+
+    // ========================================
+    // STEP 1: SENTIMENT ANALYSIS ON USER MESSAGE
+    // ========================================
+    console.log('🧠 Performing sentiment analysis on user message...');
+    
+    const sentimentAnalysis = analyzeSentiment(message);
+    const emotionScores = detectEmotions(message);
+    const riskLevel = assessRiskLevel(message, emotionScores);
+    
+    console.log('📊 Sentiment Analysis Results:', {
+      sentiment: sentimentAnalysis.label,
+      score: sentimentAnalysis.score.toFixed(4),
+      emotions: emotionScores,
+      riskLevel: riskLevel
+    });
+
+    // ========================================
+    // STEP 2: SAVE USER MESSAGE TO DYNAMODB WITH SENTIMENT
+    // ========================================
+    try {
+      console.log('💾 Saving user message to DynamoDB...');
+      await saveChatMessage({
+        user_id: effectiveUserId,
+        role: 'user',
+        message: message,
+        sentiment_label: sentimentAnalysis.label,
+        sentiment_score: sentimentAnalysis.score,
+        emotions: emotionScores,
+        risk_level: riskLevel,
+      });
+      console.log('✅ User message saved with sentiment analysis');
+    } catch (dbError) {
+      console.error('⚠️ Failed to save user message to DynamoDB:', dbError);
+      // Continue processing even if DB save fails
+    }
+
+    // ========================================
+    // STEP 3: CRISIS DETECTION AND SMS ALERT SYSTEM
+    // ========================================
     console.log('🔍 Starting crisis detection...');
     const crisisDetection = detectCrisisLevel(message);
     console.log('📊 Crisis Detection Result:', {
@@ -43,7 +88,7 @@ export async function POST(request: NextRequest) {
         const alertResult = await sendDirectSMSAlert({
           message: message,
           patientInfo: {
-            id: sessionId || generateSessionId(),
+            id: effectiveUserId,
             severity: crisisDetection.level as 'high' | 'critical'
           }
         });
@@ -71,15 +116,40 @@ export async function POST(request: NextRequest) {
     if (crisisDetection.level === 'critical' || crisisDetection.level === 'high') {
       console.log('🎯 Returning immediate crisis response');
       const crisisResponse = generateCrisisResponse(crisisDetection.level);
+      
+      // Save bot crisis response to DynamoDB
+      try {
+        await saveChatMessage({
+          user_id: effectiveUserId,
+          role: 'assistant',
+          message: crisisResponse,
+          sentiment_label: 'neutral',
+          sentiment_score: 0.5,
+          emotions: { fear: 0, anger: 0, sadness: 0, joy: 0, disgust: 0, trust: 0.8, surprise: 0 },
+          risk_level: 'normal',
+        });
+      } catch (dbError) {
+        console.error('⚠️ Failed to save crisis response to DynamoDB:', dbError);
+      }
+      
       return NextResponse.json({
         success: true,
         message: crisisResponse,
         timestamp: new Date().toISOString(),
         crisisLevel: crisisDetection.level,
-        smsAlertSent: ['high', 'critical'].includes(crisisDetection.level)
+        smsAlertSent: ['high', 'critical'].includes(crisisDetection.level),
+        sentiment: {
+          label: sentimentAnalysis.label,
+          score: sentimentAnalysis.score,
+          emotions: emotionScores,
+          riskLevel: riskLevel
+        }
       });
     }
 
+    // ========================================
+    // STEP 4: GENERATE AI RESPONSE
+    // ========================================
     console.log('🤖 Proceeding with normal AI response...');
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) {
@@ -145,13 +215,35 @@ export async function POST(request: NextRequest) {
       console.log('⚠️ Response hit token limit, but checking if we got partial response...');
       if (aiResponse && aiResponse.length > 50) {
         console.log('✅ Using partial response (sufficient content)');
+        
+        // Save bot response to DynamoDB
+        try {
+          await saveChatMessage({
+            user_id: effectiveUserId,
+            role: 'assistant',
+            message: aiResponse,
+            sentiment_label: 'positive',
+            sentiment_score: 0.7,
+            emotions: { fear: 0, anger: 0, sadness: 0, joy: 0.5, disgust: 0, trust: 0.8, surprise: 0 },
+            risk_level: 'normal',
+          });
+        } catch (dbError) {
+          console.error('⚠️ Failed to save bot response to DynamoDB:', dbError);
+        }
+        
         return NextResponse.json({
           success: true,
           message: aiResponse,
           timestamp: new Date().toISOString(),
           crisisLevel: crisisDetection.level,
           smsAlertSent: ['high', 'critical'].includes(crisisDetection.level),
-          truncated: true
+          truncated: true,
+          sentiment: {
+            label: sentimentAnalysis.label,
+            score: sentimentAnalysis.score,
+            emotions: emotionScores,
+            riskLevel: riskLevel
+          }
         });
       }
     }
@@ -164,17 +256,58 @@ export async function POST(request: NextRequest) {
       if (finishReason === 'SAFETY') {
         console.log('⚠️ Response blocked by safety filters');
         const safetyResponse = "I'm here to support you. For your safety and well-being, I recommend speaking with a professional counselor. **Please contact your campus counseling center** or call the **KIRAN Mental Health helpline at 1800-599-0019** for immediate support.";
+        
+        // Save safety response to DynamoDB
+        try {
+          await saveChatMessage({
+            user_id: effectiveUserId,
+            role: 'assistant',
+            message: safetyResponse,
+            sentiment_label: 'neutral',
+            sentiment_score: 0.5,
+            emotions: { fear: 0, anger: 0, sadness: 0, joy: 0, disgust: 0, trust: 0.8, surprise: 0 },
+            risk_level: 'normal',
+          });
+        } catch (dbError) {
+          console.error('⚠️ Failed to save safety response to DynamoDB:', dbError);
+        }
+        
         return NextResponse.json({
           success: true,
           message: safetyResponse,
           timestamp: new Date().toISOString(),
           crisisLevel: crisisDetection.level,
           smsAlertSent: ['high', 'critical'].includes(crisisDetection.level),
-          safetyFiltered: true
+          safetyFiltered: true,
+          sentiment: {
+            label: sentimentAnalysis.label,
+            score: sentimentAnalysis.score,
+            emotions: emotionScores,
+            riskLevel: riskLevel
+          }
         });
       }
       
       throw new Error(`No response from Gemini API (finishReason: ${finishReason})`);
+    }
+
+    // ========================================
+    // STEP 5: SAVE BOT RESPONSE TO DYNAMODB
+    // ========================================
+    console.log('💾 Saving bot response to DynamoDB...');
+    try {
+      await saveChatMessage({
+        user_id: effectiveUserId,
+        role: 'assistant',
+        message: aiResponse,
+        sentiment_label: 'positive', // Bot responses are typically supportive
+        sentiment_score: 0.7,
+        emotions: { fear: 0, anger: 0, sadness: 0, joy: 0.5, disgust: 0, trust: 0.8, surprise: 0 },
+        risk_level: 'normal',
+      });
+      console.log('✅ Bot response saved to DynamoDB');
+    } catch (dbError) {
+      console.error('⚠️ Failed to save bot response to DynamoDB:', dbError);
     }
 
     console.log('✅ Gemini API response received');
@@ -183,7 +316,13 @@ export async function POST(request: NextRequest) {
       message: aiResponse,
       timestamp: new Date().toISOString(),
       crisisLevel: crisisDetection.level,
-      smsAlertSent: ['high', 'critical'].includes(crisisDetection.level)
+      smsAlertSent: ['high', 'critical'].includes(crisisDetection.level),
+      sentiment: {
+        label: sentimentAnalysis.label,
+        score: sentimentAnalysis.score,
+        emotions: emotionScores,
+        riskLevel: riskLevel
+      }
     });
 
   } catch (error) {
@@ -191,6 +330,24 @@ export async function POST(request: NextRequest) {
     
     // Fallback response
     const fallbackResponse = getFallbackResponse();
+    
+    // Try to save fallback response to DynamoDB
+    try {
+      const { userId, sessionId } = await request.json().catch(() => ({}));
+      const effectiveUserId = userId || sessionId || generateSessionId();
+      
+      await saveChatMessage({
+        user_id: effectiveUserId,
+        role: 'assistant',
+        message: fallbackResponse,
+        sentiment_label: 'neutral',
+        sentiment_score: 0.5,
+        emotions: { fear: 0, anger: 0, sadness: 0, joy: 0, disgust: 0, trust: 0.6, surprise: 0 },
+        risk_level: 'normal',
+      });
+    } catch (dbError) {
+      console.error('⚠️ Failed to save fallback response to DynamoDB:', dbError);
+    }
     
     return NextResponse.json({
       success: true,

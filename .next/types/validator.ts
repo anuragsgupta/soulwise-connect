@@ -173,6 +173,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../src/app/api/cleanup-duplicates/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/cleanup-duplicates">> = Specific
+  const handler = {} as typeof import("../../src/app/api/cleanup-duplicates/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../src/app/api/institutes/[id]/upload-students/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/institutes/[id]/upload-students">> = Specific
@@ -186,6 +195,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/mcp/sms-alert">> = Specific
   const handler = {} as typeof import("../../src/app/api/mcp/sms-alert/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/api/sentiment-analysis/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/sentiment-analysis">> = Specific
+  const handler = {} as typeof import("../../src/app/api/sentiment-analysis/route.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check
