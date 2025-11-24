@@ -1,5 +1,6 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 {
   "/_error": "pages/_error.js",
   "/_app": "pages/_app.js",
@@ -21,3 +22,6 @@
   "/_document": "pages/_document.js"
 }
 >>>>>>> 42f522b (feat: Add PWA support with install prompt and button)
+=======
+{}
+>>>>>>> b49cd09 (feat: Implement dynamic font configuration and showcase component)
