@@ -394,7 +394,8 @@ const ChatBot = () => {
         },
         body: JSON.stringify({ 
           message: userMessage,
-          sessionId: sessionId 
+          sessionId: sessionId,
+          userId: User // Pass userId for DynamoDB tracking
         }),
       });
 
