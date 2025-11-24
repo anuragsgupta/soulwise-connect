@@ -125,3 +125,128 @@ export async function getCommunityItems(limit = 50) {
   const items = (res.Items || []) as (CommunityPostDB | CommunityReplyDB)[];
   return items;
 }
+
+/**
+ * ✅ ADMIN ONLY: Get all items including authorId for moderation
+ * This should ONLY be called from admin endpoints with proper auth
+ */
+export async function getCommunityItemsForAdmin(limit = 100) {
+  const res = await dynamoClient.send(
+    new ScanCommand({
+      TableName: COMMUNITY_TABLE,
+      Limit: limit,
+    })
+  );
+
+  const items = (res.Items || []) as (CommunityPostDB | CommunityReplyDB)[];
+  // Return all fields including authorId, ipAddress for admin review
+  return items;
+}
+
+/**
+ * ✅ ADMIN ONLY: Flag a post or reply as inappropriate
+ */
+export async function flagCommunityItem(
+  itemId: string,
+  flagReason: string,
+  moderatorId: string
+): Promise<boolean> {
+  try {
+    await dynamoClient.send(
+      new UpdateCommand({
+        TableName: COMMUNITY_TABLE,
+        Key: { id: itemId },
+        UpdateExpression:
+          "SET isFlagged = :flagged, flagReason = :reason, moderatorId = :modId, moderatedAt = :now",
+        ExpressionAttributeValues: {
+          ":flagged": true,
+          ":reason": flagReason,
+          ":modId": moderatorId,
+          ":now": nowIso(),
+        },
+        ConditionExpression: "attribute_exists(id)",
+      })
+    );
+    return true;
+  } catch (error) {
+    console.error("Failed to flag item:", error);
+    return false;
+  }
+}
+
+/**
+ * ✅ ADMIN ONLY: Hide a post or reply from public view
+ */
+export async function hideCommunityItem(
+  itemId: string,
+  moderatorId: string
+): Promise<boolean> {
+  try {
+    await dynamoClient.send(
+      new UpdateCommand({
+        TableName: COMMUNITY_TABLE,
+        Key: { id: itemId },
+        UpdateExpression:
+          "SET isHidden = :hidden, moderatorId = :modId, moderatedAt = :now",
+        ExpressionAttributeValues: {
+          ":hidden": true,
+          ":modId": moderatorId,
+          ":now": nowIso(),
+        },
+        ConditionExpression: "attribute_exists(id)",
+      })
+    );
+    return true;
+  } catch (error) {
+    console.error("Failed to hide item:", error);
+    return false;
+  }
+}
+
+/**
+ * ✅ ADMIN ONLY: Unhide a previously hidden post or reply
+ */
+export async function unhideCommunityItem(
+  itemId: string,
+  moderatorId: string
+): Promise<boolean> {
+  try {
+    await dynamoClient.send(
+      new UpdateCommand({
+        TableName: COMMUNITY_TABLE,
+        Key: { id: itemId },
+        UpdateExpression:
+          "SET isHidden = :hidden, moderatorId = :modId, moderatedAt = :now",
+        ExpressionAttributeValues: {
+          ":hidden": false,
+          ":modId": moderatorId,
+          ":now": nowIso(),
+        },
+        ConditionExpression: "attribute_exists(id)",
+      })
+    );
+    return true;
+  } catch (error) {
+    console.error("Failed to unhide item:", error);
+    return false;
+  }
+}
+
+/**
+ * ✅ Get flagged items for admin review
+ */
+export async function getFlaggedItems(limit = 50) {
+  const res = await dynamoClient.send(
+    new ScanCommand({
+      TableName: COMMUNITY_TABLE,
+      FilterExpression: "isFlagged = :flagged",
+      ExpressionAttributeValues: {
+        ":flagged": true,
+      },
+      Limit: limit,
+    })
+  );
+
+  const items = (res.Items || []) as (CommunityPostDB | CommunityReplyDB)[];
+  return items;
+}
