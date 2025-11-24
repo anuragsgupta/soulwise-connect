@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 {
   "/_error": "pages/_error.js",
   "/_app": "pages/_app.js",
@@ -7,3 +8,10 @@
 =======
 {}
 >>>>>>> 9d97c67 (feat: add ChatBotMobile component for enhanced user interaction and mental health support)
+=======
+{
+  "/_app": "pages/_app.js",
+  "/_document": "pages/_document.js",
+  "/_error": "pages/_error.js"
+}
+>>>>>>> 33f0d3d (added sentimental analysis for each chat)

@@ -41,7 +41,10 @@ interface ParamMap {
   "/api/institutes/[id]/upload-students": { "id": string; }
   "/api/mcp/sms-alert": {}
   "/api/sentiment-analysis": {}
+<<<<<<< HEAD
   "/api/students": {}
+=======
+>>>>>>> 33f0d3d (added sentimental analysis for each chat)
   "/api/students/by-enrollment/[enrollmentId]": { "enrollmentId": string; }
   "/api/universities": {}
   "/api/universities/[id]/institutes": { "id": string; }
