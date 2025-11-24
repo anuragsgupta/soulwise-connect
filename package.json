@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
-    "build:dev": "next build --turbopack",
+    "dev": "next dev",
+    "build": "next build",
+    "build:dev": "next build",
     "start": "next start",
     "preview": "next start",
     "lint": "eslint"
@@ -16,6 +16,7 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.936.0",
     "@aws-sdk/lib-dynamodb": "^3.936.0",
+    "@ducanh2912/next-pwa": "^10.2.9",
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^3.10.0",
     "@prisma/client": "^6.16.2",
