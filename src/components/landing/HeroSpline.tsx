@@ -143,7 +143,7 @@ export const HeroSpline = ({ variant = 'B', onCtaClick }: HeroSplineProps) => {
         aria-label="Animated illustration showing hands protecting a heart-shaped brain with floating wellness icons"
         aria-hidden={reducedMotion ? "false" : "true"}
       >
-        {!reducedMotion && splineLoaded ? (
+        {/* {!reducedMotion && splineLoaded ? (
           <Suspense fallback={
             <div className="w-full h-full bg-gradient-to-br from-secondary/20 to-wellness/20 flex items-center justify-center animate-pulse">
               <div className="text-foreground/30 text-lg font-medium">Loading 3D Scene...</div>
@@ -170,7 +170,7 @@ export const HeroSpline = ({ variant = 'B', onCtaClick }: HeroSplineProps) => {
               sizes="(max-width: 768px) 100vw, 50vw"
             />
           </div>
-        )}
+        )} */}
       </div>
 
       {/* Content Overlay */}

@@ -8,6 +8,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import logoMannMitra from '@/assets/logo-mann-mitra.png';
 import { analytics } from '@/lib/analytics';
+import InstallButton from '@/components/InstallButton';
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -63,6 +64,7 @@ export const Navbar = () => {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-4">
+            <InstallButton />
             <Link href="/login">
               <Button 
                 variant="ghost" 

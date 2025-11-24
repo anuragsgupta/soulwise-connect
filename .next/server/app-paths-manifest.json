@@ -1,4 +1,5 @@
 {
-  "/api/chat-memory/route": "app/api/chat-memory/route.js",
-  "/dashboard/page": "app/dashboard/page.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/analytics/route": "app/api/analytics/route.js",
+  "/page": "app/page.js"
 }
