@@ -83,196 +83,198 @@ export default function CalmCircle({ onClose }: CalmCircleProps) {
   const totalTime = cycles * (inhaleTime + holdTime + exhaleTime);
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl p-6 sm:p-8 bg-gradient-to-br from-purple/10 to-sky/10">
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold font-heading text-primary">
-              Calm Circle
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1 font-body">
-              4-7-8 breathing technique for relaxation
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSoundEnabled(!soundEnabled)}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-            </Button>
-            {onClose && (
+    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto">
+      <Card className="w-full max-w-lg lg:max-w-2xl my-auto bg-background border-2 border-primary/20">
+        <div className="p-4 sm:p-6 md:p-8">
+          <div className="flex justify-between items-start mb-4 sm:mb-6">
+            <div>
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold font-heading text-primary">
+                Calm Circle
+              </h2>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-body">
+                4-7-8 breathing technique for relaxation
+              </p>
+            </div>
+            <div className="flex gap-2 -mt-1 -mr-2">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={onClose}
+                onClick={() => setSoundEnabled(!soundEnabled)}
                 className="text-muted-foreground hover:text-foreground"
               >
-                ✕
+                {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
               </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Customization Controls */}
-        <div className="space-y-4 mb-6 p-4 bg-primary/5 rounded-lg">
-          <div>
-            <div className="flex justify-between mb-2">
-              <label className="text-sm font-medium font-heading">Inhale</label>
-              <span className="text-sm text-muted-foreground">{inhaleTime}s</span>
+              {onClose && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onClose}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  ✕
+                </Button>
+              )}
             </div>
-            <Slider
-              value={[inhaleTime]}
-              onValueChange={(value) => setInhaleTime(value[0])}
-              min={2}
-              max={8}
-              step={1}
-              disabled={isPlaying}
-            />
           </div>
-          <div>
-            <div className="flex justify-between mb-2">
-              <label className="text-sm font-medium font-heading">Hold</label>
-              <span className="text-sm text-muted-foreground">{holdTime}s</span>
-            </div>
-            <Slider
-              value={[holdTime]}
-              onValueChange={(value) => setHoldTime(value[0])}
-              min={2}
-              max={10}
-              step={1}
-              disabled={isPlaying}
-            />
-          </div>
-          <div>
-            <div className="flex justify-between mb-2">
-              <label className="text-sm font-medium font-heading">Exhale</label>
-              <span className="text-sm text-muted-foreground">{exhaleTime}s</span>
-            </div>
-            <Slider
-              value={[exhaleTime]}
-              onValueChange={(value) => setExhaleTime(value[0])}
-              min={2}
-              max={12}
-              step={1}
-              disabled={isPlaying}
-            />
-          </div>
-        </div>
 
-        {/* Animated Circle */}
-        <div className="relative w-full aspect-square max-w-md mx-auto mb-6 flex items-center justify-center">
-          {/* Outer ring */}
-          <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
-          
-          {/* Progress ring */}
-          <svg className="absolute inset-0 w-full h-full -rotate-90">
-            <circle
-              cx="50%"
-              cy="50%"
-              r="45%"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="8"
-              strokeDasharray={`${progress * 2.83} 283`}
-              className="text-primary transition-all duration-100"
-            />
-          </svg>
-
-          {/* Pulsing circle */}
-          <div
-            className={`
-              aspect-square rounded-full bg-gradient-to-br ${getCircleColor()}
-              flex items-center justify-center shadow-2xl
-              transition-all duration-100
-            `}
-            style={{
-              width: `${getCircleScale() * 70}%`,
-              height: `${getCircleScale() * 70}%`,
-            }}
-          >
-            <div className="text-center text-white">
-              <div className="text-4xl sm:text-5xl font-bold mb-2 font-heading">
-                {Math.ceil(currentDuration - (progress / 100) * currentDuration)}
+          {/* Customization Controls */}
+          <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6 p-3 sm:p-4 bg-primary/5 rounded-lg border border-primary/10">
+            <div>
+              <div className="flex justify-between mb-2">
+                <label className="text-xs sm:text-sm font-medium font-heading">Inhale</label>
+                <span className="text-xs sm:text-sm text-muted-foreground">{inhaleTime}s</span>
               </div>
-              <div className="text-sm sm:text-base font-medium uppercase tracking-wider font-accent">
-                {phase}
+              <Slider
+                value={[inhaleTime]}
+                onValueChange={(value) => setInhaleTime(value[0])}
+                min={2}
+                max={8}
+                step={1}
+                disabled={isPlaying}
+              />
+            </div>
+            <div>
+              <div className="flex justify-between mb-2">
+                <label className="text-xs sm:text-sm font-medium font-heading">Hold</label>
+                <span className="text-xs sm:text-sm text-muted-foreground">{holdTime}s</span>
+              </div>
+              <Slider
+                value={[holdTime]}
+                onValueChange={(value) => setHoldTime(value[0])}
+                min={2}
+                max={10}
+                step={1}
+                disabled={isPlaying}
+              />
+            </div>
+            <div>
+              <div className="flex justify-between mb-2">
+                <label className="text-xs sm:text-sm font-medium font-heading">Exhale</label>
+                <span className="text-xs sm:text-sm text-muted-foreground">{exhaleTime}s</span>
+              </div>
+              <Slider
+                value={[exhaleTime]}
+                onValueChange={(value) => setExhaleTime(value[0])}
+                min={2}
+                max={12}
+                step={1}
+                disabled={isPlaying}
+              />
+            </div>
+          </div>
+
+          {/* Animated Circle */}
+          <div className="relative w-full aspect-square max-w-[280px] sm:max-w-sm md:max-w-md mx-auto mb-5 sm:mb-6 flex items-center justify-center">
+            {/* Outer ring */}
+            <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
+            
+            {/* Progress ring */}
+            <svg className="absolute inset-0 w-full h-full -rotate-90">
+              <circle
+                cx="50%"
+                cy="50%"
+                r="45%"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="8"
+                strokeDasharray={`${progress * 2.83} 283`}
+                className="text-primary transition-all duration-100"
+              />
+            </svg>
+
+            {/* Pulsing circle */}
+            <div
+              className={`
+                aspect-square rounded-full bg-gradient-to-br ${getCircleColor()}
+                flex items-center justify-center shadow-2xl
+                transition-all duration-100
+              `}
+              style={{
+                width: `${getCircleScale() * 70}%`,
+                height: `${getCircleScale() * 70}%`,
+              }}
+            >
+              <div className="text-center text-white">
+                <div className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2 font-heading">
+                  {Math.ceil(currentDuration - (progress / 100) * currentDuration)}
+                </div>
+                <div className="text-xs sm:text-sm md:text-base font-medium uppercase tracking-wider font-accent">
+                  {phase}
+                </div>
+              </div>
+            </div>
+
+            {/* Glow effect */}
+            <div
+              className={`
+                absolute aspect-square rounded-full blur-3xl opacity-30
+                bg-gradient-to-br ${getCircleColor()}
+              `}
+              style={{
+                width: `${getCircleScale() * 80}%`,
+                height: `${getCircleScale() * 80}%`,
+              }}
+            />
+          </div>
+
+          {/* Stats */}
+          <div className="flex justify-center gap-6 sm:gap-8 mb-5 sm:mb-6">
+            <div className="text-center">
+              <div className="text-xl sm:text-2xl md:text-3xl font-bold text-primary font-heading">
+                {cycles}
+              </div>
+              <div className="text-xs sm:text-sm text-muted-foreground font-body">
+                Cycles
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-xl sm:text-2xl md:text-3xl font-bold text-primary font-heading">
+                {Math.floor(totalTime / 60)}:{String(totalTime % 60).padStart(2, '0')}
+              </div>
+              <div className="text-xs sm:text-sm text-muted-foreground font-body">
+                Time
               </div>
             </div>
           </div>
 
-          {/* Glow effect */}
-          <div
-            className={`
-              absolute aspect-square rounded-full blur-3xl opacity-30
-              bg-gradient-to-br ${getCircleColor()}
-            `}
-            style={{
-              width: `${getCircleScale() * 80}%`,
-              height: `${getCircleScale() * 80}%`,
-            }}
-          />
-        </div>
-
-        {/* Stats */}
-        <div className="flex justify-center gap-8 mb-6">
-          <div className="text-center">
-            <div className="text-2xl sm:text-3xl font-bold text-primary font-heading">
-              {cycles}
-            </div>
-            <div className="text-xs sm:text-sm text-muted-foreground font-body">
-              Cycles
-            </div>
+          {/* Controls */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button
+              onClick={handleToggle}
+              size="lg"
+              className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 font-accent"
+            >
+              {isPlaying ? (
+                <>
+                  <Pause className="w-4 h-4 mr-2" />
+                  Pause
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 mr-2" />
+                  {cycles > 0 ? 'Resume' : 'Start'}
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={handleReset}
+              variant="outline"
+              size="lg"
+              className="w-full sm:w-auto font-accent border-2"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Reset
+            </Button>
           </div>
-          <div className="text-center">
-            <div className="text-2xl sm:text-3xl font-bold text-primary font-heading">
-              {Math.floor(totalTime / 60)}:{String(totalTime % 60).padStart(2, '0')}
-            </div>
-            <div className="text-xs sm:text-sm text-muted-foreground font-body">
-              Time
-            </div>
+
+          {/* Instructions */}
+          <div className="mt-5 sm:mt-6 p-3 sm:p-4 bg-primary/5 rounded-lg border border-primary/10">
+            <p className="text-xs sm:text-sm text-center text-muted-foreground font-body leading-relaxed">
+              <strong className="text-primary">4-7-8 Technique:</strong> Developed by Dr. Andrew Weil, 
+              this pattern activates your parasympathetic nervous system, promoting deep relaxation. 
+              Perfect for reducing anxiety and improving sleep quality.
+            </p>
           </div>
-        </div>
-
-        {/* Controls */}
-        <div className="flex gap-3 justify-center">
-          <Button
-            onClick={handleToggle}
-            size="lg"
-            className="bg-gradient-to-r from-primary to-primary-glow hover:from-primary/90 hover:to-primary-glow/90 font-accent"
-          >
-            {isPlaying ? (
-              <>
-                <Pause className="w-4 h-4 mr-2" />
-                Pause
-              </>
-            ) : (
-              <>
-                <Play className="w-4 h-4 mr-2" />
-                {cycles > 0 ? 'Resume' : 'Start'}
-              </>
-            )}
-          </Button>
-          <Button
-            onClick={handleReset}
-            variant="outline"
-            size="lg"
-            className="font-accent"
-          >
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Reset
-          </Button>
-        </div>
-
-        {/* Instructions */}
-        <div className="mt-6 p-4 bg-primary/5 rounded-lg">
-          <p className="text-xs sm:text-sm text-center text-muted-foreground font-body leading-relaxed">
-            <strong className="text-primary">4-7-8 Technique:</strong> Developed by Dr. Andrew Weil, 
-            this pattern activates your parasympathetic nervous system, promoting deep relaxation. 
-            Perfect for reducing anxiety and improving sleep quality.
-          </p>
         </div>
       </Card>
     </div>
