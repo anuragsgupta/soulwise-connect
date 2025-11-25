@@ -1,0 +1,252 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  university   University? @relation(fields: [universityId], references: [id])
+  universityId String?
+  institute    Institute?  @relation(fields: [instituteId], references: [id])
+  instituteId  String?
+  student      Student?
+  auditLogs    AuditLog[]
+
+  @@map("users")
+}
+
+model University {
+  id               String    @id @default(uuid())
+  name             String
+  domain           String    @unique
+  address          String
+  establishedYear  Int
+  contactEmail     String
+  contactPhone     String
+  website          String?
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relations
+  users      User[]
+  institutes Institute[]
+  students   Student[]
+  auditLogs  AuditLog[]
+
+  @@map("universities")
+}
+
+model Institute {
+  id          String   @id @default(uuid())
+  name        String
+  code        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  universityId String
+  users        User[]
+  students     Student[]
+  departments  Department[]
+  auditLogs    AuditLog[]
+
+  @@map("institutes")
+}
+
+model Department {
+  id          String   @id @default(uuid())
+  name        String
+  code        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  institute   Institute @relation(fields: [instituteId], references: [id], onDelete: Cascade)
+  instituteId String
+  students    Student[]
+  auditLogs   AuditLog[]
+
+  @@unique([instituteId, code])
+  @@map("departments")
+}
+
+model Student {
+  id               String   @id @default(uuid())
+  rollNumber       String   @unique
+  firstName        String
+  lastName         String
+  email            String   @unique
+  phone            String?
+  dateOfBirth      DateTime?
+  gender           Gender?
+  address          String?
+  admissionYear    Int
+  currentSemester  Int      @default(1)
+  cgpa             Float?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  user         User?       @relation(fields: [userId], references: [id])
+  userId       String?     @unique
+  university   University  @relation(fields: [universityId], references: [id])
+  universityId String
+  institute    Institute   @relation(fields: [instituteId], references: [id])
+  instituteId  String
+  department   Department? @relation(fields: [departmentId], references: [id])
+  departmentId String?
+  enrollments  StudentEnrollment[]
+  auditLogs    AuditLog[]
+
+  @@map("students")
+}
+
+model StudentBatch {
+  id         String   @id @default(uuid())
+  batchName  String
+  year       Int
+  semester   Int
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  enrollments StudentEnrollment[]
+  auditLogs   AuditLog[]
+
+  @@unique([batchName, year, semester])
+  @@map("student_batches")
+}
+
+model StudentEnrollment {
+  id            String   @id @default(uuid())
+  enrollmentDate DateTime @default(now())
+  status        EnrollmentStatus @default(ACTIVE)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  student      Student      @relation(fields: [studentId], references: [id])
+  studentId    String
+  batch        StudentBatch @relation(fields: [batchId], references: [id])
+  batchId      String
+  auditLogs    AuditLog[]
+
+  @@unique([studentId, batchId])
+  @@map("student_enrollments")
+}
+
+model StudentUpload {
+  id            String       @id @default(uuid())
+  fileName      String
+  filePath      String
+  totalRecords  Int
+  successCount  Int          @default(0)
+  errorCount    Int          @default(0)
+  status        UploadStatus @default(PENDING)
+  errorLog      Json?
+  uploadedBy    String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  auditLogs AuditLog[]
+
+  @@map("student_uploads")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  isActive  Boolean  @default(true)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  auditLogs AuditLog[]
+
+  @@map("sessions")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  tableName   String
+  recordId    String
+  action      String
+  oldValues   Json?
+  newValues   Json?
+  performedBy String
+  timestamp   DateTime @default(now())
+
+  // Relations
+  user             User?            @relation(fields: [userId], references: [id])
+  userId           String?
+  university       University?      @relation(fields: [universityId], references: [id])
+  universityId     String?
+  institute        Institute?       @relation(fields: [instituteId], references: [id])
+  instituteId      String?
+  department       Department?      @relation(fields: [departmentId], references: [id])
+  departmentId     String?
+  student          Student?         @relation(fields: [studentId], references: [id])
+  studentId        String?
+  studentBatch     StudentBatch?    @relation(fields: [studentBatchId], references: [id])
+  studentBatchId   String?
+  studentEnrollment StudentEnrollment? @relation(fields: [studentEnrollmentId], references: [id])
+  studentEnrollmentId String?
+  studentUpload    StudentUpload?   @relation(fields: [studentUploadId], references: [id])
+  studentUploadId  String?
+  session          Session?         @relation(fields: [sessionId], references: [id])
+  sessionId        String?
+
+  @@map("audit_logs")
+}
+
+enum Role {
+  SUPER_ADMIN
+  UNIVERSITY_ADMIN
+  INSTITUTE_ADMIN
+  FACULTY
+  STUDENT
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  INACTIVE
+  GRADUATED
+  DROPPED
+}
+
+enum UploadStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}

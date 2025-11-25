@@ -1,103 +1,119 @@
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Starting database seed...');
 
-  // Create SuperAdmin user
-  console.log('Creating SuperAdmin user...');
-  const superAdminEmail = 'superadmin@mannmitra.com';
-  
-  const existingSuperAdmin = await prisma.user.findUnique({
-    where: { email: superAdminEmail },
+  // Create default Super Admin
+  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'superadmin@soulwise.connect';
+  const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || 'SuperAdmin@2024';
+  const superAdminName = process.env.SUPER_ADMIN_NAME || 'Super Administrator';
+
+  // Check if super admin already exists
+  const existingSuperAdmin = await prisma.admin.findFirst({
+    where: {
+      OR: [
+        { isSuperAdmin: true },
+        { email: superAdminEmail }
+      ]
+    }
   });
 
-  if (!existingSuperAdmin) {
-    // Hash the password
-    const hashedPassword = await bcrypt.hash('admin123', 12);
-    
-    const superAdmin = await prisma.user.create({
+  if (existingSuperAdmin) {
+    console.log('✅ Super Admin already exists');
+    console.log(`   Email: ${existingSuperAdmin.email}`);
+    console.log(`   Name: ${existingSuperAdmin.name}`);
+  } else {
+    // Hash password
+    const passwordHash = await bcrypt.hash(superAdminPassword, 12);
+
+    // Create super admin
+    const superAdmin = await prisma.admin.create({
       data: {
+        name: superAdminName,
         email: superAdminEmail,
-        password: hashedPassword,
-        role: 'SUPER_ADMIN',
-        isActive: true,
-      },
+        passwordHash,
+        adminType: 'SUPER_ADMIN',
+        status: 'ACTIVE',
+        isSuperAdmin: true, // This is the permanent super admin
+        phone: '+91-1234567890',
+        address: 'Ministry of Education, Government of India'
+      }
     });
 
-    console.log(`✅ Created SuperAdmin user: ${superAdminEmail}`);
-    console.log(`🔑 Default password: admin123 (change immediately!)`);
-  } else {
-    console.log(`ℹ️  SuperAdmin user already exists: ${superAdminEmail}`);
+    console.log('✅ Default Super Admin created successfully!');
+    console.log('');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📋 Super Admin Credentials:');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`   Email:    ${superAdmin.email}`);
+    console.log(`   Password: ${superAdminPassword}`);
+    console.log(`   Name:     ${superAdmin.name}`);
+    console.log(`   ID:       ${superAdmin.id}`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('');
+    console.log('⚠️  IMPORTANT: Please change the password after first login!');
+    console.log('⚠️  This super admin CANNOT be deleted from the system.');
+    console.log('');
+
+    // Log the creation
+    await prisma.auditLog.create({
+      data: {
+        performedById: superAdmin.id,
+        performedByType: 'ADMIN',
+        action: 'CREATE',
+        tableName: 'admins',
+        recordId: superAdmin.id,
+        newValues: {
+          email: superAdmin.email,
+          name: superAdmin.name,
+          adminType: superAdmin.adminType,
+          isSuperAdmin: true
+        },
+        timestamp: new Date()
+      }
+    });
   }
 
-  // Create sample university
-  console.log('Creating sample university...');
-  const sampleUniversity = await prisma.university.upsert({
-    where: { domain: 'du.ac.in' },
-    update: {},
-    create: {
-      name: 'Delhi University',
-      domain: 'du.ac.in',
-      address: 'University Enclave, Delhi, India',
-      establishedYear: 1922,
-      contactEmail: 'admin@du.ac.in',
-      contactPhone: '+91-11-27666613',
-      website: 'https://du.ac.in',
-      isActive: true,
-    },
-  });
+  // Create sample fields if they don't exist
+  const fieldsData = [
+    { name: 'Engineering', description: 'Engineering and Technology fields' },
+    { name: 'Medical', description: 'Medical and Health Sciences' },
+    { name: 'Arts', description: 'Arts and Humanities' },
+    { name: 'Commerce', description: 'Commerce and Business Studies' },
+    { name: 'Science', description: 'Pure Sciences' },
+    { name: 'Law', description: 'Law and Legal Studies' },
+  ];
 
-  console.log(`✅ Created/Updated university: ${sampleUniversity.name}`);
+  for (const fieldData of fieldsData) {
+    const existingField = await prisma.field.findFirst({
+      where: { name: fieldData.name }
+    });
 
-  // // Create sample institute
-  // console.log('Creating sample institute...');
-  // const sampleInstitute = await prisma.institute.upsert({
-  //   where: { code: 'DU-COLLEGE-001' },
-  //   update: {},
-  //   create: {
-  //     universityId: sampleUniversity.id,
-  //     name: 'St. Stephen\'s College',
-  //     code: 'DU-COLLEGE-001',
-  //     address: 'University Enclave, Delhi, India',
-  //     contactEmail: 'admin@ststephens.edu',
-  //     contactPhone: '+91-11-27667271',
-  //     isActive: true,
-  //   },
-  // });
+    if (!existingField) {
+      await prisma.field.create({ data: fieldData });
+      console.log(`✅ Created field: ${fieldData.name}`);
+    }
+  }
 
-  // console.log(`✅ Created/Updated institute: ${sampleInstitute.name}`);
-
-  // Create audit log entry
-  // const auditLog = await prisma.auditLog.create({
-  //   data: {
-  //     action: 'DATABASE_SEEDED',
-  //     tableName: 'system',
-  //     userId: existingSuperAdmin?.id || (await prisma.user.findUnique({ where: { email: superAdminEmail } }))?.id || '',
-  //     details: { message: 'Database seeding completed successfully' },
-  //   },
-  // });
-
-  console.log('🎉 Database seeding completed successfully!');
-  console.log('\n📋 Summary:');
-  console.log('- 1 SuperAdmin user created');
-  console.log('- 1 sample university created');
-  console.log('- 1 sample institute created');
-  console.log('- Initial audit log created');
-  console.log('\n🚀 Next steps:');
-  console.log('1. Update SuperAdmin password');
-  console.log('2. Start the application');
-  console.log('3. Login as SuperAdmin to create more universities');
+  console.log('');
+  console.log('🎉 Database seed completed successfully!');
+  console.log('');
+  console.log('Next steps:');
+  console.log('1. Visit http://localhost:3000/login');
+  console.log(`2. Login with email: ${superAdminEmail}`);
+  console.log('3. Start creating universities and admins!');
+  console.log('');
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (e) => {
-    console.error('❌ Seeding failed:', e);
-    await prisma.$disconnect();
+  .catch((e) => {
+    console.error('❌ Error during seed:');
+    console.error(e);
     process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
   });

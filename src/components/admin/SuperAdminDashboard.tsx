@@ -9,18 +9,23 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, University, Users, Mail, ExternalLink } from 'lucide-react';
+import { Plus, University, Users, Mail, ExternalLink, UserPlus, Building2 } from 'lucide-react';
 import CreateUniversityForm from './CreateUniversityForm';
+import CreateAdminForm from './CreateAdminForm';
+import CreateInstituteForm from './CreateInstituteForm';
+import InstitutesTable from './InstitutesTable';
+import AdminsTable from './AdminsTable';
 
 interface University {
   id: string;
   name: string;
+  email: string;
   domain: string;
+  phone: string;
   address: string;
-  establishedYear: number;
-  contactEmail: string;
-  contactPhone: string;
-  website?: string;
+  city: string;
+  state: string;
+  status: string;
   _count: {
     institutes: number;
   };
@@ -32,13 +37,19 @@ interface SuperAdminDashboardProps {
 
 export default function SuperAdminDashboard({ onLogout }: SuperAdminDashboardProps) {
   const [universities, setUniversities] = useState<University[]>([]);
+  const [adminCount, setAdminCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showCreateAdmin, setShowCreateAdmin] = useState(false);
+  const [showCreateInstitute, setShowCreateInstitute] = useState(false);
+  const [selectedUniversity, setSelectedUniversity] = useState<University | null>(null);
+  const [activeView, setActiveView] = useState<'universities' | 'institutes' | 'admins'>('universities');
   const { toast } = useToast();
 
   useEffect(() => {
     loadUniversities();
+    loadAdminCount();
   }, []);
 
   const loadUniversities = async () => {
@@ -55,23 +66,25 @@ export default function SuperAdminDashboard({ onLogout }: SuperAdminDashboardPro
           {
             id: '1',
             name: 'Delhi University',
+            email: 'admin@du.ac.in',
             domain: 'du.ac.in',
-            address: 'Delhi, India',
-            establishedYear: 1922,
-            contactEmail: 'admin@du.ac.in',
-            contactPhone: '+91-11-27666613',
-            website: 'https://www.du.ac.in',
+            phone: '+91-11-27666613',
+            address: 'University Enclave',
+            city: 'New Delhi',
+            state: 'Delhi',
+            status: 'ACTIVE',
             _count: { institutes: 12 },
           },
           {
             id: '2',
             name: 'Mumbai University',
+            email: 'registrar@mu.ac.in',
             domain: 'mu.ac.in',
-            address: 'Mumbai, Maharashtra, India',
-            establishedYear: 1857,
-            contactEmail: 'registrar@mu.ac.in',
-            contactPhone: '+91-22-26543000',
-            website: 'https://www.mu.ac.in',
+            phone: '+91-22-26543000',
+            address: 'Kalina Campus',
+            city: 'Mumbai',
+            state: 'Maharashtra',
+            status: 'ACTIVE',
             _count: { institutes: 8 },
           },
         ];
@@ -91,23 +104,25 @@ export default function SuperAdminDashboard({ onLogout }: SuperAdminDashboardPro
         {
           id: '1',
           name: 'Delhi University',
+          email: 'admin@du.ac.in',
           domain: 'du.ac.in',
-          address: 'Delhi, India',
-          establishedYear: 1922,
-          contactEmail: 'admin@du.ac.in',
-          contactPhone: '+91-11-27666613',
-          website: 'https://www.du.ac.in',
+          phone: '+91-11-27666613',
+          address: 'University Enclave, Delhi',
+          city: 'New Delhi',
+          state: 'Delhi',
+          status: 'ACTIVE',
           _count: { institutes: 12 },
         },
         {
           id: '2',
           name: 'Mumbai University',
+          email: 'registrar@mu.ac.in',
           domain: 'mu.ac.in',
-          address: 'Mumbai, Maharashtra, India',
-          establishedYear: 1857,
-          contactEmail: 'registrar@mu.ac.in',
-          contactPhone: '+91-22-26543000',
-          website: 'https://www.mu.ac.in',
+          phone: '+91-22-26543000',
+          address: 'Kalina Campus',
+          city: 'Mumbai',
+          state: 'Maharashtra',
+          status: 'ACTIVE',
           _count: { institutes: 8 },
         },
       ];
@@ -116,9 +131,47 @@ export default function SuperAdminDashboard({ onLogout }: SuperAdminDashboardPro
     }
   };
 
+  const loadAdminCount = async () => {
+    try {
+      const token = localStorage.getItem('auth-token');
+      const response = await fetch('/api/admins', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        setAdminCount(result.data.admins.length);
+      }
+    } catch (error) {
+      console.error('Failed to load admin count:', error);
+    }
+  };
+
   const handleCreateSuccess = () => {
     loadUniversities(); // Reload the list
     setShowCreateForm(false);
+  };
+
+  const handleAdminCreateSuccess = () => {
+    loadAdminCount(); // Reload admin count
+    setShowCreateAdmin(false);
+    setSelectedUniversity(null);
+    toast({
+      title: 'Success',
+      description: 'Admin created successfully',
+    });
+  };
+
+  const handleInstituteCreateSuccess = () => {
+    loadUniversities(); // Reload to update institute counts
+    setShowCreateInstitute(false);
+    setSelectedUniversity(null);
+    toast({
+      title: 'Success',
+      description: 'Institute created successfully',
+    });
   };
 
   if (loading) {
@@ -157,28 +210,60 @@ export default function SuperAdminDashboard({ onLogout }: SuperAdminDashboardPro
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card 
+            className={`cursor-pointer transition-all hover:shadow-lg ${
+              activeView === 'universities' ? 'ring-2 ring-primary shadow-md' : ''
+            }`}
+            onClick={() => setActiveView('universities')}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Universities</CardTitle>
               <University className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{universities.length}</div>
-              <p className="text-xs text-muted-foreground">Active institutions</p>
+              <p className="text-xs text-muted-foreground">
+                {activeView === 'universities' ? '✓ ' : ''}Active institutions
+              </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card 
+            className={`cursor-pointer transition-all hover:shadow-lg ${
+              activeView === 'institutes' ? 'ring-2 ring-primary shadow-md' : ''
+            }`}
+            onClick={() => setActiveView('institutes')}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Institutes</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <Building2 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {universities.reduce((sum, uni) => sum + uni._count.institutes, 0)}
               </div>
-              <p className="text-xs text-muted-foreground">Across all universities</p>
+              <p className="text-xs text-muted-foreground">
+                {activeView === 'institutes' ? '✓ ' : ''}Across all universities
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className={`cursor-pointer transition-all hover:shadow-lg ${
+              activeView === 'admins' ? 'ring-2 ring-primary shadow-md' : ''
+            }`}
+            onClick={() => setActiveView('admins')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Admins</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{adminCount}</div>
+              <p className="text-xs text-muted-foreground">
+                {activeView === 'admins' ? '✓ ' : ''}System administrators
+              </p>
             </CardContent>
           </Card>
 
@@ -194,26 +279,27 @@ export default function SuperAdminDashboard({ onLogout }: SuperAdminDashboardPro
           </Card>
         </div>
 
-        {/* Universities Section */}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-              <div>
-                <CardTitle>Universities</CardTitle>
-                <CardDescription>Manage universities and invite administrators</CardDescription>
+        {/* Dynamic Table Section */}
+        {activeView === 'universities' ? (
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <div>
+                  <CardTitle>Universities</CardTitle>
+                  <CardDescription>Manage universities and create administrators</CardDescription>
+                </div>
+                <Button 
+                  onClick={() => setShowCreateForm(true)}
+                  className="flex items-center justify-center gap-2 w-full sm:w-auto"
+                >
+                  <Plus className="h-4 w-4" />
+                  Create University
+                </Button>
               </div>
-              <Button 
-                onClick={() => setShowCreateForm(true)}
-                className="flex items-center justify-center gap-2 w-full sm:w-auto"
-              >
-                <Plus className="h-4 w-4" />
-                Create University
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {universities.map((university) => (
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {universities.map((university) => (
                 <div
                   key={university.id}
                   className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-4"
@@ -223,18 +309,33 @@ export default function SuperAdminDashboard({ onLogout }: SuperAdminDashboardPro
                     <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-muted-foreground mt-1">
                       <span>{university.domain}</span>
                       <span className="hidden sm:inline">•</span>
-                      <span>{university.address}</span>
+                      <span>{university.city}, {university.state}</span>
                       <span className="hidden sm:inline">•</span>
                       <span>{university._count.institutes} institutes</span>
                     </div>
                   </div>
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2">
-                    <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                      <Mail className="h-4 w-4 mr-2" />
-                      Invite Admin
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full sm:w-auto"
+                      onClick={() => {
+                        setSelectedUniversity(university);
+                        setShowCreateAdmin(true);
+                      }}
+                    >
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Create Admin
                     </Button>
-                    <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                      <ExternalLink className="h-4 w-4 mr-2" />
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full sm:w-auto"
+                      onClick={() => {
+                        setSelectedUniversity(university);
+                      }}
+                    >
+                      <Building2 className="h-4 w-4 mr-2" />
                       View Details
                     </Button>
                   </div>
@@ -243,6 +344,11 @@ export default function SuperAdminDashboard({ onLogout }: SuperAdminDashboardPro
             </div>
           </CardContent>
         </Card>
+        ) : activeView === 'institutes' ? (
+          <InstitutesTable />
+        ) : (
+          <AdminsTable />
+        )}
       </div>
 
       {/* Create University Form Modal */}
@@ -253,6 +359,125 @@ export default function SuperAdminDashboard({ onLogout }: SuperAdminDashboardPro
           onSuccess={handleCreateSuccess}
         />
       )}
+
+      {/* Create Admin Modal */}
+      <Dialog open={showCreateAdmin} onOpenChange={setShowCreateAdmin}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-primary" />
+              Create Admin for {selectedUniversity?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Create a new administrator for this university
+            </DialogDescription>
+          </DialogHeader>
+          {selectedUniversity && (
+            <CreateAdminForm 
+              universityId={selectedUniversity.id}
+              universityName={selectedUniversity.name}
+              onSuccess={handleAdminCreateSuccess}
+              onCancel={() => setShowCreateAdmin(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Institute Modal */}
+      <Dialog open={showCreateInstitute} onOpenChange={setShowCreateInstitute}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-primary" />
+              Create Institute for {selectedUniversity?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Add a new institute/college to this university
+            </DialogDescription>
+          </DialogHeader>
+          {selectedUniversity && (
+            <CreateInstituteForm 
+              universityId={selectedUniversity.id}
+              universityName={selectedUniversity.name}
+              onSuccess={handleInstituteCreateSuccess}
+              onCancel={() => setShowCreateInstitute(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* University Details Modal */}
+      <Dialog open={selectedUniversity !== null && !showCreateAdmin} onOpenChange={(open) => !open && setSelectedUniversity(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-primary" />
+              {selectedUniversity?.name}
+            </DialogTitle>
+            <DialogDescription>
+              University details and information
+            </DialogDescription>
+          </DialogHeader>
+          {selectedUniversity && (
+            <div className="space-y-6 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Domain</Label>
+                  <p className="mt-1 text-sm">{selectedUniversity.domain}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Status</Label>
+                  <p className="mt-1">
+                    <Badge variant={selectedUniversity.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                      {selectedUniversity.status}
+                    </Badge>
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Email</Label>
+                  <p className="mt-1 text-sm">{selectedUniversity.email}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Phone</Label>
+                  <p className="mt-1 text-sm">{selectedUniversity.phone}</p>
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-sm font-medium text-muted-foreground">Address</Label>
+                  <p className="mt-1 text-sm">{selectedUniversity.address}</p>
+                  <p className="text-sm text-muted-foreground">{selectedUniversity.city}, {selectedUniversity.state}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Total Institutes</Label>
+                  <p className="mt-1 text-2xl font-bold text-primary">{selectedUniversity._count.institutes}</p>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-4 border-t">
+                <Button variant="outline" onClick={() => setSelectedUniversity(null)}>
+                  Close
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setShowCreateInstitute(true);
+                  }}
+                >
+                  <Building2 className="h-4 w-4 mr-2" />
+                  Create Institute
+                </Button>
+                <Button 
+                  onClick={() => {
+                    setShowCreateAdmin(true);
+                  }}
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Create Admin
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

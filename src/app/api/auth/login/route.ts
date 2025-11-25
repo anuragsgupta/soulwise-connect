@@ -1,41 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { createApiResponse } from '@/middleware/auth';
+import { PrismaClient } from '@prisma/client';
+import { verifyPassword, generateToken, createResponse } from '@/lib/auth';
 
-// Mock password verification (replace with bcrypt)
-async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  // In production: return await bcrypt.compare(password, hashedPassword);
-  return `hashed-${password}` === hashedPassword;
-}
-
-// Mock JWT generation (replace with actual JWT)
-function generateToken(payload: any): string {
-  // In production: return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '7d' });
-  return `user-${payload.userId}`;
-}
+const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password, enrollmentId } = body;
+    const { email, password, rollNumber } = body;
 
     // Validate required fields
-    if ((!email && !enrollmentId) || !password) {
-      return createApiResponse(false, 'Email/Enrollment ID and password are required', null, 400);
+    if ((!email && !rollNumber) || !password) {
+      return NextResponse.json(
+        createResponse(false, 'Email/Roll Number and password are required'),
+        { status: 400 }
+      );
     }
 
-    let user;
+    let userType: 'ADMIN' | 'FACULTY' | 'STUDENT';
+    let userData: any;
+    let passwordHash: string;
 
-    // Handle student login with enrollment ID
-    if (enrollmentId) {
+    // Handle student login with roll number
+    if (rollNumber) {
       const student = await prisma.student.findUnique({
-        where: { enrollmentId },
+        where: { rollNumber },
         include: {
-          user: {
+          batch: {
             include: {
-              userRoles: {
+              department: {
                 include: {
-                  role: true,
+                  institute: {
+                    include: {
+                      university: true,
+                    },
+                  },
                 },
               },
             },
@@ -43,91 +42,173 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      if (!student || !student.user) {
-        return createApiResponse(false, 'Invalid enrollment ID or password', null, 401);
+      if (!student) {
+        return NextResponse.json(
+          createResponse(false, 'Invalid roll number or password'),
+          { status: 401 }
+        );
       }
 
-      user = student.user;
+      // Check if student is active
+      if (student.status !== 'ACTIVE') {
+        return NextResponse.json(
+          createResponse(false, 'Student account is not active. Please contact administrator.'),
+          { status: 403 }
+        );
+      }
+
+      userType = 'STUDENT';
+      userData = student;
+      passwordHash = student.passwordHash;
     } else {
-      // Handle regular email login
-      user = await prisma.user.findUnique({
+      // Try to find admin first
+      const admin = await prisma.admin.findUnique({
         where: { email },
         include: {
-          userRoles: {
-            include: {
-              role: true,
-            },
-          },
+          university: true,
+          institute: true,
         },
       });
 
-      if (!user) {
-        return createApiResponse(false, 'Invalid email or password', null, 401);
+      if (admin) {
+        // Check if admin is active
+        if (admin.status !== 'ACTIVE') {
+          return NextResponse.json(
+            createResponse(false, 'Admin account is not active. Please contact administrator.'),
+            { status: 403 }
+          );
+        }
+
+        userType = 'ADMIN';
+        userData = admin;
+        passwordHash = admin.passwordHash;
+      } else {
+        // Try to find faculty
+        const faculty = await prisma.faculty.findUnique({
+          where: { email },
+          include: {
+            department: {
+              include: {
+                institute: {
+                  include: {
+                    university: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        if (!faculty) {
+          return NextResponse.json(
+            createResponse(false, 'Invalid email or password'),
+            { status: 401 }
+          );
+        }
+
+        // Check if faculty is active
+        if (faculty.status !== 'ACTIVE') {
+          return NextResponse.json(
+            createResponse(false, 'Faculty account is not active. Please contact administrator.'),
+            { status: 403 }
+          );
+        }
+
+        userType = 'FACULTY';
+        userData = faculty;
+        passwordHash = faculty.passwordHash;
       }
     }
 
     // Verify password
-    const isValidPassword = await verifyPassword(password, user.passwordHash);
+    const isValidPassword = await verifyPassword(password, passwordHash);
     if (!isValidPassword) {
-      return createApiResponse(false, 'Invalid email or password', null, 401);
+      return NextResponse.json(
+        createResponse(false, 'Invalid credentials'),
+        { status: 401 }
+      );
     }
 
-    // Check user status
-    if (user.status === 'suspended') {
-      return createApiResponse(false, 'Account is suspended. Please contact administrator.', null, 403);
-    }
+    // Build token payload based on user type
+    let tokenPayload: any = {
+      id: userData.id,
+      email: userData.email,
+      userType,
+    };
 
-    if (user.status === 'pending') {
-      return createApiResponse(false, 'Account is pending approval. Please contact administrator.', null, 403);
+    if (userType === 'ADMIN') {
+      tokenPayload.adminType = userData.adminType;
+      tokenPayload.isSuperAdmin = userData.isSuperAdmin;
+      tokenPayload.universityId = userData.universityId;
+      tokenPayload.instituteId = userData.instituteId;
+    } else if (userType === 'FACULTY') {
+      tokenPayload.facultyType = userData.facultyType;
+      tokenPayload.departmentId = userData.departmentId;
+      tokenPayload.instituteId = userData.department?.instituteId;
+      tokenPayload.universityId = userData.department?.institute?.universityId;
+    } else if (userType === 'STUDENT') {
+      tokenPayload.rollNumber = userData.rollNumber;
+      tokenPayload.batchId = userData.batchId;
+      tokenPayload.departmentId = userData.batch?.departmentId;
+      tokenPayload.instituteId = userData.batch?.department?.instituteId;
+      tokenPayload.universityId = userData.batch?.department?.institute?.universityId;
     }
 
     // Generate JWT token
-    const token = generateToken({
-      userId: user.userId,
-      email: user.email,
-      roles: user.userRoles.map((ur: { roleId: any; role: { name: any; }; universityId: any; instituteId: any; }) => ({
-        roleId: ur.roleId,
-        roleName: ur.role.name,
-        universityId: ur.universityId,
-        instituteId: ur.instituteId,
-      })),
-    });
+    const token = generateToken(tokenPayload);
 
     // Log audit event
     await prisma.auditLog.create({
       data: {
-        actorUser: user.userId,
-        action: 'USER_LOGIN',
-        objectType: 'USER',
-        objectId: user.userId,
-        detail: {
-          email: user.email,
-          loginMethod: enrollmentId ? 'enrollment_id' : 'email',
+        tableName: userType === 'ADMIN' ? 'admins' : userType === 'FACULTY' ? 'faculties' : 'students',
+        recordId: userData.id,
+        action: 'LOGIN',
+        performedById: userData.id,
+        performedByType: userType,
+        newValues: {
+          loginMethod: rollNumber ? 'roll_number' : 'email',
+          timestamp: new Date().toISOString(),
         },
+        timestamp: new Date(),
       },
     });
 
-    return createApiResponse(
-      true,
-      'Login successful',
-      {
+    // Build response user object
+    let responseUser: any = {
+      id: userData.id,
+      email: userData.email,
+      name: userData.name,
+      userType,
+    };
+
+    if (userType === 'ADMIN') {
+      responseUser.adminType = userData.adminType;
+      responseUser.isSuperAdmin = userData.isSuperAdmin;
+      responseUser.university = userData.university;
+      responseUser.institute = userData.institute;
+    } else if (userType === 'FACULTY') {
+      responseUser.facultyType = userData.facultyType;
+      responseUser.department = userData.department;
+    } else if (userType === 'STUDENT') {
+      responseUser.rollNumber = userData.rollNumber;
+      responseUser.batch = userData.batch;
+    }
+
+    return NextResponse.json(
+      createResponse(true, 'Login successful', {
         token,
-        user: {
-          userId: user.userId,
-          email: user.email,
-          displayName: user.displayName,
-          status: user.status,
-          roles: user.userRoles.map((ur: { role: { name: any; }; universityId: any; instituteId: any; }) => ({
-            roleName: ur.role.name,
-            universityId: ur.universityId,
-            instituteId: ur.instituteId,
-          })),
-        },
-      }
+        user: responseUser,
+      }),
+      { status: 200 }
     );
 
   } catch (error) {
     console.error('Login error:', error);
-    return createApiResponse(false, 'Internal server error', null, 500);
+    return NextResponse.json(
+      createResponse(false, 'Internal server error'),
+      { status: 500 }
+    );
+  } finally {
+    await prisma.$disconnect();
   }
 }
