@@ -1,5 +1,6 @@
 {
 <<<<<<< HEAD
+<<<<<<< HEAD
   "pages": {
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -7,12 +8,16 @@
 
 =======
 >>>>>>> 42f522b (feat: Add PWA support with install prompt and button)
+=======
+  "pages": {
+>>>>>>> 20802ac (improve exercise-resource UI)
     "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
+<<<<<<< HEAD
 <<<<<<< HEAD
     "/auth/login/page": [
       "static/chunks/webpack.js",
@@ -41,11 +46,14 @@
     ],
 =======
 >>>>>>> 42f522b (feat: Add PWA support with install prompt and button)
+=======
+>>>>>>> 20802ac (improve exercise-resource UI)
     "/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
     ],
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -185,11 +193,14 @@
 =======
 =======
 >>>>>>> b49cd09 (feat: Implement dynamic font configuration and showcase component)
+=======
+>>>>>>> 20802ac (improve exercise-resource UI)
     "/api/analytics/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/analytics/route.js"
     ],
+<<<<<<< HEAD
     "/auth/login/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -197,12 +208,23 @@
       "static/chunks/app/_not-found/page.js"
 >>>>>>> 42f522b (feat: Add PWA support with install prompt and button)
 =======
+=======
+    "/login/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/login/page.js"
+    ],
+    "/auth/login/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+>>>>>>> 20802ac (improve exercise-resource UI)
       "static/chunks/app/auth/login/page.js"
     ],
     "/dashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/page.js"
+<<<<<<< HEAD
     ],
     "/api/chat-memory/route": [
       "static/chunks/webpack.js",
@@ -214,4 +236,8 @@
 =======
   "pages": {}
 >>>>>>> d6cba01 (added breathing  games)
+=======
+    ]
+  }
+>>>>>>> 20802ac (improve exercise-resource UI)
 }
