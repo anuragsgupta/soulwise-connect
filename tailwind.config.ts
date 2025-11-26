@@ -18,7 +18,10 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        sans: ['Nunito', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['var(--font-body)', 'system-ui', '-apple-system', 'sans-serif'],
+        heading: ['var(--font-heading)', 'system-ui', '-apple-system', 'sans-serif'],
+        body: ['var(--font-body)', 'system-ui', '-apple-system', 'sans-serif'],
+        accent: ['var(--font-accent)', 'system-ui', '-apple-system', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

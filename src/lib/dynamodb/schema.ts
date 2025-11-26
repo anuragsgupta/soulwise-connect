@@ -58,3 +58,90 @@ export const DEFAULT_EMOTIONS: EmotionScores = {
   trust: 0,
   surprise: 0,
 };
+
+
+// -------------------------------
+// COMMUNITY FORUM MEMORY SCHEMA
+// -------------------------------
+
+// /lib/dynamodb/schema.ts
+
+// DB shape for a community post
+export interface CommunityPostDB {
+  id: string;                // PK in DynamoDB
+  type: "post";
+  title: string;
+  content: string;
+  authorId: string;          // ⚠️ ALWAYS stored for admin tracking
+  author: string;            // Display name (could be "Anonymous User")
+  category: string;
+  isAnonymous: boolean;      // If true, frontend shows "Anonymous"
+  likes: number;
+  repliesCount: number;
+  createdAt: string;         // ISO date string
+  updatedAt: string;         // ISO date string
+  
+  // ✅ NEW: Moderation & Tracking fields
+  ipAddress?: string;        // Optional: User's IP for severe cases
+  userAgent?: string;        // Optional: Browser info
+  isFlagged?: boolean;       // Flagged by users or auto-moderation
+  flagReason?: string;       // Reason for flagging
+  isHidden?: boolean;        // Hidden by admin/moderator
+  moderatorId?: string;      // Admin who took action
+  moderatedAt?: string;      // Timestamp of moderation action
+}
+
+// DB shape for a community reply
+export interface CommunityReplyDB {
+  id: string;                // PK in DynamoDB
+  type: "reply";
+  postId: string;
+  content: string;
+  authorId: string;          // ⚠️ ALWAYS stored for admin tracking
+  author: string;            // Display name (could be "Anonymous User")
+  isAnonymous: boolean;
+  likes: number;
+  createdAt: string;
+  updatedAt: string;
+  
+  // ✅ NEW: Moderation & Tracking fields
+  ipAddress?: string;
+  userAgent?: string;
+  isFlagged?: boolean;
+  flagReason?: string;
+  isHidden?: boolean;
+  moderatorId?: string;
+  moderatedAt?: string;
+}
+
+// Inputs from the frontend
+export interface CommunityPostInput {
+  title: string;
+  content: string;
+  category?: string;
+  isAnonymous?: boolean;
+  authorId: string;          // ⚠️ REQUIRED: Never expose to public, admin only
+  author: string;
+  
+  // ✅ NEW: Optional metadata for tracking & moderation
+  ipAddress?: string;
+  userAgent?: string;
+  isFlagged?: boolean;
+  flagReason?: string;
+  isHidden?: boolean;
+}
+
+export interface CommunityReplyInput {
+  postId: string;
+  content: string;
+  isAnonymous?: boolean;
+  authorId: string;          // ⚠️ REQUIRED: Never expose to public, admin only
+  author: string;
+  
+  // ✅ NEW: Optional metadata for tracking & moderation
+  ipAddress?: string;
+  userAgent?: string;
+  isFlagged?: boolean;
+  flagReason?: string;
+  isHidden?: boolean;
+}
