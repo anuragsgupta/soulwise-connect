@@ -46,7 +46,6 @@ model Admin {
 }
 
 model University {
-<<<<<<< HEAD
   id        String           @id @default(uuid())
   name      String
   email     String           @unique
@@ -58,19 +57,6 @@ model University {
   status    UniversityStatus @default(ACTIVE)
   createdAt DateTime         @default(now()) @map("created_at")
   updatedAt DateTime         @updatedAt @map("updated_at")
-=======
-  id              String   @id @default(uuid())
-  name            String
-  domain          String   @unique
-  address         String
-  establishedYear Int
-  contactEmail    String
-  contactPhone    String
-  website         String?
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
->>>>>>> 84ebef8 (fix eslinting)
 
   // Relations
   admins     Admin[]
@@ -93,16 +79,7 @@ model Field {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-<<<<<<< HEAD
   institutes Institute[]
-=======
-  university   University   @relation(fields: [universityId], references: [id], onDelete: Cascade)
-  universityId String
-  users        User[]
-  students     Student[]
-  departments  Department[]
-  auditLogs    AuditLog[]
->>>>>>> 84ebef8 (fix eslinting)
 
   @@map("fields")
 }
@@ -148,17 +125,10 @@ model Department {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-<<<<<<< HEAD
   institute   Institute @relation(fields: [instituteId], references: [id], onDelete: Cascade)
   instituteId String    @map("institute_id")
   hod         Faculty?  @relation("DepartmentHOD", fields: [hodId], references: [id])
   hodId       String?   @map("hod_id")
-=======
-  institute   Institute  @relation(fields: [instituteId], references: [id], onDelete: Cascade)
-  instituteId String
-  students    Student[]
-  auditLogs   AuditLog[]
->>>>>>> 84ebef8 (fix eslinting)
 
   // Inverse relations
   batches   Batch[]
@@ -172,7 +142,6 @@ model Department {
   @@map("departments")
 }
 
-<<<<<<< HEAD
 model Batch {
   id              String   @id @default(uuid())
   name            String // e.g., "2024-2028"
@@ -185,37 +154,6 @@ model Batch {
   // Relations
   department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
   departmentId String     @map("department_id")
-=======
-model Student {
-  id              String    @id @default(uuid())
-  rollNumber      String    @unique
-  firstName       String
-  lastName        String
-  email           String    @unique
-  phone           String?
-  dateOfBirth     DateTime?
-  gender          Gender?
-  address         String?
-  admissionYear   Int
-  currentSemester Int       @default(1)
-  cgpa            Float?
-  isActive        Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  // Relations
-  user         User?               @relation(fields: [userId], references: [id])
-  userId       String?             @unique
-  university   University          @relation(fields: [universityId], references: [id])
-  universityId String
-  institute    Institute           @relation(fields: [instituteId], references: [id])
-  instituteId  String
-  department   Department?         @relation(fields: [departmentId], references: [id])
-  departmentId String?
-  enrollments  StudentEnrollment[]
-  auditLogs    AuditLog[]
-  phq9Surveys  PHQ9Survey[]
->>>>>>> 84ebef8 (fix eslinting)
 
   // Inverse relations
   students Student[]
@@ -322,7 +260,6 @@ model Student {
   @@map("students")
 }
 
-<<<<<<< HEAD
 model Location {
   id              String       @id @default(uuid())
   address         String? // Static/permanent address
@@ -338,16 +275,6 @@ model Location {
   lastUpdated     DateTime     @map("last_updated")
   createdAt       DateTime     @default(now()) @map("created_at")
   updatedAt       DateTime     @updatedAt @map("updated_at")
-=======
-model StudentBatch {
-  id        String   @id @default(uuid())
-  batchName String
-  year      Int
-  semester  Int
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
->>>>>>> 84ebef8 (fix eslinting)
 
   // Relations
   student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -356,7 +283,6 @@ model StudentBatch {
   @@map("locations")
 }
 
-<<<<<<< HEAD
 // ==================== MENTAL HEALTH SYSTEM ====================
 
 model MoodCheckIn {
@@ -371,28 +297,12 @@ model MoodCheckIn {
   // Relations
   student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId String  @map("student_id")
-=======
-model StudentEnrollment {
-  id             String           @id @default(uuid())
-  enrollmentDate DateTime         @default(now())
-  status         EnrollmentStatus @default(ACTIVE)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-
-  // Relations
-  student   Student      @relation(fields: [studentId], references: [id])
-  studentId String
-  batch     StudentBatch @relation(fields: [batchId], references: [id])
-  batchId   String
-  auditLogs AuditLog[]
->>>>>>> 84ebef8 (fix eslinting)
 
   @@index([studentId, checkInDate])
   @@index([checkInDate])
   @@map("mood_check_ins")
 }
 
-<<<<<<< HEAD
 model CrisisAlert {
   id              String         @id @default(uuid())
   severity        CrisisSeverity
@@ -406,20 +316,6 @@ model CrisisAlert {
   resolutionNotes String?        @map("resolution_notes")
   createdAt       DateTime       @default(now()) @map("created_at")
   updatedAt       DateTime       @updatedAt @map("updated_at")
-=======
-model StudentUpload {
-  id           String       @id @default(uuid())
-  fileName     String
-  filePath     String
-  totalRecords Int
-  successCount Int          @default(0)
-  errorCount   Int          @default(0)
-  status       UploadStatus @default(PENDING)
-  errorLog     Json?
-  uploadedBy   String
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
->>>>>>> 84ebef8 (fix eslinting)
 
   // Relations
   student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -534,7 +430,6 @@ model AuditLog {
   ipAddress      String?    @map("ip_address")
   timestamp      DateTime   @default(now())
 
-<<<<<<< HEAD
   // Polymorphic relations for performer
   admin    Admin?   @relation("AdminAuditLogs", fields: [adminId], references: [id])
   adminId  String?  @map("admin_id")
@@ -542,27 +437,6 @@ model AuditLog {
   facultyId String? @map("faculty_id")
   student  Student? @relation("StudentAuditLogs", fields: [studentId], references: [id])
   studentId String? @map("student_id")
-=======
-  // Relations
-  user                User?              @relation(fields: [userId], references: [id])
-  userId              String?
-  university          University?        @relation(fields: [universityId], references: [id])
-  universityId        String?
-  institute           Institute?         @relation(fields: [instituteId], references: [id])
-  instituteId         String?
-  department          Department?        @relation(fields: [departmentId], references: [id])
-  departmentId        String?
-  student             Student?           @relation(fields: [studentId], references: [id])
-  studentId           String?
-  studentBatch        StudentBatch?      @relation(fields: [studentBatchId], references: [id])
-  studentBatchId      String?
-  studentEnrollment   StudentEnrollment? @relation(fields: [studentEnrollmentId], references: [id])
-  studentEnrollmentId String?
-  studentUpload       StudentUpload?     @relation(fields: [studentUploadId], references: [id])
-  studentUploadId     String?
-  session             Session?           @relation(fields: [sessionId], references: [id])
-  sessionId           String?
->>>>>>> 84ebef8 (fix eslinting)
 
   // Context relations
   university   University? @relation("UniversityAuditLogs", fields: [universityId], references: [id])
@@ -577,46 +451,9 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-<<<<<<< HEAD
 // ==================== ENUMS ====================
 
 enum AdminType {
-=======
-model PHQ9Survey {
-  id           String   @id @default(uuid())
-  surveyNumber Int // 1, 2, or 3 (to track which of the 3 surveys)
-  completedAt  DateTime @default(now())
-
-  // PHQ-9 Questions (0=Not at all, 1=Several days, 2=More than half the time, 3=Nearly every day)
-  q1_interest      Int // Little interest or pleasure in doing things
-  q2_depressed     Int // Feeling down, depressed, or hopeless
-  q3_sleep         Int // Trouble falling/staying asleep, or sleeping too much
-  q4_energy        Int // Feeling tired or having little energy
-  q5_appetite      Int // Poor appetite or overeating
-  q6_failure       Int // Feeling bad about yourself or that you're a failure
-  q7_concentration Int // Trouble concentrating on things
-  q8_movement      Int // Moving or speaking slowly, or being fidgety/restless
-  q9_harm          Int // Thoughts that you would be better off dead or hurting yourself
-
-  // Calculated scores
-  totalScore Int // Sum of all questions (0-27)
-  severity   PHQ9Severity // NONE, MILD, MODERATE, MODERATELY_SEVERE, SEVERE
-
-  // Metadata
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId String
-
-  @@index([studentId, surveyNumber])
-  @@index([completedAt])
-  @@map("phq9_surveys")
-}
-
-enum Role {
->>>>>>> 84ebef8 (fix eslinting)
   SUPER_ADMIN
   UNIVERSITY_ADMIN
   INSTITUTE_ADMIN
@@ -707,7 +544,6 @@ enum UserType {
 
 enum InviteStatus {
   PENDING
-<<<<<<< HEAD
   ACCEPTED
   EXPIRED
   CANCELLED
@@ -720,17 +556,4 @@ enum AuditAction {
   LOGIN
   LOGOUT
   PASSWORD_CHANGE
-=======
-  PROCESSING
-  COMPLETED
-  FAILED
-}
-
-enum PHQ9Severity {
-  NONE // 0-4
-  MILD // 5-9
-  MODERATE // 10-14
-  MODERATELY_SEVERE // 15-19
-  SEVERE // 20-27
->>>>>>> 84ebef8 (fix eslinting)
 }
