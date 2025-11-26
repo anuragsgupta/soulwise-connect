@@ -349,6 +349,15 @@ export default function LoginPage() {
                       Try the student portal with a demo account while authentication is being set up.
                     </AlertDescription>
                   </Alert>
+                  
+                  <Alert className="bg-blue-50 border-blue-200">
+                    <GraduationCap className="w-4 h-4 text-blue-600" />
+                    <AlertDescription className="text-blue-800">
+                      <span className="font-semibold">Demo Mode Available!</span>
+                      <br />
+                      Try the student portal with a demo account while authentication is being set up.
+                    </AlertDescription>
+                  </Alert>
 
                   <div className="text-center mt-4">
                     <p className="text-sm text-muted-foreground">
