@@ -1,0 +1,362 @@
+Isne to poora schema redesign kr diya :
+
+SOULWISE CONNECT - COMPLETE DATABASE SCHEMA
+=============================================
+
+HIERARCHY:
+--> = Manages
+
+MOE (Super Admins) --> Manages Universities & Other Admins (Register, Edit, Update)
+University Admin --> Manages Institutes (Register, Edit, Update)
+Institute Admin --> Manages Departments, Faculty, Students
+    HOD --> Mentor Supervisor --> Mentor --> Faculty (Register, Modify)
+Student --> Uses Dashboard (main source of data), managed by Faculty
+
+REGISTRATION PROCESS:
+ 1. Super Admin registers Universities and University Admins (credentials sent via email)
+ 2. University Admin registers Institutes and Institute Admins
+ 3. Institute Admin registers Departments, Faculty (HOD, Mentors, etc.)
+ 4. Faculty registers Students (credentials sent via email)
+ 5. All users can change their passwords after first login
+
+================================================================================
+DATABASE TABLES (PostgreSQL): '-->' means references/foreign key
+================================================================================
+
+[+] ADMIN:
+ - id PK UUID
+ - name VARCHAR(255)
+ - email VARCHAR(255) UNIQUE
+ - password_hash VARCHAR(255)
+ - phone VARCHAR(20)
+ - address TEXT
+ - admin_type ENUM (SUPER_ADMIN, UNIVERSITY_ADMIN, INSTITUTE_ADMIN)
+ - status ENUM (ACTIVE, SUSPENDED, PENDING_APPROVAL) DEFAULT ACTIVE
+ - university_id FK --> UNIVERSITY (nullable for Super Admins)
+ - institute_id FK --> INSTITUTE (nullable for University/Super Admins)
+ - last_login TIMESTAMP
+ - created_at TIMESTAMP
+ - updated_at TIMESTAMP
+
+[+] UNIVERSITY:
+ - id PK UUID
+ - name VARCHAR(255)
+ - email VARCHAR(255) UNIQUE
+ - domain VARCHAR(100) (e.g., "du.ac.in" for email validation)
+ - phone VARCHAR(20)
+ - address TEXT
+ - city VARCHAR(100)
+ - state VARCHAR(100)
+ - status ENUM (ACTIVE, INACTIVE) DEFAULT ACTIVE
+ - created_at TIMESTAMP
+ - updated_at TIMESTAMP
+
+[+] INSTITUTE:
+ - id PK UUID
+ - code VARCHAR(50) UNIQUE (college code)
+ - name VARCHAR(255)
+ - email VARCHAR(255) UNIQUE
+ - phone VARCHAR(20)
+ - address TEXT
+ - university_id FK --> UNIVERSITY
+ - field_id FK --> FIELD
+ - hod_id FK --> FACULTY (nullable - current Head of Department)
+ - status ENUM (ACTIVE, INACTIVE) DEFAULT ACTIVE
+ - created_at TIMESTAMP
+ - updated_at TIMESTAMP
+
+[+] FIELD:
+ - id PK UUID
+ - name VARCHAR(255) (e.g., Engineering, Medical, Arts, Commerce)
+ - description TEXT
+ - created_at TIMESTAMP
+ - updated_at TIMESTAMP
+
+[+] DEPARTMENT:
+ - id PK UUID
+ - name VARCHAR(255) (e.g., Computer Science, Mechanical, Psychology)
+ - code VARCHAR(50) UNIQUE
+ - institute_id FK --> INSTITUTE
+ - hod_id FK --> FACULTY (nullable)
+ - created_at TIMESTAMP
+ - updated_at TIMESTAMP
+
+[+] BATCH:
+ - id PK UUID
+ - name VARCHAR(100) (e.g., "2024-2028")
+ - start_year INT
+ - end_year INT
+ - current_semester INT
+ - department_id FK --> DEPARTMENT
+ - created_at TIMESTAMP
+ - updated_at TIMESTAMP
+
+[+] FACULTY:
+ - id PK UUID
+ - name VARCHAR(255)
+ - email VARCHAR(255) UNIQUE
+ - password_hash VARCHAR(255)
+ - phone VARCHAR(20)
+ - address TEXT
+ - job_title VARCHAR(100) (Professor, Assistant Professor, Counselor, etc.)
+ - faculty_type ENUM (HOD, MENTOR_SUPERVISOR, MENTOR, FACULTY, COUNSELOR)
+ - department_id FK --> DEPARTMENT
+ - institute_id FK --> INSTITUTE
+ - mentor_supervisor_id FK --> FACULTY (nullable - who manages this mentor)
+ - status ENUM (ACTIVE, ON_LEAVE, SUSPENDED, INACTIVE) DEFAULT ACTIVE
+ - availability_status ENUM (AVAILABLE, BUSY, OFFLINE) DEFAULT AVAILABLE
+ - years_of_experience INT
+ - pan_number VARCHAR(10)
+ - aadhaar_number VARCHAR(12)
+ - last_login TIMESTAMP
+ - created_at TIMESTAMP
+ - updated_at TIMESTAMP
+
+[+] STUDENT:
+ - id PK UUID
+ - name VARCHAR(255)
+ - email VARCHAR(255) UNIQUE
+ - password_hash VARCHAR(255)
+ - enrollment_id VARCHAR(50) UNIQUE (primary login identifier)
+ - roll_number VARCHAR(50)
+ - phone VARCHAR(20)
+ - parent_phone VARCHAR(20)
+ - emergency_contact_name VARCHAR(255)
+ - emergency_contact_phone VARCHAR(20)
+ - current_semester INT
+ - cgpa DECIMAL(3,2)
+ - admission_year INT
+ - status ENUM (ACTIVE, SUSPENDED, GRADUATED, DROPPED_OUT) DEFAULT ACTIVE
+ - university_id FK --> UNIVERSITY
+ - institute_id FK --> INSTITUTE
+ - department_id FK --> DEPARTMENT
+ - batch_id FK --> BATCH
+ - mentor_id FK --> FACULTY (assigned mentor)
+ - last_login TIMESTAMP
+ - created_at TIMESTAMP
+ - updated_at TIMESTAMP
+
+[+] LOCATION:
+ - id PK UUID
+ - student_id FK --> STUDENT
+ - address TEXT (static/permanent address)
+ - city VARCHAR(100)
+ - state VARCHAR(100)
+ - pincode VARCHAR(10)
+ - home_latitude DECIMAL(10,8)
+ - home_longitude DECIMAL(11,8)
+ - recent_latitude DECIMAL(10,8) (dynamic - updated on login)
+ - recent_longitude DECIMAL(11,8)
+ - recent_address TEXT
+ - location_type ENUM (HOME, CAMPUS, OTHER)
+ - last_updated TIMESTAMP
+ - created_at TIMESTAMP
+ - updated_at TIMESTAMP
+
+[+] ROLE:
+ - id PK UUID
+ - name VARCHAR(100) UNIQUE (SUPER_ADMIN, UNIVERSITY_ADMIN, INSTITUTE_ADMIN, HOD, MENTOR_SUPERVISOR, MENTOR, FACULTY, STUDENT)
+ - description TEXT
+ - permissions JSON (what actions allowed)
+ - created_at TIMESTAMP
+ - updated_at TIMESTAMP
+
+[+] USER_ROLE:
+ - id PK UUID
+ - user_id UUID (polymorphic - can be admin/faculty/student)
+ - user_type ENUM (ADMIN, FACULTY, STUDENT)
+ - role_id FK --> ROLE
+ - university_id FK --> UNIVERSITY (nullable)
+ - institute_id FK --> INSTITUTE (nullable)
+ - created_at TIMESTAMP
+
+[+] SESSION:
+ - id PK UUID
+ - user_id UUID
+ - user_type ENUM (ADMIN, FACULTY, STUDENT)
+ - token TEXT UNIQUE
+ - ip_address VARCHAR(45)
+ - user_agent TEXT
+ - expires_at TIMESTAMP
+ - is_active BOOLEAN DEFAULT TRUE
+ - created_at TIMESTAMP
+
+[+] AUDIT_LOG:
+ - id PK UUID
+ - performed_by_id UUID
+ - performed_by_type ENUM (ADMIN, FACULTY, STUDENT)
+ - action ENUM (CREATE, UPDATE, DELETE, LOGIN, LOGOUT, PASSWORD_CHANGE)
+ - table_name VARCHAR(100)
+ - record_id UUID
+ - old_values JSON
+ - new_values JSON
+ - ip_address VARCHAR(45)
+ - timestamp TIMESTAMP
+
+[+] INVITE:
+ - id PK UUID
+ - email VARCHAR(255)
+ - token VARCHAR(255) UNIQUE
+ - user_type ENUM (ADMIN, FACULTY, STUDENT)
+ - role_id FK --> ROLE
+ - university_id FK --> UNIVERSITY (nullable)
+ - institute_id FK --> INSTITUTE (nullable)
+ - department_id FK --> DEPARTMENT (nullable)
+ - created_by_id UUID
+ - created_by_type ENUM (ADMIN, FACULTY)
+ - expires_at TIMESTAMP
+ - accepted_at TIMESTAMP (nullable)
+ - status ENUM (PENDING, ACCEPTED, EXPIRED, CANCELLED) DEFAULT PENDING
+ - created_at TIMESTAMP
+
+[+] MOOD_CHECK_IN:
+ - id PK UUID
+ - student_id FK --> STUDENT
+ - mood_score INT (1-5: 1=Very Low, 5=Excellent)
+ - mood_label VARCHAR(50) (Excellent, Good, Okay, Low, Very Low)
+ - factors JSON ARRAY (sleep, energy, stress, social, exercise, academic)
+ - notes TEXT
+ - check_in_date DATE
+ - created_at TIMESTAMP
+
+[+] CRISIS_ALERT:
+ - id PK UUID
+ - student_id FK --> STUDENT
+ - severity ENUM (LOW, MEDIUM, HIGH, CRITICAL)
+ - trigger_source ENUM (CHAT, MOOD_TRACKER, MANUAL, SYSTEM)
+ - trigger_message TEXT
+ - ai_analysis TEXT
+ - keywords JSON ARRAY
+ - status ENUM (OPEN, ACKNOWLEDGED, IN_PROGRESS, RESOLVED, FALSE_ALARM)
+ - assigned_to_id FK --> FACULTY (nullable)
+ - acknowledged_at TIMESTAMP
+ - resolved_at TIMESTAMP
+ - resolution_notes TEXT
+ - created_at TIMESTAMP
+ - updated_at TIMESTAMP
+
+[+] RESOURCE:
+ - id PK UUID
+ - title VARCHAR(255)
+ - description TEXT
+ - category ENUM (ARTICLE, VIDEO, AUDIO, EXERCISE, HELPLINE, EMERGENCY)
+ - content_url TEXT
+ - thumbnail_url TEXT
+ - tags JSON ARRAY
+ - view_count INT DEFAULT 0
+ - is_featured BOOLEAN DEFAULT FALSE
+ - created_by_id UUID
+ - created_by_type ENUM (ADMIN, FACULTY)
+ - created_at TIMESTAMP
+ - updated_at TIMESTAMP
+
+[+] PEER_FORUM:
+ - id PK UUID
+ - student_id FK --> STUDENT
+ - title VARCHAR(255)
+ - content TEXT
+ - is_anonymous BOOLEAN DEFAULT FALSE
+ - tags JSON ARRAY
+ - upvote_count INT DEFAULT 0
+ - comment_count INT DEFAULT 0
+ - status ENUM (ACTIVE, FLAGGED, REMOVED) DEFAULT ACTIVE
+ - created_at TIMESTAMP
+ - updated_at TIMESTAMP
+
+[+] FORUM_COMMENT:
+ - id PK UUID
+ - forum_id FK --> PEER_FORUM
+ - student_id FK --> STUDENT
+ - content TEXT
+ - is_anonymous BOOLEAN DEFAULT FALSE
+ - upvote_count INT DEFAULT 0
+ - status ENUM (ACTIVE, FLAGGED, REMOVED) DEFAULT ACTIVE
+ - created_at TIMESTAMP
+ - updated_at TIMESTAMP
+
+[+] CHAT_SESSION:
+ - id PK UUID
+ - student_id FK --> STUDENT
+ - session_start TIMESTAMP
+ - session_end TIMESTAMP (nullable)
+ - message_count INT DEFAULT 0
+ - crisis_detected BOOLEAN DEFAULT FALSE
+ - sentiment_score DECIMAL(3,2) (avg sentiment: -1 to 1)
+ - created_at TIMESTAMP
+
+[+] CHAT_MESSAGE:
+ - id PK UUID
+ - session_id FK --> CHAT_SESSION
+ - sender_type ENUM (STUDENT, BOT)
+ - content TEXT
+ - sentiment_score DECIMAL(3,2) (message sentiment: -1 to 1)
+ - crisis_keywords JSON ARRAY
+ - timestamp TIMESTAMP
+
+================================================================================
+NoSQL DATABASE (MongoDB/Firebase) - For Real-time Features
+================================================================================
+
+[+] APPOINTMENT:
+ - id PK
+ - faculty_id FK --> FACULTY
+ - student_id FK --> STUDENT
+ - title VARCHAR(255)
+ - description TEXT
+ - date_scheduled TIMESTAMP
+ - duration INT (in minutes)
+ - priority ENUM (NORMAL, MODERATE, HIGH, URGENT) DEFAULT NORMAL
+ - meeting_mode ENUM (IN_PERSON, VIDEO_CALL, PHONE_CALL, CHAT)
+ - meeting_link TEXT (nullable - for video calls)
+ - status ENUM (SCHEDULED, CONFIRMED, CANCELLED, COMPLETED, NO_SHOW) DEFAULT SCHEDULED
+ - cancellation_reason TEXT (nullable)
+ - notes TEXT (meeting notes/summary)
+ - created_by_id
+ - created_by_type ENUM (FACULTY, STUDENT)
+ - created_at TIMESTAMP
+ - updated_at TIMESTAMP
+
+[+] FACULTY_NOTIFICATION:
+ - id PK
+ - faculty_id FK --> FACULTY
+ - title VARCHAR(255)
+ - message TEXT
+ - type ENUM (NEW_ALERT, APPOINTMENT_REMINDER, APPOINTMENT_CANCELLED, CRISIS_ALERT, URGENT_ACTION_REQUIRED, SYSTEM)
+ - priority ENUM (LOW, NORMAL, MODERATE, HIGH, CRITICAL) DEFAULT NORMAL
+ - is_read BOOLEAN DEFAULT FALSE
+ - appointment_id FK --> APPOINTMENT (nullable)
+ - student_id FK --> STUDENT (nullable)
+ - crisis_alert_id FK --> CRISIS_ALERT (nullable)
+ - action_url TEXT (deep link to relevant page)
+ - created_at TIMESTAMP
+ - read_at TIMESTAMP (nullable)
+
+[+] STUDENT_NOTIFICATION:
+ - id PK
+ - student_id FK --> STUDENT
+ - title VARCHAR(255)
+ - message TEXT
+ - type ENUM (APPOINTMENT_CONFIRMATION, APPOINTMENT_REMINDER, RESOURCE_RECOMMENDATION, MOOD_CHECK_REMINDER, SYSTEM)
+ - priority ENUM (LOW, NORMAL, HIGH) DEFAULT NORMAL
+ - is_read BOOLEAN DEFAULT FALSE
+ - appointment_id FK --> APPOINTMENT (nullable)
+ - resource_id FK --> RESOURCE (nullable)
+ - action_url TEXT
+ - created_at TIMESTAMP
+ - read_at TIMESTAMP (nullable)
+
+================================================================================
+INDEXES FOR OPTIMIZATION:
+================================================================================
+- ADMIN: (email), (admin_type, status), (university_id), (institute_id)
+- UNIVERSITY: (domain), (status)
+- INSTITUTE: (code), (university_id), (status)
+- DEPARTMENT: (code), (institute_id)
+- FACULTY: (email), (institute_id), (department_id), (faculty_type), (status)
+- STUDENT: (email), (enrollment_id), (roll_number), (institute_id), (department_id), (mentor_id), (status)
+- MOOD_CHECK_IN: (student_id, check_in_date), (check_in_date DESC)
+- CRISIS_ALERT: (student_id, status), (severity, status), (created_at DESC)
+- SESSION: (token), (user_id, user_type), (expires_at)
+- AUDIT_LOG: (performed_by_id, performed_by_type), (timestamp DESC)
+- APPOINTMENT: (faculty_id, date_scheduled), (student_id, status)
+

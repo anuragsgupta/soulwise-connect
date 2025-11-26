@@ -7,19 +7,19 @@ export async function POST(request: NextRequest) {
     const { 
       name, 
       domain, 
-      address, 
-      establishedYear, 
-      contactEmail, 
-      contactPhone, 
-      website 
+      address,
+      city,
+      state, 
+      email, 
+      phone 
     } = body;
 
     // Validate required fields
-    if (!name || !domain || !address || !establishedYear || !contactEmail || !contactPhone) {
+    if (!name || !domain || !address || !city || !state || !email || !phone) {
       return NextResponse.json(
         { 
           success: false, 
-          message: 'Name, domain, address, established year, contact email, and contact phone are required' 
+          message: 'Name, domain, address, city, state, email, and phone are required' 
         },
         { status: 400 }
       );
@@ -34,17 +34,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate email format
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json(
         { success: false, message: 'Invalid email format' },
-        { status: 400 }
-      );
-    }
-
-    // Validate established year
-    if (establishedYear < 1800 || establishedYear > new Date().getFullYear()) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid established year' },
         { status: 400 }
       );
     }
@@ -68,13 +60,13 @@ export async function POST(request: NextRequest) {
     const university = await prisma.university.create({
       data: {
         name: name.trim(),
+        email: email.toLowerCase().trim(),
         domain: domain.toLowerCase().trim(),
+        phone: phone.trim(),
         address: address.trim(),
-        establishedYear: parseInt(establishedYear),
-        contactEmail: contactEmail.toLowerCase().trim(),
-        contactPhone: contactPhone.trim(),
-        website: website ? website.trim() : null,
-        isActive: true,
+        city: city.trim(),
+        state: state.trim(),
+        status: 'ACTIVE',
       },
     });
 
@@ -86,12 +78,13 @@ export async function POST(request: NextRequest) {
           university: {
             id: university.id,
             name: university.name,
+            email: university.email,
             domain: university.domain,
+            phone: university.phone,
             address: university.address,
-            establishedYear: university.establishedYear,
-            contactEmail: university.contactEmail,
-            contactPhone: university.contactPhone,
-            website: university.website,
+            city: university.city,
+            state: university.state,
+            status: university.status,
           },
         },
       },
@@ -135,7 +128,7 @@ export async function GET(request: NextRequest) {
     
     // Get all active universities with institute count
     const universities = await prisma.university.findMany({
-      where: { isActive: true },
+      where: { status: 'ACTIVE' },
       orderBy: { name: 'asc' },
       include: {
         _count: {
@@ -167,13 +160,13 @@ export async function GET(request: NextRequest) {
           {
             id: 'mock-1',
             name: 'Sample University 1',
+            email: 'admin@sample1.edu',
             domain: 'sample1.edu',
-            address: '123 University St, City, State',
-            establishedYear: 1950,
-            contactEmail: 'admin@sample1.edu',
-            contactPhone: '+1-234-567-8901',
-            website: 'https://sample1.edu',
-            isActive: true,
+            phone: '+1-234-567-8901',
+            address: '123 University St',
+            city: 'Sample City',
+            state: 'Sample State',
+            status: 'ACTIVE' as const,
             createdAt: new Date(),
             updatedAt: new Date(),
             _count: { institutes: 3 }
@@ -181,13 +174,13 @@ export async function GET(request: NextRequest) {
           {
             id: 'mock-2',
             name: 'Sample University 2',
+            email: 'contact@sample2.edu',
             domain: 'sample2.edu',
-            address: '456 Education Ave, City, State',
-            establishedYear: 1985,
-            contactEmail: 'contact@sample2.edu',
-            contactPhone: '+1-234-567-8902',
-            website: 'https://sample2.edu',
-            isActive: true,
+            phone: '+1-234-567-8902',
+            address: '456 Education Ave',
+            city: 'Another City',
+            state: 'Another State',
+            status: 'ACTIVE' as const,
             createdAt: new Date(),
             updatedAt: new Date(),
             _count: { institutes: 5 }

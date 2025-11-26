@@ -9,56 +9,48 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { Brain, Mail, Lock, Users, GraduationCap } from 'lucide-react';
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [credentials, setCredentials] = useState({
+  const [adminCredentials, setAdminCredentials] = useState({
     email: '',
     password: '',
   });
+  const [studentCredentials, setStudentCredentials] = useState({
+    rollNumber: '',
+    password: '',
+  });
   const { toast } = useToast();
+  const { login } = useAuth();
   const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent, userType: 'student' | 'admin') => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: credentials.email,
-          password: credentials.password,
-          userType,
-        }),
-      });
+      const success = await login(adminCredentials.email, adminCredentials.password);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
+      if (success) {
+        toast({
+          title: 'Welcome!',
+          description: 'Login successful. Redirecting to your dashboard...',
+        });
+        router.push('/dashboard');
+      } else {
+        toast({
+          title: 'Login Failed',
+          description: 'Invalid email or password',
+          variant: 'destructive',
+        });
       }
-
-      // Store user data and token
-      localStorage.setItem('user', JSON.stringify(data.user));
-      localStorage.setItem('token', data.token);
-
-      toast({
-        title: 'Welcome!',
-        description: 'Login successful. Redirecting to your dashboard...',
-      });
-
-      // Redirect to dashboard
-      router.push('/dashboard');
     } catch (error) {
       console.error('Login error:', error);
       toast({
         title: 'Login Failed',
-        description: error instanceof Error ? error.message : 'An error occurred during login',
+        description: 'An error occurred during login',
         variant: 'destructive',
       });
     } finally {
@@ -66,30 +58,35 @@ export default function LoginPage() {
     }
   };
 
-  const handleDemoLogin = (userType: 'student' | 'admin', role?: string) => {
-    // Simulate successful login with demo data
-    const demoUser = {
-      userType,
-      email: userType === 'student' ? 'student@example.com' : 'admin@example.com',
-      role: role || (userType === 'admin' ? 'SuperAdmin' : 'Student'),
-      userId: '123',
-      ...(userType === 'admin' && { universityId: '1', instituteId: '1' }),
-      ...(userType === 'student' && { enrollmentId: 'STU001', instituteId: '1' }),
-    };
+  const handleStudentLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
 
-    localStorage.setItem('user', JSON.stringify(demoUser));
-    localStorage.setItem('token', 'demo-token-' + Date.now());
+    try {
+      const success = await login('', studentCredentials.password, studentCredentials.rollNumber);
 
-    toast({
-      title: 'Demo Login Successful',
-      description: `Logged in as ${role || userType}. Redirecting to dashboard...`,
-    });
-
-    // Redirect Faculty to their specific dashboard
-    if (role === 'Faculty') {
-      router.push('/faculty');
-    } else {
-      router.push('/dashboard');
+      if (success) {
+        toast({
+          title: 'Welcome!',
+          description: 'Login successful. Redirecting to your dashboard...',
+        });
+        router.push('/dashboard');
+      } else {
+        toast({
+          title: 'Login Failed',
+          description: 'Invalid roll number or password',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        title: 'Login Failed',
+        description: 'An error occurred during login',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -135,7 +132,7 @@ export default function LoginPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={(e) => handleLogin(e, 'admin')} className="space-y-4">
+                  <form onSubmit={handleAdminLogin} className="space-y-4">
                     <div>
                       <Label htmlFor="admin-email">Email Address</Label>
                       <div className="relative">
@@ -144,8 +141,8 @@ export default function LoginPage() {
                           id="admin-email"
                           type="email"
                           placeholder="admin@university.edu"
-                          value={credentials.email}
-                          onChange={(e) => setCredentials(prev => ({ ...prev, email: e.target.value }))}
+                          value={adminCredentials.email}
+                          onChange={(e) => setAdminCredentials(prev => ({ ...prev, email: e.target.value }))}
                           className="pl-10"
                           required
                         />
@@ -159,8 +156,8 @@ export default function LoginPage() {
                           id="admin-password"
                           type="password"
                           placeholder="Enter your password"
-                          value={credentials.password}
-                          onChange={(e) => setCredentials(prev => ({ ...prev, password: e.target.value }))}
+                          value={adminCredentials.password}
+                          onChange={(e) => setAdminCredentials(prev => ({ ...prev, password: e.target.value }))}
                           className="pl-10"
                           required
                         />
@@ -169,56 +166,56 @@ export default function LoginPage() {
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading ? 'Signing in...' : 'Sign In'}
                     </Button>
+                    <div className="text-center">
+                      <Button 
+                        type="button"
+                        variant="link" 
+                        onClick={() => router.push('/register')}
+                        className="text-sm"
+                      >
+                        Don't have an account? Register here
+                      </Button>
+                    </div>
                   </form>
                 </CardContent>
               </Card>
 
-              {/* Admin Demo Options */}
+              {/* Admin Info */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Quick Demo Access</CardTitle>
+                  <CardTitle>Administrator Access</CardTitle>
                   <CardDescription>
-                    Try different admin roles without credentials
+                    Different admin levels have different capabilities
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <Alert>
                     <AlertDescription>
-                      Click any button below to experience the portal as different admin types.
+                      Sign in with your institutional email and password to access your dashboard.
                     </AlertDescription>
                   </Alert>
                   
-                  <Button 
-                    onClick={() => handleDemoLogin('admin', 'SuperAdmin')}
-                    className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-                    variant="default"
-                  >
-                    Demo as Super Admin
-                  </Button>
-                  
-                  <Button 
-                    onClick={() => handleDemoLogin('admin', 'UniversityAdmin')}
-                    className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
-                    variant="default"
-                  >
-                    Demo as University Admin
-                  </Button>
-                  
-                  <Button 
-                    onClick={() => handleDemoLogin('admin', 'InstituteAdmin')}
-                    className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
-                    variant="default"
-                  >
-                    Demo as Institute Admin
-                  </Button>
-                  
-                  <Button 
-                    onClick={() => handleDemoLogin('admin', 'Faculty')}
-                    className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700"
-                    variant="default"
-                  >
-                    Demo as Faculty
-                  </Button>
+                  <div className="space-y-2 text-sm">
+                    <div className="p-3 bg-red-50 rounded-lg">
+                      <p className="font-semibold text-red-700">Super Admin</p>
+                      <p className="text-red-600">Full system access and university management</p>
+                    </div>
+                    
+                    <div className="p-3 bg-blue-50 rounded-lg">
+                      <p className="font-semibold text-blue-700">University Admin</p>
+                      <p className="text-blue-600">Manage institutes and university-wide settings</p>
+                    </div>
+                    
+                    <div className="p-3 bg-green-50 rounded-lg">
+                      <p className="font-semibold text-green-700">Institute Admin</p>
+                      <p className="text-green-600">Manage students, faculty, and courses</p>
+                    </div>
+                    
+                    <div className="p-3 bg-purple-50 rounded-lg">
+                      <p className="font-semibold text-purple-700">Faculty</p>
+                      <p className="text-purple-600">Access courses and student interactions</p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -238,17 +235,17 @@ export default function LoginPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={(e) => handleLogin(e, 'student')} className="space-y-4">
+                  <form onSubmit={handleStudentLogin} className="space-y-4">
                     <div>
-                      <Label htmlFor="student-email">Email Address</Label>
+                      <Label htmlFor="student-roll">Roll Number</Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                         <Input
-                          id="student-email"
-                          type="email"
-                          placeholder="student@university.edu"
-                          value={credentials.email}
-                          onChange={(e) => setCredentials(prev => ({ ...prev, email: e.target.value }))}
+                          id="student-roll"
+                          type="text"
+                          placeholder="Enter your roll number"
+                          value={studentCredentials.rollNumber}
+                          onChange={(e) => setStudentCredentials(prev => ({ ...prev, rollNumber: e.target.value }))}
                           className="pl-10"
                           required
                         />
@@ -262,8 +259,8 @@ export default function LoginPage() {
                           id="student-password"
                           type="password"
                           placeholder="Enter your password"
-                          value={credentials.password}
-                          onChange={(e) => setCredentials(prev => ({ ...prev, password: e.target.value }))}
+                          value={studentCredentials.password}
+                          onChange={(e) => setStudentCredentials(prev => ({ ...prev, password: e.target.value }))}
                           className="pl-10"
                           required
                         />
@@ -276,28 +273,20 @@ export default function LoginPage() {
                 </CardContent>
               </Card>
 
-              {/* Student Demo Options */}
+              {/* Student Info */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Student Demo Access</CardTitle>
+                  <CardTitle>Student Portal</CardTitle>
                   <CardDescription>
-                    Experience the student portal
+                    Access your academic resources
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <Alert>
                     <AlertDescription>
-                      Click the button below to experience the student dashboard.
+                      Use your roll number and password to access the student portal.
                     </AlertDescription>
                   </Alert>
-                  
-                  <Button 
-                    onClick={() => handleDemoLogin('student')}
-                    className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700"
-                    variant="default"
-                  >
-                    Demo as Student
-                  </Button>
 
                   <div className="text-center mt-4">
                     <p className="text-sm text-muted-foreground">

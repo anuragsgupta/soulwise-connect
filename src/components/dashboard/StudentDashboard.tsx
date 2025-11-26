@@ -21,8 +21,7 @@ import {
   MapPin,
   Navigation,
   AlertTriangle,
-  Phone,
-  ClipboardCheck
+  Phone
 } from "lucide-react";
 import mannMitraLogo from "@/assets/mann-mitra-logo.png";
 import MoodTracker from "./MoodTracker";
@@ -656,7 +655,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
           ].map((item) => (
             <button
               key={item.id}
-              onClick={() => handleTabChange(item.id as 'dashboard' | 'mood' | 'chat' | 'appointments' | 'resources' | 'forum')}
+              onClick={() => handleTabChange(item.id as any)}
               className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-all duration-200 ${
                 activeTab === item.id 
                   ? 'text-primary' 

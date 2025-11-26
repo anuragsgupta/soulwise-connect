@@ -1,4 +1,5 @@
-// This is your Prisma schema file,
+// This is your Prisma schema file
+// Updated to match the new admin-centric architecture
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -10,285 +11,549 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  role      Role
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// ==================== ADMIN SYSTEM ====================
+
+model Admin {
+  id           String      @id @default(uuid())
+  name         String
+  email        String      @unique
+  passwordHash String      @map("password_hash")
+  phone        String?
+  address      String?
+  adminType    AdminType   @map("admin_type")
+  status       AdminStatus @default(ACTIVE)
+  isSuperAdmin Boolean     @default(false) @map("is_super_admin") // Flag for default super admin
+  lastLogin    DateTime?   @map("last_login")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
 
   // Relations
   university   University? @relation(fields: [universityId], references: [id])
-  universityId String?
+  universityId String?     @map("university_id")
   institute    Institute?  @relation(fields: [instituteId], references: [id])
-  instituteId  String?
-  student      Student?
-  auditLogs    AuditLog[]
+  instituteId  String?     @map("institute_id")
 
-  @@map("users")
+  // Inverse relations
+  createdInvites Invite[]    @relation("InviteCreator")
+  auditLogs      AuditLog[]  @relation("AdminAuditLogs")
+  sessions       Session[]
+
+  @@index([email])
+  @@index([adminType, status])
+  @@index([universityId])
+  @@index([instituteId])
+  @@map("admins")
 }
 
 model University {
-  id              String   @id @default(uuid())
-  name            String
-  domain          String   @unique
-  address         String
-  establishedYear Int
-  contactEmail    String
-  contactPhone    String
-  website         String?
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id        String           @id @default(uuid())
+  name      String
+  email     String           @unique
+  domain    String           @unique // For email validation (e.g., "du.ac.in")
+  phone     String
+  address   String
+  city      String
+  state     String
+  status    UniversityStatus @default(ACTIVE)
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
 
   // Relations
-  users      User[]
+  admins     Admin[]
   institutes Institute[]
   students   Student[]
-  auditLogs  AuditLog[]
+  faculties  Faculty[]
+  invites    Invite[]
+  auditLogs  AuditLog[] @relation("UniversityAuditLogs")
 
+  @@index([domain])
+  @@index([status])
   @@map("universities")
 }
 
-model Institute {
+model Field {
   id          String   @id @default(uuid())
-  name        String
-  code        String   @unique
+  name        String // Engineering, Medical, Arts, Commerce
   description String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  university   University   @relation(fields: [universityId], references: [id], onDelete: Cascade)
-  universityId String
-  users        User[]
-  students     Student[]
-  departments  Department[]
-  auditLogs    AuditLog[]
+  institutes Institute[]
 
+  @@map("fields")
+}
+
+model Institute {
+  id        String           @id @default(uuid())
+  code      String           @unique
+  name      String
+  email     String           @unique
+  phone     String
+  address   String
+  status    InstituteStatus  @default(ACTIVE)
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  university   University  @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  universityId String      @map("university_id")
+  field        Field?      @relation(fields: [fieldId], references: [id])
+  fieldId      String?     @map("field_id")
+  hod          Faculty?    @relation("InstituteHOD", fields: [hodId], references: [id])
+  hodId        String?     @map("hod_id")
+
+  // Inverse relations
+  admins      Admin[]
+  departments Department[]
+  students    Student[]
+  faculties   Faculty[]    @relation("InstituteFaculty")
+  invites     Invite[]
+  auditLogs   AuditLog[]   @relation("InstituteAuditLogs")
+
+  @@index([code])
+  @@index([universityId])
+  @@index([status])
   @@map("institutes")
 }
 
 model Department {
-  id          String   @id @default(uuid())
-  name        String
-  code        String
-  description String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  institute   Institute  @relation(fields: [instituteId], references: [id], onDelete: Cascade)
-  instituteId String
-  students    Student[]
-  auditLogs   AuditLog[]
+  institute   Institute @relation(fields: [instituteId], references: [id], onDelete: Cascade)
+  instituteId String    @map("institute_id")
+  hod         Faculty?  @relation("DepartmentHOD", fields: [hodId], references: [id])
+  hodId       String?   @map("hod_id")
 
-  @@unique([instituteId, code])
+  // Inverse relations
+  batches   Batch[]
+  students  Student[]
+  faculties Faculty[]  @relation("DepartmentFaculty")
+  invites   Invite[]
+  auditLogs AuditLog[] @relation("DepartmentAuditLogs")
+
+  @@index([code])
+  @@index([instituteId])
   @@map("departments")
 }
 
-model Student {
-  id              String    @id @default(uuid())
-  rollNumber      String    @unique
-  firstName       String
-  lastName        String
-  email           String    @unique
-  phone           String?
-  dateOfBirth     DateTime?
-  gender          Gender?
-  address         String?
-  admissionYear   Int
-  currentSemester Int       @default(1)
-  cgpa            Float?
-  isActive        Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+model Batch {
+  id              String   @id @default(uuid())
+  name            String // e.g., "2024-2028"
+  startYear       Int      @map("start_year")
+  endYear         Int      @map("end_year")
+  currentSemester Int      @map("current_semester")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   // Relations
-  user         User?               @relation(fields: [userId], references: [id])
-  userId       String?             @unique
-  university   University          @relation(fields: [universityId], references: [id])
-  universityId String
-  institute    Institute           @relation(fields: [instituteId], references: [id])
-  instituteId  String
-  department   Department?         @relation(fields: [departmentId], references: [id])
-  departmentId String?
-  enrollments  StudentEnrollment[]
-  auditLogs    AuditLog[]
-  phq9Surveys  PHQ9Survey[]
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  departmentId String     @map("department_id")
 
+  // Inverse relations
+  students Student[]
+
+  @@map("batches")
+}
+
+// ==================== FACULTY SYSTEM ====================
+
+model Faculty {
+  id                  String         @id @default(uuid())
+  name                String
+  email               String         @unique
+  passwordHash        String         @map("password_hash")
+  phone               String?
+  address             String?
+  jobTitle            String?        @map("job_title") // Professor, Assistant Professor, etc.
+  facultyType         FacultyType    @map("faculty_type")
+  status              FacultyStatus  @default(ACTIVE)
+  availabilityStatus  AvailabilityStatus @default(AVAILABLE) @map("availability_status")
+  yearsOfExperience   Int?           @map("years_of_experience")
+  panNumber           String?        @map("pan_number")
+  aadhaarNumber       String?        @map("aadhaar_number")
+  lastLogin           DateTime?      @map("last_login")
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  department          Department     @relation("DepartmentFaculty", fields: [departmentId], references: [id])
+  departmentId        String         @map("department_id")
+  institute           Institute      @relation("InstituteFaculty", fields: [instituteId], references: [id])
+  instituteId         String         @map("institute_id")
+  university          University     @relation(fields: [universityId], references: [id])
+  universityId        String         @map("university_id")
+  mentorSupervisor    Faculty?       @relation("MentorSupervisor", fields: [mentorSupervisorId], references: [id])
+  mentorSupervisorId  String?        @map("mentor_supervisor_id")
+
+  // Inverse relations
+  mentoredFaculty     Faculty[]      @relation("MentorSupervisor")
+  mentoredStudents    Student[]
+  hodOfInstitutes     Institute[]    @relation("InstituteHOD")
+  hodOfDepartments    Department[]   @relation("DepartmentHOD")
+  createdInvites      Invite[]       @relation("FacultyInviteCreator")
+  crisisAlerts        CrisisAlert[]
+  auditLogs           AuditLog[]     @relation("FacultyAuditLogs")
+  sessions            Session[]
+
+  @@index([email])
+  @@index([instituteId])
+  @@index([departmentId])
+  @@index([facultyType])
+  @@index([status])
+  @@map("faculty")
+}
+
+// ==================== STUDENT SYSTEM ====================
+
+model Student {
+  id                    String        @id @default(uuid())
+  name                  String
+  email                 String        @unique
+  passwordHash          String        @map("password_hash")
+  enrollmentId          String        @unique @map("enrollment_id") // Primary login identifier
+  rollNumber            String?       @map("roll_number")
+  phone                 String?
+  parentPhone           String?       @map("parent_phone")
+  emergencyContactName  String?       @map("emergency_contact_name")
+  emergencyContactPhone String?       @map("emergency_contact_phone")
+  currentSemester       Int           @map("current_semester")
+  cgpa                  Decimal?      @db.Decimal(3, 2)
+  admissionYear         Int           @map("admission_year")
+  status                StudentStatus @default(ACTIVE)
+  lastLogin             DateTime?     @map("last_login")
+  createdAt             DateTime      @default(now()) @map("created_at")
+  updatedAt             DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  university   University  @relation(fields: [universityId], references: [id])
+  universityId String      @map("university_id")
+  institute    Institute   @relation(fields: [instituteId], references: [id])
+  instituteId  String      @map("institute_id")
+  department   Department  @relation(fields: [departmentId], references: [id])
+  departmentId String      @map("department_id")
+  batch        Batch       @relation(fields: [batchId], references: [id])
+  batchId      String      @map("batch_id")
+  mentor       Faculty?    @relation(fields: [mentorId], references: [id])
+  mentorId     String?     @map("mentor_id")
+
+  // Inverse relations
+  locations     Location[]
+  moodCheckIns  MoodCheckIn[]
+  crisisAlerts  CrisisAlert[]
+  chatSessions  ChatSession[]
+  auditLogs     AuditLog[]    @relation("StudentAuditLogs")
+  sessions      Session[]
+
+  @@index([email])
+  @@index([enrollmentId])
+  @@index([rollNumber])
+  @@index([instituteId])
+  @@index([departmentId])
+  @@index([mentorId])
+  @@index([status])
   @@map("students")
 }
 
-model StudentBatch {
-  id        String   @id @default(uuid())
-  batchName String
-  year      Int
-  semester  Int
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Location {
+  id              String       @id @default(uuid())
+  address         String? // Static/permanent address
+  city            String?
+  state           String?
+  pincode         String?
+  homeLatitude    Decimal?     @map("home_latitude") @db.Decimal(10, 8)
+  homeLongitude   Decimal?     @map("home_longitude") @db.Decimal(11, 8)
+  recentLatitude  Decimal?     @map("recent_latitude") @db.Decimal(10, 8)
+  recentLongitude Decimal?     @map("recent_longitude") @db.Decimal(11, 8)
+  recentAddress   String?      @map("recent_address")
+  locationType    LocationType @map("location_type")
+  lastUpdated     DateTime     @map("last_updated")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
 
   // Relations
-  enrollments StudentEnrollment[]
-  auditLogs   AuditLog[]
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId String  @map("student_id")
 
-  @@unique([batchName, year, semester])
-  @@map("student_batches")
+  @@map("locations")
 }
 
-model StudentEnrollment {
-  id             String           @id @default(uuid())
-  enrollmentDate DateTime         @default(now())
-  status         EnrollmentStatus @default(ACTIVE)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+// ==================== MENTAL HEALTH SYSTEM ====================
+
+model MoodCheckIn {
+  id          String   @id @default(uuid())
+  moodScore   Int      @map("mood_score") // 1-5
+  moodLabel   String   @map("mood_label") // Excellent, Good, Okay, Low, Very Low
+  factors     Json? // Array of factors: sleep, energy, stress, social, exercise, academic
+  notes       String?
+  checkInDate DateTime @map("check_in_date") @db.Date
+  createdAt   DateTime @default(now()) @map("created_at")
 
   // Relations
-  student   Student      @relation(fields: [studentId], references: [id])
-  studentId String
-  batch     StudentBatch @relation(fields: [batchId], references: [id])
-  batchId   String
-  auditLogs AuditLog[]
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId String  @map("student_id")
 
-  @@unique([studentId, batchId])
-  @@map("student_enrollments")
+  @@index([studentId, checkInDate])
+  @@index([checkInDate])
+  @@map("mood_check_ins")
 }
 
-model StudentUpload {
-  id           String       @id @default(uuid())
-  fileName     String
-  filePath     String
-  totalRecords Int
-  successCount Int          @default(0)
-  errorCount   Int          @default(0)
-  status       UploadStatus @default(PENDING)
-  errorLog     Json?
-  uploadedBy   String
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+model CrisisAlert {
+  id              String         @id @default(uuid())
+  severity        CrisisSeverity
+  triggerSource   TriggerSource  @map("trigger_source")
+  triggerMessage  String?        @map("trigger_message")
+  aiAnalysis      String?        @map("ai_analysis")
+  keywords        Json? // Array of keywords
+  status          CrisisStatus   @default(OPEN)
+  acknowledgedAt  DateTime?      @map("acknowledged_at")
+  resolvedAt      DateTime?      @map("resolved_at")
+  resolutionNotes String?        @map("resolution_notes")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
 
-  auditLogs AuditLog[]
+  // Relations
+  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId    String   @map("student_id")
+  assignedTo   Faculty? @relation(fields: [assignedToId], references: [id])
+  assignedToId String?  @map("assigned_to_id")
 
-  @@map("student_uploads")
+  @@index([studentId, status])
+  @@index([severity, status])
+  @@index([createdAt])
+  @@map("crisis_alerts")
+}
+
+model ChatSession {
+  id              String    @id @default(uuid())
+  sessionStart    DateTime  @map("session_start")
+  sessionEnd      DateTime? @map("session_end")
+  messageCount    Int       @default(0) @map("message_count")
+  crisisDetected  Boolean   @default(false) @map("crisis_detected")
+  sentimentScore  Decimal?  @map("sentiment_score") @db.Decimal(3, 2) // -1 to 1
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  student   Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId String        @map("student_id")
+
+  // Inverse relations
+  messages ChatMessage[]
+
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id             String      @id @default(uuid())
+  senderType     SenderType  @map("sender_type")
+  content        String
+  sentimentScore Decimal?    @map("sentiment_score") @db.Decimal(3, 2)
+  crisisKeywords Json?       @map("crisis_keywords") // Array
+  timestamp      DateTime    @default(now())
+
+  // Relations
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId String      @map("session_id")
+
+  @@map("chat_messages")
+}
+
+// ==================== SYSTEM TABLES ====================
+
+model Invite {
+  id            String      @id @default(uuid())
+  email         String
+  token         String      @unique
+  userType      UserType    @map("user_type")
+  roleType      String      @map("role_type") // UNIVERSITY_ADMIN, INSTITUTE_ADMIN, FACULTY, etc.
+  expiresAt     DateTime    @map("expires_at")
+  acceptedAt    DateTime?   @map("accepted_at")
+  status        InviteStatus @default(PENDING)
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  // Relations - who created this invite
+  createdByAdmin   Admin?   @relation("InviteCreator", fields: [createdByAdminId], references: [id])
+  createdByAdminId String?  @map("created_by_admin_id")
+  createdByFaculty Faculty? @relation("FacultyInviteCreator", fields: [createdByFacultyId], references: [id])
+  createdByFacultyId String? @map("created_by_faculty_id")
+
+  // Context relations
+  university   University? @relation(fields: [universityId], references: [id])
+  universityId String?     @map("university_id")
+  institute    Institute?  @relation(fields: [instituteId], references: [id])
+  instituteId  String?     @map("institute_id")
+  department   Department? @relation(fields: [departmentId], references: [id])
+  departmentId String?     @map("department_id")
+
+  @@map("invites")
 }
 
 model Session {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  userId    String
-  isActive  Boolean  @default(true)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  userType  UserType  @map("user_type")
+  token     String    @unique
+  ipAddress String?   @map("ip_address")
+  userAgent String?   @map("user_agent")
+  expiresAt DateTime  @map("expires_at")
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
 
-  auditLogs AuditLog[]
+  // Polymorphic relations
+  admin    Admin?   @relation(fields: [adminId], references: [id])
+  adminId  String?  @map("admin_id")
+  faculty  Faculty? @relation(fields: [facultyId], references: [id])
+  facultyId String? @map("faculty_id")
+  student  Student? @relation(fields: [studentId], references: [id])
+  studentId String? @map("student_id")
 
+  @@index([token])
+  @@index([userId, userType])
+  @@index([expiresAt])
   @@map("sessions")
 }
 
 model AuditLog {
-  id          String   @id @default(uuid())
-  tableName   String
-  recordId    String
-  action      String
-  oldValues   Json?
-  newValues   Json?
-  performedBy String
-  timestamp   DateTime @default(now())
+  id             String     @id @default(uuid())
+  performedById  String     @map("performed_by_id")
+  performedByType UserType  @map("performed_by_type")
+  action         AuditAction
+  tableName      String     @map("table_name")
+  recordId       String     @map("record_id")
+  oldValues      Json?      @map("old_values")
+  newValues      Json?      @map("new_values")
+  ipAddress      String?    @map("ip_address")
+  timestamp      DateTime   @default(now())
 
-  // Relations
-  user                User?              @relation(fields: [userId], references: [id])
-  userId              String?
-  university          University?        @relation(fields: [universityId], references: [id])
-  universityId        String?
-  institute           Institute?         @relation(fields: [instituteId], references: [id])
-  instituteId         String?
-  department          Department?        @relation(fields: [departmentId], references: [id])
-  departmentId        String?
-  student             Student?           @relation(fields: [studentId], references: [id])
-  studentId           String?
-  studentBatch        StudentBatch?      @relation(fields: [studentBatchId], references: [id])
-  studentBatchId      String?
-  studentEnrollment   StudentEnrollment? @relation(fields: [studentEnrollmentId], references: [id])
-  studentEnrollmentId String?
-  studentUpload       StudentUpload?     @relation(fields: [studentUploadId], references: [id])
-  studentUploadId     String?
-  session             Session?           @relation(fields: [sessionId], references: [id])
-  sessionId           String?
+  // Polymorphic relations for performer
+  admin    Admin?   @relation("AdminAuditLogs", fields: [adminId], references: [id])
+  adminId  String?  @map("admin_id")
+  faculty  Faculty? @relation("FacultyAuditLogs", fields: [facultyId], references: [id])
+  facultyId String? @map("faculty_id")
+  student  Student? @relation("StudentAuditLogs", fields: [studentId], references: [id])
+  studentId String? @map("student_id")
 
+  // Context relations
+  university   University? @relation("UniversityAuditLogs", fields: [universityId], references: [id])
+  universityId String?     @map("university_id")
+  institute    Institute?  @relation("InstituteAuditLogs", fields: [instituteId], references: [id])
+  instituteId  String?     @map("institute_id")
+  department   Department? @relation("DepartmentAuditLogs", fields: [departmentId], references: [id])
+  departmentId String?     @map("department_id")
+
+  @@index([performedById, performedByType])
+  @@index([timestamp])
   @@map("audit_logs")
 }
 
-model PHQ9Survey {
-  id           String   @id @default(uuid())
-  surveyNumber Int // 1, 2, or 3 (to track which of the 3 surveys)
-  completedAt  DateTime @default(now())
+// ==================== ENUMS ====================
 
-  // PHQ-9 Questions (0=Not at all, 1=Several days, 2=More than half the time, 3=Nearly every day)
-  q1_interest      Int // Little interest or pleasure in doing things
-  q2_depressed     Int // Feeling down, depressed, or hopeless
-  q3_sleep         Int // Trouble falling/staying asleep, or sleeping too much
-  q4_energy        Int // Feeling tired or having little energy
-  q5_appetite      Int // Poor appetite or overeating
-  q6_failure       Int // Feeling bad about yourself or that you're a failure
-  q7_concentration Int // Trouble concentrating on things
-  q8_movement      Int // Moving or speaking slowly, or being fidgety/restless
-  q9_harm          Int // Thoughts that you would be better off dead or hurting yourself
-
-  // Calculated scores
-  totalScore Int // Sum of all questions (0-27)
-  severity   PHQ9Severity // NONE, MILD, MODERATE, MODERATELY_SEVERE, SEVERE
-
-  // Metadata
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId String
-
-  @@index([studentId, surveyNumber])
-  @@index([completedAt])
-  @@map("phq9_surveys")
-}
-
-enum Role {
+enum AdminType {
   SUPER_ADMIN
   UNIVERSITY_ADMIN
   INSTITUTE_ADMIN
+}
+
+enum AdminStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING_APPROVAL
+}
+
+enum UniversityStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum InstituteStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum FacultyType {
+  HOD
+  MENTOR_SUPERVISOR
+  MENTOR
+  FACULTY
+  COUNSELOR
+}
+
+enum FacultyStatus {
+  ACTIVE
+  ON_LEAVE
+  SUSPENDED
+  INACTIVE
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  BUSY
+  OFFLINE
+}
+
+enum StudentStatus {
+  ACTIVE
+  SUSPENDED
+  GRADUATED
+  DROPPED_OUT
+}
+
+enum LocationType {
+  HOME
+  CAMPUS
+  OTHER
+}
+
+enum CrisisSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TriggerSource {
+  CHAT
+  MOOD_TRACKER
+  MANUAL
+  SYSTEM
+}
+
+enum CrisisStatus {
+  OPEN
+  ACKNOWLEDGED
+  IN_PROGRESS
+  RESOLVED
+  FALSE_ALARM
+}
+
+enum SenderType {
+  STUDENT
+  BOT
+}
+
+enum UserType {
+  ADMIN
   FACULTY
   STUDENT
 }
 
-enum Gender {
-  MALE
-  FEMALE
-  OTHER
-}
-
-enum EnrollmentStatus {
-  ACTIVE
-  INACTIVE
-  GRADUATED
-  DROPPED
-}
-
-enum UploadStatus {
+enum InviteStatus {
   PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
+  ACCEPTED
+  EXPIRED
+  CANCELLED
 }
 
-enum PHQ9Severity {
-  NONE // 0-4
-  MILD // 5-9
-  MODERATE // 10-14
-  MODERATELY_SEVERE // 15-19
-  SEVERE // 20-27
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  PASSWORD_CHANGE
 }

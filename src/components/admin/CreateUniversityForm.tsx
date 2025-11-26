@@ -21,20 +21,20 @@ interface UniversityFormData {
   name: string;
   domain: string;
   address: string;
-  establishedYear: number;
-  contactEmail: string;
-  contactPhone: string;
-  website: string;
+  city: string;
+  state: string;
+  email: string;
+  phone: string;
 }
 
 interface UniversityFormErrors {
   name?: string;
   domain?: string;
   address?: string;
-  establishedYear?: string;
-  contactEmail?: string;
-  contactPhone?: string;
-  website?: string;
+  city?: string;
+  state?: string;
+  email?: string;
+  phone?: string;
 }
 
 const CreateUniversityForm: React.FC<CreateUniversityFormProps> = ({
@@ -46,10 +46,10 @@ const CreateUniversityForm: React.FC<CreateUniversityFormProps> = ({
     name: '',
     domain: '',
     address: '',
-    establishedYear: new Date().getFullYear(),
-    contactEmail: '',
-    contactPhone: '',
-    website: ''
+    city: '',
+    state: '',
+    email: '',
+    phone: '',
   });
 
   const [errors, setErrors] = useState<UniversityFormErrors>({});
@@ -75,29 +75,24 @@ const CreateUniversityForm: React.FC<CreateUniversityFormProps> = ({
       newErrors.address = 'Address is required';
     }
 
-    if (!formData.establishedYear) {
-      newErrors.establishedYear = 'Established year is required';
-    } else if (formData.establishedYear < 1800 || formData.establishedYear > new Date().getFullYear()) {
-      newErrors.establishedYear = 'Please enter a valid year';
+    if (!formData.city.trim()) {
+      newErrors.city = 'City is required';
     }
 
-    if (!formData.contactEmail.trim()) {
-      newErrors.contactEmail = 'Contact email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) {
-      newErrors.contactEmail = 'Please enter a valid email address';
+    if (!formData.state.trim()) {
+      newErrors.state = 'State is required';
     }
 
-    if (!formData.contactPhone.trim()) {
-      newErrors.contactPhone = 'Contact phone is required';
-    } else if (!/^[\+]?[\d\s\-\(\)]+$/.test(formData.contactPhone)) {
-      newErrors.contactPhone = 'Please enter a valid phone number';
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
     }
 
-    // Optional website validation
-    if (formData.website && formData.website.trim()) {
-      if (!/^https?:\/\/.+\..+/.test(formData.website)) {
-        newErrors.website = 'Please enter a valid website URL (including http:// or https://)';
-      }
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Phone is required';
+    } else if (!/^[\+]?[\d\s\-\(\)]+$/.test(formData.phone)) {
+      newErrors.phone = 'Please enter a valid phone number';
     }
 
     setErrors(newErrors);
@@ -162,10 +157,10 @@ const CreateUniversityForm: React.FC<CreateUniversityFormProps> = ({
           name: '',
           domain: '',
           address: '',
-          establishedYear: new Date().getFullYear(),
-          contactEmail: '',
-          contactPhone: '',
-          website: ''
+          city: '',
+          state: '',
+          email: '',
+          phone: '',
         });
         onSuccess();
         onClose();
@@ -189,10 +184,10 @@ const CreateUniversityForm: React.FC<CreateUniversityFormProps> = ({
         name: '',
         domain: '',
         address: '',
-        establishedYear: new Date().getFullYear(),
-        contactEmail: '',
-        contactPhone: '',
-        website: ''
+        city: '',
+        state: '',
+        email: '',
+        phone: '',
       });
       setErrors({});
       setIsSuccess(false);
@@ -274,32 +269,46 @@ const CreateUniversityForm: React.FC<CreateUniversityFormProps> = ({
                   <Label htmlFor="address">Address *</Label>
                   <Textarea
                     id="address"
-                    placeholder="Complete university address including city, state, and postal code"
+                    placeholder="Street address"
                     value={formData.address}
                     onChange={(e) => handleInputChange('address', e.target.value)}
                     className={errors.address ? 'border-red-500' : ''}
-                    rows={3}
+                    rows={2}
                   />
                   {errors.address && (
                     <p className="text-sm text-red-500">{errors.address}</p>
                   )}
                 </div>
 
-                {/* Established Year */}
+                {/* City */}
                 <div className="space-y-2">
-                  <Label htmlFor="establishedYear">Established Year *</Label>
+                  <Label htmlFor="city">City *</Label>
                   <Input
-                    id="establishedYear"
-                    type="number"
-                    min="1800"
-                    max={new Date().getFullYear()}
-                    placeholder="e.g., 1868"
-                    value={formData.establishedYear}
-                    onChange={(e) => handleInputChange('establishedYear', parseInt(e.target.value) || 0)}
-                    className={errors.establishedYear ? 'border-red-500' : ''}
+                    id="city"
+                    type="text"
+                    placeholder="e.g., Berkeley"
+                    value={formData.city}
+                    onChange={(e) => handleInputChange('city', e.target.value)}
+                    className={errors.city ? 'border-red-500' : ''}
                   />
-                  {errors.establishedYear && (
-                    <p className="text-sm text-red-500">{errors.establishedYear}</p>
+                  {errors.city && (
+                    <p className="text-sm text-red-500">{errors.city}</p>
+                  )}
+                </div>
+
+                {/* State */}
+                <div className="space-y-2">
+                  <Label htmlFor="state">State *</Label>
+                  <Input
+                    id="state"
+                    type="text"
+                    placeholder="e.g., California"
+                    value={formData.state}
+                    onChange={(e) => handleInputChange('state', e.target.value)}
+                    className={errors.state ? 'border-red-500' : ''}
+                  />
+                  {errors.state && (
+                    <p className="text-sm text-red-500">{errors.state}</p>
                   )}
                 </div>
               </CardContent>
@@ -314,51 +323,35 @@ const CreateUniversityForm: React.FC<CreateUniversityFormProps> = ({
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Contact Email */}
+                {/* Email */}
                 <div className="space-y-2">
-                  <Label htmlFor="contactEmail">Contact Email *</Label>
+                  <Label htmlFor="email">University Email *</Label>
                   <Input
-                    id="contactEmail"
+                    id="email"
                     type="email"
                     placeholder="e.g., admin@berkeley.edu"
-                    value={formData.contactEmail}
-                    onChange={(e) => handleInputChange('contactEmail', e.target.value)}
-                    className={errors.contactEmail ? 'border-red-500' : ''}
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    className={errors.email ? 'border-red-500' : ''}
                   />
-                  {errors.contactEmail && (
-                    <p className="text-sm text-red-500">{errors.contactEmail}</p>
+                  {errors.email && (
+                    <p className="text-sm text-red-500">{errors.email}</p>
                   )}
                 </div>
 
-                {/* Contact Phone */}
+                {/* Phone */}
                 <div className="space-y-2">
-                  <Label htmlFor="contactPhone">Contact Phone *</Label>
+                  <Label htmlFor="phone">University Phone *</Label>
                   <Input
-                    id="contactPhone"
+                    id="phone"
                     type="tel"
                     placeholder="e.g., +1 (510) 642-6000"
-                    value={formData.contactPhone}
-                    onChange={(e) => handleInputChange('contactPhone', e.target.value)}
-                    className={errors.contactPhone ? 'border-red-500' : ''}
+                    value={formData.phone}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    className={errors.phone ? 'border-red-500' : ''}
                   />
-                  {errors.contactPhone && (
-                    <p className="text-sm text-red-500">{errors.contactPhone}</p>
-                  )}
-                </div>
-
-                {/* Website */}
-                <div className="space-y-2">
-                  <Label htmlFor="website">Website (Optional)</Label>
-                  <Input
-                    id="website"
-                    type="url"
-                    placeholder="e.g., https://www.berkeley.edu"
-                    value={formData.website}
-                    onChange={(e) => handleInputChange('website', e.target.value)}
-                    className={errors.website ? 'border-red-500' : ''}
-                  />
-                  {errors.website && (
-                    <p className="text-sm text-red-500">{errors.website}</p>
+                  {errors.phone && (
+                    <p className="text-sm text-red-500">{errors.phone}</p>
                   )}
                 </div>
               </CardContent>
