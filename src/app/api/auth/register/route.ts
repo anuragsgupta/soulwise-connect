@@ -6,11 +6,11 @@ const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify that the requester is a super admin
+    // Verify authentication
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
-        createResponse(false, 'Unauthorized. Only super admin can register new admins.'),
+        createResponse(false, 'Unauthorized. Authentication required.'),
         { status: 401 }
       );
     }
@@ -18,9 +18,9 @@ export async function POST(request: NextRequest) {
     const token = authHeader.substring(7);
     const decoded = verifyToken(token);
 
-    if (!decoded || !decoded.isSuperAdmin) {
+    if (!decoded || decoded.userType !== 'ADMIN') {
       return NextResponse.json(
-        createResponse(false, 'Forbidden. Only super admin can register new admins.'),
+        createResponse(false, 'Forbidden. Only admins can register new admins.'),
         { status: 403 }
       );
     }
@@ -34,6 +34,65 @@ export async function POST(request: NextRequest) {
         createResponse(false, 'Email, password, name, and admin type are required'),
         { status: 400 }
       );
+    }
+
+    // Authorization checks based on requester's role
+    if (!decoded.isSuperAdmin) {
+      // University admin can create admins for their own university
+      if (decoded.adminType === 'UNIVERSITY_ADMIN') {
+        if (!universityId || universityId !== decoded.universityId) {
+          return NextResponse.json(
+            createResponse(false, 'You can only create admins for your own university'),
+            { status: 403 }
+          );
+        }
+        
+        // University admin can create both university admins and institute admins for their university
+        if (adminType !== 'UNIVERSITY_ADMIN' && adminType !== 'INSTITUTE_ADMIN') {
+          return NextResponse.json(
+            createResponse(false, 'Invalid admin type'),
+            { status: 403 }
+          );
+        }
+        
+        // If creating institute admin, verify the institute is under their university
+        if (adminType === 'INSTITUTE_ADMIN' && instituteId) {
+          const institute = await prisma.institute.findUnique({
+            where: { id: instituteId },
+          });
+          
+          if (!institute || institute.universityId !== decoded.universityId) {
+            return NextResponse.json(
+              createResponse(false, 'You can only create admins for institutes in your university'),
+              { status: 403 }
+            );
+          }
+        }
+      } else if (decoded.adminType === 'INSTITUTE_ADMIN') {
+        // Institute admins can only create admins for their own institute
+        if (!instituteId || instituteId !== decoded.instituteId) {
+          return NextResponse.json(
+            createResponse(false, 'You can only create admins for your own institute'),
+            { status: 403 }
+          );
+        }
+        
+        // Institute admin cannot create university admins, only institute admins
+        if (adminType === 'UNIVERSITY_ADMIN') {
+          return NextResponse.json(
+            createResponse(false, 'Institute admins cannot create university admins'),
+            { status: 403 }
+          );
+        }
+        
+        // Ensure universityId matches their institute's university
+        if (universityId !== decoded.universityId) {
+          return NextResponse.json(
+            createResponse(false, 'Invalid university ID'),
+            { status: 403 }
+          );
+        }
+      }
     }
 
     // Validate email format
@@ -54,12 +113,31 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate admin type
-    const validAdminTypes = ['UNIVERSITY_ADMIN', 'INSTITUTE_ADMIN'];
-    if (!validAdminTypes.includes(adminType)) {
-      return NextResponse.json(
-        createResponse(false, 'Invalid admin type. Only UNIVERSITY_ADMIN and INSTITUTE_ADMIN can be created.'),
-        { status: 400 }
-      );
+    if (decoded.isSuperAdmin) {
+      const validAdminTypes = ['UNIVERSITY_ADMIN', 'INSTITUTE_ADMIN'];
+      if (!validAdminTypes.includes(adminType)) {
+        return NextResponse.json(
+          createResponse(false, 'Invalid admin type. Only UNIVERSITY_ADMIN and INSTITUTE_ADMIN can be created.'),
+          { status: 400 }
+        );
+      }
+    } else if (decoded.adminType === 'UNIVERSITY_ADMIN') {
+      // University admins can create both UNIVERSITY_ADMIN and INSTITUTE_ADMIN
+      const validAdminTypes = ['UNIVERSITY_ADMIN', 'INSTITUTE_ADMIN'];
+      if (!validAdminTypes.includes(adminType)) {
+        return NextResponse.json(
+          createResponse(false, 'Invalid admin type'),
+          { status: 403 }
+        );
+      }
+    } else {
+      // Institute admins can only create INSTITUTE_ADMIN
+      if (adminType !== 'INSTITUTE_ADMIN') {
+        return NextResponse.json(
+          createResponse(false, 'You can only create Institute Admins'),
+          { status: 403 }
+        );
+      }
     }
 
     // Check if admin already exists
@@ -121,6 +199,16 @@ export async function POST(request: NextRequest) {
           createResponse(false, 'Institute does not belong to the specified university'),
           { status: 400 }
         );
+      }
+
+      // If requester is university admin, verify it's their university's institute
+      if (!decoded.isSuperAdmin && decoded.adminType === 'UNIVERSITY_ADMIN') {
+        if (institute.universityId !== decoded.universityId) {
+          return NextResponse.json(
+            createResponse(false, 'You can only create admins for institutes in your university'),
+            { status: 403 }
+          );
+        }
       }
     }
 

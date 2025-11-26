@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import SuperAdminDashboard from './SuperAdminDashboard';
+import UniversityAdminDashboard from './UniversityAdminDashboard';
+import InstituteAdminDashboard from './InstituteAdminDashboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +17,14 @@ export default function AdminDashboard({ userRole, onLogout }: AdminDashboardPro
   // Route to specific admin dashboard based on role
   if (userRole === 'SuperAdmin') {
     return <SuperAdminDashboard onLogout={onLogout} />;
+  }
+
+  if (userRole === 'UniversityAdmin') {
+    return <UniversityAdminDashboard onLogout={onLogout} />;
+  }
+
+  if (userRole === 'InstituteAdmin') {
+    return <InstituteAdminDashboard onLogout={onLogout} />;
   }
 
   // Default admin dashboard for other roles

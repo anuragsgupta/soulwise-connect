@@ -184,13 +184,22 @@ export async function POST(request: NextRequest) {
     if (userType === 'ADMIN') {
       responseUser.adminType = userData.adminType;
       responseUser.isSuperAdmin = userData.isSuperAdmin;
+      responseUser.universityId = userData.universityId;
+      responseUser.instituteId = userData.instituteId;
       responseUser.university = userData.university;
       responseUser.institute = userData.institute;
     } else if (userType === 'FACULTY') {
       responseUser.facultyType = userData.facultyType;
+      responseUser.departmentId = userData.departmentId;
+      responseUser.instituteId = userData.department?.instituteId;
+      responseUser.universityId = userData.department?.institute?.universityId;
       responseUser.department = userData.department;
     } else if (userType === 'STUDENT') {
       responseUser.rollNumber = userData.rollNumber;
+      responseUser.batchId = userData.batchId;
+      responseUser.departmentId = userData.batch?.departmentId;
+      responseUser.instituteId = userData.batch?.department?.instituteId;
+      responseUser.universityId = userData.batch?.department?.institute?.universityId;
       responseUser.batch = userData.batch;
     }
 

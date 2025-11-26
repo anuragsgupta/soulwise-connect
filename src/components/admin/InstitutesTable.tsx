@@ -33,21 +33,23 @@ interface Institute {
 
 interface InstitutesTableProps {
   onCreateInstitute?: () => void;
+  universityId?: string;
 }
 
-export default function InstitutesTable({ onCreateInstitute }: InstitutesTableProps) {
+export default function InstitutesTable({ onCreateInstitute, universityId }: InstitutesTableProps) {
   const [institutes, setInstitutes] = useState<Institute[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedInstitute, setSelectedInstitute] = useState<Institute | null>(null);
 
   useEffect(() => {
     loadInstitutes();
-  }, []);
+  }, [universityId]);
 
   const loadInstitutes = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/institutes');
+      const url = universityId ? `/api/institutes?universityId=${universityId}` : '/api/institutes';
+      const response = await fetch(url);
       const result = await response.json();
       
       if (result.success) {

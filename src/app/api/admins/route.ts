@@ -43,6 +43,13 @@ export async function GET(request: NextRequest) {
             id: true,
             name: true,
             code: true,
+            universityId: true,
+            university: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },

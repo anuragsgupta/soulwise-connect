@@ -41,20 +41,29 @@ export default function InstituteAdminDashboard({ onLogout }: InstituteAdminDash
   const { toast } = useToast();
 
   useEffect(() => {
-    loadInstituteData();
-  }, []);
+    if (user?.instituteId) {
+      loadInstituteData();
+    }
+  }, [user?.instituteId]);
 
   const loadInstituteData = async () => {
+    if (!user?.instituteId) {
+      console.log('No instituteId found on user:', user);
+      return;
+    }
+    
     try {
       setLoading(true);
       const token = localStorage.getItem('auth-token');
       
-      // Load institute details with stats
+      console.log('Loading data for instituteId:', user.instituteId);
+      
+      // Load institute details with stats and admins count
       const [instituteResponse, adminsResponse] = await Promise.all([
-        fetch(`/api/institutes?universityId=${user?.universityId}`, {
+        fetch(`/api/institutes?universityId=${user.universityId}`, {
           headers: { 'Authorization': `Bearer ${token}` },
         }),
-        fetch(`/api/admins?instituteId=${user?.instituteId}`, {
+        fetch(`/api/admins`, {
           headers: { 'Authorization': `Bearer ${token}` },
         })
       ]);
@@ -62,15 +71,30 @@ export default function InstituteAdminDashboard({ onLogout }: InstituteAdminDash
       const instituteResult = await instituteResponse.json();
       const adminsResult = await adminsResponse.json();
       
+      console.log('Institute result:', instituteResult);
+      console.log('Admins result:', adminsResult);
+      
       if (instituteResult.success) {
-        const myInstitute = instituteResult.data.institutes.find((inst: any) => inst.id === user?.instituteId);
+        const myInstitute = instituteResult.data.institutes.find((inst: any) => inst.id === user.instituteId);
+        console.log('My institute:', myInstitute);
+        
         if (myInstitute && myInstitute._count) {
-          setStats({
+          // Filter admins for this institute
+          const instituteAdmins = adminsResult.success 
+            ? adminsResult.data.admins.filter((admin: any) => admin.instituteId === user.instituteId)
+            : [];
+          
+          console.log('Institute admins:', instituteAdmins);
+          
+          const newStats = {
             departments: myInstitute._count.departments || 0,
             faculties: myInstitute._count.faculties || 0,
             students: myInstitute._count.students || 0,
-            admins: adminsResult.success ? adminsResult.data.admins.length : 0,
-          });
+            admins: instituteAdmins.length,
+          };
+          
+          console.log('Setting stats:', newStats);
+          setStats(newStats);
         }
       }
     } catch (error) {

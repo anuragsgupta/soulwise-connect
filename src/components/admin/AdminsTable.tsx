@@ -17,6 +17,8 @@ interface Admin {
   adminType: string;
   status: string;
   isSuperAdmin: boolean;
+  universityId?: string;
+  instituteId?: string;
   university?: {
     id: string;
     name: string;
@@ -25,18 +27,28 @@ interface Admin {
     id: string;
     name: string;
     code: string;
+    universityId?: string;
+    university?: {
+      id: string;
+      name: string;
+    };
   };
   createdAt: string;
 }
 
-export default function AdminsTable() {
+interface AdminsTableProps {
+  universityId?: string;
+  instituteId?: string;
+}
+
+export default function AdminsTable({ universityId, instituteId }: AdminsTableProps) {
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
 
   useEffect(() => {
     loadAdmins();
-  }, []);
+  }, [universityId, instituteId]);
 
   const loadAdmins = async () => {
     try {
@@ -50,7 +62,28 @@ export default function AdminsTable() {
       const result = await response.json();
       
       if (result.success) {
-        setAdmins(result.data.admins);
+        let filteredAdmins = result.data.admins;
+        
+        // Filter by instituteId if provided
+        if (instituteId) {
+          filteredAdmins = filteredAdmins.filter((admin: Admin) => admin.institute?.id === instituteId);
+        }
+        // Filter by universityId if provided (includes university admins and institute admins under that university)
+        else if (universityId) {
+          filteredAdmins = filteredAdmins.filter((admin: Admin) => {
+            // Include university admins for this university
+            if (admin.adminType === 'UNIVERSITY_ADMIN' && admin.university?.id === universityId) {
+              return true;
+            }
+            // Include institute admins whose institute is under this university
+            if (admin.adminType === 'INSTITUTE_ADMIN' && admin.institute?.university?.id === universityId) {
+              return true;
+            }
+            return false;
+          });
+        }
+        
+        setAdmins(filteredAdmins);
       }
     } catch (error) {
       console.error('Failed to load admins:', error);

@@ -37,28 +37,41 @@ export default function UniversityAdminDashboard({ onLogout }: UniversityAdminDa
   }, [user?.universityId, user]);
 
   const loadCounts = async () => {
-    if (!user?.universityId) return;
+    if (!user?.universityId) {
+      console.log('No universityId found on user:', user);
+      return;
+    }
     
     try {
       setLoading(true);
       const token = localStorage.getItem('auth-token');
+      
+      console.log('Loading counts for universityId:', user.universityId);
       
       // Load institutes count
       const institutesResponse = await fetch(`/api/institutes?universityId=${user.universityId}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       const institutesResult = await institutesResponse.json();
+      console.log('Institutes result:', institutesResult);
       if (institutesResult.success) {
         setInstituteCount(institutesResult.data.institutes.length);
+        console.log('Institute count:', institutesResult.data.institutes.length);
       }
 
-      // Load admins count (excluding super admins)
-      const adminsResponse = await fetch(`/api/admins?universityId=${user.universityId}`, {
+      // Load admins count (excluding super admins, filter by university)
+      const adminsResponse = await fetch(`/api/admins`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       const adminsResult = await adminsResponse.json();
+      console.log('Admins result:', adminsResult);
       if (adminsResult.success) {
-        setAdminCount(adminsResult.data.admins.length);
+        // Filter admins for this university and exclude super admins
+        const universityAdmins = adminsResult.data.admins.filter(
+          (admin: any) => admin.universityId === user.universityId && !admin.isSuperAdmin
+        );
+        console.log('Filtered university admins:', universityAdmins);
+        setAdminCount(universityAdmins.length);
       }
     } catch (error) {
       console.error('Failed to load counts:', error);
