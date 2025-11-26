@@ -17,6 +17,7 @@ import CreateAdminForm from '@/components/admin/CreateAdminForm';
 import CreateDepartmentForm from '@/components/admin/CreateDepartmentForm';
 import CreateFacultyForm from '@/components/admin/CreateFacultyForm';
 import CreateStudentForm from '@/components/admin/CreateStudentForm';
+import CreateBatchForm from '@/components/admin/CreateBatchForm';
 
 interface InstituteStats {
   departments: number;
@@ -37,6 +38,7 @@ export default function InstituteAdminDashboard({ onLogout }: InstituteAdminDash
   const [showCreateDepartment, setShowCreateDepartment] = useState(false);
   const [showCreateFaculty, setShowCreateFaculty] = useState(false);
   const [showCreateStudent, setShowCreateStudent] = useState(false);
+  const [showCreateBatch, setShowCreateBatch] = useState(false);
   const [activeView, setActiveView] = useState<'admins' | 'students' | 'faculties' | 'departments' | null>(null);
   const { toast } = useToast();
 
@@ -299,12 +301,21 @@ export default function InstituteAdminDashboard({ onLogout }: InstituteAdminDash
                   </div>
                   <CardDescription>Manage academic departments in your institute</CardDescription>
                 </div>
-                <Button
-                  onClick={() => setShowCreateDepartment(true)}
-                  className="w-full sm:w-auto"
-                >
-                  Add Department
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <Button
+                    onClick={() => setShowCreateBatch(true)}
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                  >
+                    Add Batch
+                  </Button>
+                  <Button
+                    onClick={() => setShowCreateDepartment(true)}
+                    className="w-full sm:w-auto"
+                  >
+                    Add Department
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -462,6 +473,31 @@ export default function InstituteAdminDashboard({ onLogout }: InstituteAdminDash
               });
             }}
             onCancel={() => setShowCreateStudent(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Batch Dialog */}
+      <Dialog open={showCreateBatch} onOpenChange={setShowCreateBatch}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add New Batch</DialogTitle>
+            <DialogDescription>
+              Create a new batch for {user?.institute?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <CreateBatchForm
+            instituteId={user?.instituteId || ''}
+            instituteName={user?.institute?.name || ''}
+            onSuccess={() => {
+              setShowCreateBatch(false);
+              loadInstituteData();
+              toast({
+                title: 'Success',
+                description: 'Batch created successfully',
+              });
+            }}
+            onCancel={() => setShowCreateBatch(false)}
           />
         </DialogContent>
       </Dialog>

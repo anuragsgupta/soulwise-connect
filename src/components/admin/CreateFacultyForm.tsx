@@ -270,9 +270,10 @@ const CreateFacultyForm: React.FC<CreateFacultyFormProps> = ({
             <SelectContent>
               <SelectItem value="FACULTY">Faculty</SelectItem>
               <SelectItem value="MENTOR">Mentor</SelectItem>
-              <SelectItem value="COUNSELOR">Counselor</SelectItem>
               <SelectItem value="MENTOR_SUPERVISOR">Mentor Supervisor</SelectItem>
               <SelectItem value="HOD">Head of Department</SelectItem>
+              <SelectItem value="SENIOR">Senior</SelectItem>
+              <SelectItem value="COUNSELOR">Counselor</SelectItem>
             </SelectContent>
           </Select>
         </div>
