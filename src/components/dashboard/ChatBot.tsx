@@ -4,11 +4,11 @@ import { useState, useRef, useEffect, Suspense } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import ChatMessages, { Message } from "./ChatMessages";
 import ChatInput from "./ChatInput";
 import { 
   Bot, 
-  User, 
   Heart, 
   Brain,
   Phone,
@@ -26,6 +26,7 @@ import {
 
 const ChatBot = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -48,10 +49,10 @@ const ChatBot = () => {
   useEffect(() => {
     const initializeChat = async () => {
       try {
-        // TODO: Replace with dynamic user ID from authentication
-        // For now, using hardcoded user ID for testing
-        const currentSessionId = 'user-1763748214213';
-        console.log('👤 Using hardcoded user ID:', currentSessionId);
+        // Use authenticated user ID or demo student for testing
+        const currentSessionId = user?.id || 'demo-student-1763748214213';
+        const userType = user?.userType || 'DEMO';
+        console.log('👤 User ID:', currentSessionId, '| Type:', userType);
         
         setSessionId(currentSessionId);
         
@@ -114,7 +115,7 @@ const ChatBot = () => {
     initializeChat();
     checkLocationPermission();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
   // Check and request location permission
   const checkLocationPermission = async () => {
@@ -382,7 +383,7 @@ const ChatBot = () => {
         body: JSON.stringify({ 
           message: userMessage,
           sessionId: sessionId,
-          userId: User // Pass userId for DynamoDB tracking
+          userId: sessionId // Pass userId for DynamoDB tracking
         }),
       });
 
