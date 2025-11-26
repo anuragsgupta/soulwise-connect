@@ -1,24 +1,18 @@
 "use client";
 
-import { useState, useRef, useEffect, Suspense, lazy } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useRef, useEffect, Suspense } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import ChatMessages, { Message } from "./ChatMessages";
 import ChatInput from "./ChatInput";
-import QuickActions from "./QuickActions";
 import { 
-  MessageCircle, 
-  Send, 
   Bot, 
   User, 
   Heart, 
   Brain,
   Phone,
   AlertTriangle,
-  Lightbulb,
   Calendar,
   Trash2,
   RefreshCw,
@@ -37,8 +31,6 @@ const ChatBot = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string>("");
-  const [splineLoaded, setSplineLoaded] = useState(false);
-  const [isChatStarted, setIsChatStarted] = useState(false);
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -71,7 +63,7 @@ const ChatBot = () => {
           
           if (data.success && data.messages && data.messages.length > 0) {
             // Convert DynamoDB messages to UI Message format
-            const loadedMessages: Message[] = data.messages.map((msg: any) => ({
+            const loadedMessages: Message[] = data.messages.map((msg: { timestamp: string; message: string; role: string; created_at: string; risk_level?: string }) => ({
               id: msg.timestamp,
               content: msg.message,
               sender: msg.role === 'user' ? 'user' : 'bot',
@@ -121,6 +113,7 @@ const ChatBot = () => {
 
     initializeChat();
     checkLocationPermission();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Check and request location permission
@@ -133,7 +126,7 @@ const ChatBot = () => {
         permission.addEventListener('change', () => {
           setLocationPermission(permission.state);
         });
-      } catch (error) {
+      } catch {
         console.log('Permission API not supported, will request directly');
         setLocationPermission('prompt');
       }
@@ -339,13 +332,7 @@ const ChatBot = () => {
 
     mediaQuery.addEventListener('change', handleChange);
     
-    // Load Spline after component mount
-    if (!reducedMotion) {
-      const timer = setTimeout(() => {
-        setSplineLoaded(true);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
+    
 
     return () => {
       mediaQuery.removeEventListener('change', handleChange);
@@ -656,35 +643,6 @@ const ChatBot = () => {
     }
   };
 
-  const handleQuickAction = (actionText: string) => {
-    setInputMessage(actionText);
-    
-    // Show feedback for quick action selection
-    toast({
-      title: "Quick Action Selected",
-      description: `"${actionText}" has been added to your message. Click send to continue.`,
-      duration: 3000,
-    });
-
-    // Auto-focus the input field
-    setTimeout(() => {
-      const inputElement = document.querySelector('input[placeholder="Share what\'s on your mind..."]') as HTMLInputElement;
-      if (inputElement) {
-        inputElement.focus();
-      }
-    }, 100);
-  };
-
-  const quickActions = [
-    { text: "I'm feeling anxious", icon: AlertTriangle },
-    { text: "Suggest me songs", icon: Lightbulb },
-    { text: "Suggest me motivational movies", icon: Lightbulb },
-    { text: "Tell me a motivational quote", icon: Lightbulb },
-    { text: "Book counselor appointment", icon: Calendar },
-    { text: "Find nearby mental health services", icon: MapPin },
-    { text: "Emergency support", icon: Phone }
-  ];
-
   return (
     <div className="relative h-full w-full md:space-y-6">
       {/* Spline Background - Fixed positioning */}
@@ -822,12 +780,12 @@ const ChatBot = () => {
             <div className="flex-1">
               <h3 className="font-bold text-lg text-primary mb-3 flex items-center">
                 <Heart className="w-4 h-4 mr-2 text-red-500" />
-                You're Worth the Call
+                You&apos;re Worth the Call
               </h3>
               
               <p className="text-sm text-gray-700 mb-4 leading-relaxed">
                 Taking care of your mental health is one of the strongest things you can do. 
-                If you're struggling, reaching out is a sign of <strong>courage, not weakness</strong>.
+                If you&apos;re struggling, reaching out is a sign of <strong>courage, not weakness</strong>.
               </p>
 
               <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4 rounded-r-lg">
@@ -890,7 +848,7 @@ const ChatBot = () => {
 
               <div className="bg-primary/5 rounded-lg p-3 border border-primary/20 text-center">
                 <p className="text-sm text-primary font-medium">
-                  💡 Remember: Every step toward getting help is a victory. You're not alone! 🌈
+                  💡 Remember: Every step toward getting help is a victory. You&apos;re not alone! 🌈
                 </p>
               </div>
             </div>
