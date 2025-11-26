@@ -30,7 +30,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (email: string, password: string, rollNumber?: string) => Promise<boolean>;
+  login: (email: string, password: string, enrollmentId?: string) => Promise<boolean>;
   register: (email: string, password: string, role: string, universityId?: string, instituteId?: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const login = async (email: string, password: string, rollNumber?: string): Promise<boolean> => {
+  const login = async (email: string, password: string, enrollmentId?: string): Promise<boolean> => {
     setIsLoading(true);
     
     try {
@@ -78,9 +78,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          email: rollNumber ? undefined : email, 
+          email: enrollmentId ? undefined : email, 
           password,
-          rollNumber 
+          enrollmentId 
         }),
       });
 

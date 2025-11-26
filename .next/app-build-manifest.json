@@ -75,6 +75,11 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/batches/route.js"
+    ],
+    "/api/chat-memory/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/chat-memory/route.js"
     ]
   }
 }

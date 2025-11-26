@@ -1,9 +1,7 @@
 {
-  "/api/departments/route": "app/api/departments/route.js",
-  "/api/students/route": "app/api/students/route.js",
-  "/api/batches/route": "app/api/batches/route.js",
-  "/api/institutes/route": "app/api/institutes/route.js",
-  "/api/admins/route": "app/api/admins/route.js",
+  "/api/chat-memory/route": "app/api/chat-memory/route.js",
   "/auth/login/page": "app/auth/login/page.js",
-  "/dashboard/page": "app/dashboard/page.js"
+  "/dashboard/page": "app/dashboard/page.js",
+  "/page": "app/page.js",
+  "/login/page": "app/login/page.js"
 }

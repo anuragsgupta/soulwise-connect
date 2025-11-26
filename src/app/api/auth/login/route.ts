@@ -7,12 +7,12 @@ const prisma = new PrismaClient();
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password, rollNumber } = body;
+    const { email, password, enrollmentId } = body;
 
     // Validate required fields
-    if ((!email && !rollNumber) || !password) {
+    if ((!email && !enrollmentId) || !password) {
       return NextResponse.json(
-        createResponse(false, 'Email/Roll Number and password are required'),
+        createResponse(false, 'Email/Enrollment ID and password are required'),
         { status: 400 }
       );
     }
@@ -21,10 +21,10 @@ export async function POST(request: NextRequest) {
     let userData: any;
     let passwordHash: string;
 
-    // Handle student login with roll number
-    if (rollNumber) {
+    // Handle student login with enrollment ID
+    if (enrollmentId) {
       const student = await prisma.student.findUnique({
-        where: { rollNumber },
+        where: { enrollmentId },
         include: {
           batch: {
             include: {
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
 
       if (!student) {
         return NextResponse.json(
-          createResponse(false, 'Invalid roll number or password'),
+          createResponse(false, 'Invalid enrollment ID or password'),
           { status: 401 }
         );
       }
@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
         performedById: userData.id,
         performedByType: userType,
         newValues: {
-          loginMethod: rollNumber ? 'roll_number' : 'email',
+          loginMethod: enrollmentId ? 'enrollment_id' : 'email',
           timestamp: new Date().toISOString(),
         },
         timestamp: new Date(),

@@ -19,7 +19,7 @@ export default function LoginPage() {
     password: '',
   });
   const [studentCredentials, setStudentCredentials] = useState({
-    rollNumber: '',
+    enrollmentId: '',
     password: '',
   });
   const { toast } = useToast();
@@ -63,7 +63,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const success = await login('', studentCredentials.password, studentCredentials.rollNumber);
+      const success = await login('', studentCredentials.password, studentCredentials.enrollmentId);
 
       if (success) {
         toast({
@@ -74,7 +74,7 @@ export default function LoginPage() {
       } else {
         toast({
           title: 'Login Failed',
-          description: 'Invalid roll number or password',
+          description: 'Invalid enrollment ID or password',
           variant: 'destructive',
         });
       }
@@ -237,15 +237,15 @@ export default function LoginPage() {
                 <CardContent>
                   <form onSubmit={handleStudentLogin} className="space-y-4">
                     <div>
-                      <Label htmlFor="student-roll">Roll Number</Label>
+                      <Label htmlFor="student-enrollment">Enrollment ID</Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                         <Input
-                          id="student-roll"
+                          id="student-enrollment"
                           type="text"
-                          placeholder="Enter your roll number"
-                          value={studentCredentials.rollNumber}
-                          onChange={(e) => setStudentCredentials(prev => ({ ...prev, rollNumber: e.target.value }))}
+                          placeholder="Enter your enrollment ID"
+                          value={studentCredentials.enrollmentId}
+                          onChange={(e) => setStudentCredentials(prev => ({ ...prev, enrollmentId: e.target.value }))}
                           className="pl-10"
                           required
                         />
@@ -284,7 +284,7 @@ export default function LoginPage() {
                 <CardContent className="space-y-3">
                   <Alert>
                     <AlertDescription>
-                      Use your roll number and password to access the student portal.
+                      Use your enrollment ID and password to access the student portal.
                     </AlertDescription>
                   </Alert>
 
