@@ -15,15 +15,14 @@ import {
   Users, 
   Brain,
   Smile,
-  Meh,
-  Frown,
   TrendingUp,
   Bell,
   LogOut,
   MapPin,
   Navigation,
   AlertTriangle,
-  Phone
+  Phone,
+  ClipboardCheck
 } from "lucide-react";
 import mannMitraLogo from "@/assets/mann-mitra-logo.png";
 import MoodTracker from "./MoodTracker";
@@ -63,6 +62,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
     };
 
     initializeLocation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-request location when permission is granted
@@ -70,6 +70,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
     if (locationPermission === 'granted' && !userLocation) {
       getCurrentLocation();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locationPermission]);
 
   // Check and request location permission
@@ -87,7 +88,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
         if (permission.state === 'granted') {
           getCurrentLocation();
         }
-      } catch (error) {
+      } catch {
         console.log('Permission API not supported, will request directly');
         setLocationPermission('prompt');
       }
@@ -289,6 +290,13 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       icon: Heart,
       color: "from-wellness to-wellness-light",
       action: () => setActiveTab('mood')
+    },
+    {
+      title: "PHQ-9 Assessment",
+      description: "Complete mental health survey",
+      icon: ClipboardCheck,
+      color: "from-purple-500 to-pink-500",
+      action: () => window.location.href = '/phq9-survey?studentId=current-student'
     },
     {
       title: "AI Support Chat",
@@ -557,7 +565,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                   key={item.id}
                   variant={activeTab === item.id ? 'default' : 'ghost'}
                   size="sm"
-                  onClick={() => handleTabChange(item.id as any)}
+                  onClick={() => handleTabChange(item.id as 'dashboard' | 'mood' | 'chat' | 'appointments' | 'resources' | 'forum')}
                   className={`flex items-center space-x-2 ${
                     activeTab === item.id 
                       ? 'bg-primary text-white' 
@@ -658,7 +666,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
           ].map((item) => (
             <button
               key={item.id}
-              onClick={() => handleTabChange(item.id as any)}
+              onClick={() => handleTabChange(item.id as 'dashboard' | 'mood' | 'chat' | 'appointments' | 'resources' | 'forum')}
               className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-all duration-200 ${
                 activeTab === item.id 
                   ? 'text-primary' 

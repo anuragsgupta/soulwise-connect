@@ -19,12 +19,6 @@ export default function BoxBreathing({ onClose }: BoxBreathingProps) {
   const [showSettings, setShowSettings] = useState(false);
 
   const phases = ['Breathe In', 'Hold', 'Breathe Out', 'Hold'];
-  const colors = [
-    'from-teal-400 to-cyan-500',
-    'from-blue-400 to-indigo-500', 
-    'from-purple-400 to-pink-500',
-    'from-indigo-400 to-blue-500'
-  ];
 
   useEffect(() => {
     if (!isPlaying) return;

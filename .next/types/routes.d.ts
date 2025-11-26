@@ -40,6 +40,7 @@ interface ParamMap {
 >>>>>>> 0128f28 (feat: Implement content moderation and admin moderation endpoints)
   "/api/institutes/[id]/upload-students": { "id": string; }
   "/api/mcp/sms-alert": {}
+  "/api/phq9-survey": {}
   "/api/sentiment-analysis": {}
 <<<<<<< HEAD
   "/api/students": {}
@@ -54,7 +55,11 @@ interface ParamMap {
   "/faculty": {}
   "/login": {}
   "/mcp-test": {}
+<<<<<<< HEAD
   "/register": {}
+=======
+  "/phq9-survey": {}
+>>>>>>> 84ebef8 (fix eslinting)
 }
 
 

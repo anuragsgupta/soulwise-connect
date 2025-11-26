@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 globalThis.__BUILD_MANIFEST = {
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -58,3 +59,6 @@ globalThis.__BUILD_MANIFEST.lowPriorityFiles = [
 ,"/static/" + process.env.__NEXT_BUILD_ID + "/_ssgManifest.js",
 
 ];
+=======
+globalThis.__BUILD_MANIFEST={polyfillFiles:["static/chunks/polyfills-42372ed130431b0a.js"],devFiles:[],ampDevFiles:[],lowPriorityFiles:[],rootMainFiles:["static/chunks/webpack-1c819081f1f082b1.js","static/chunks/4bd1b696-f785427dddbba9fb.js","static/chunks/39-9bb4d58f94693743.js","static/chunks/main-app-049bb69a87617621.js"],rootMainFilesTree:{},pages:{"/_app":["static/chunks/webpack-1c819081f1f082b1.js","static/chunks/framework-b9fffb5537caa07c.js","static/chunks/main-dabcb746fbb37406.js","static/chunks/pages/_app-6c8c2371b16a04b8.js"],"/_error":["static/chunks/webpack-1c819081f1f082b1.js","static/chunks/framework-b9fffb5537caa07c.js","static/chunks/main-dabcb746fbb37406.js","static/chunks/pages/_error-94812ad32cad7365.js"]},ampFirstPages:[]},globalThis.__BUILD_MANIFEST.lowPriorityFiles=["/static/"+process.env.__NEXT_BUILD_ID+"/_buildManifest.js",,"/static/"+process.env.__NEXT_BUILD_ID+"/_ssgManifest.js"];
+>>>>>>> 84ebef8 (fix eslinting)

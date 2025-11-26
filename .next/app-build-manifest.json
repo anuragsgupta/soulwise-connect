@@ -5,6 +5,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
 >>>>>>> 42f522b (feat: Add PWA support with install prompt and button)
@@ -52,6 +53,27 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
+=======
+    "/_not-found/page": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/app/_not-found/page-ab851152a6b0d439.js"
+    ],
+    "/layout": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/css/d9548adc9fe128e2.css",
+      "static/css/9c1091f1cd81ef81.css",
+      "static/chunks/6182-6d3fcde944ae1cc5.js",
+      "static/chunks/9972-e2eed67b4aad59cd.js",
+      "static/chunks/8553-dd94e0bd5ee6c711.js",
+      "static/chunks/1868-aab2e24fe0258f35.js",
+      "static/chunks/app/layout-8e1004f0a9af7fb8.js"
+>>>>>>> 84ebef8 (fix eslinting)
     ],
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -196,10 +218,13 @@
 =======
 >>>>>>> 20802ac (improve exercise-resource UI)
     "/api/analytics/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/analytics/route.js"
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/app/api/analytics/route-cad7aa11c9f66839.js"
     ],
+<<<<<<< HEAD
 <<<<<<< HEAD
     "/auth/login/page": [
       "static/chunks/webpack.js",
@@ -231,6 +256,190 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/chat-memory/route.js"
 >>>>>>> b49cd09 (feat: Implement dynamic font configuration and showcase component)
+=======
+    "/api/auth/accept-invite/route": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/app/api/auth/accept-invite/route-cad7aa11c9f66839.js"
+    ],
+    "/api/auth/login/route": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/app/api/auth/login/route-cad7aa11c9f66839.js"
+    ],
+    "/api/auth/signup-request/route": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/app/api/auth/signup-request/route-cad7aa11c9f66839.js"
+    ],
+    "/api/chat-memory/route": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/app/api/chat-memory/route-cad7aa11c9f66839.js"
+    ],
+    "/api/chatbot-v2/route": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/app/api/chatbot-v2/route-cad7aa11c9f66839.js"
+    ],
+    "/api/chatbot/route": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/app/api/chatbot/route-cad7aa11c9f66839.js"
+    ],
+    "/api/cleanup-duplicates/route": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/app/api/cleanup-duplicates/route-cad7aa11c9f66839.js"
+    ],
+    "/api/institutes/[id]/upload-students/route": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/app/api/institutes/[id]/upload-students/route-cad7aa11c9f66839.js"
+    ],
+    "/api/mcp/sms-alert/route": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/app/api/mcp/sms-alert/route-cad7aa11c9f66839.js"
+    ],
+    "/api/phq9-survey/route": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/app/api/phq9-survey/route-cad7aa11c9f66839.js"
+    ],
+    "/api/sentiment-analysis/route": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/app/api/sentiment-analysis/route-cad7aa11c9f66839.js"
+    ],
+    "/api/students/by-enrollment/[enrollmentId]/route": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/app/api/students/by-enrollment/[enrollmentId]/route-cad7aa11c9f66839.js"
+    ],
+    "/api/universities/[id]/institutes/route": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/app/api/universities/[id]/institutes/route-cad7aa11c9f66839.js"
+    ],
+    "/api/universities/[id]/invite-admin/route": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/app/api/universities/[id]/invite-admin/route-cad7aa11c9f66839.js"
+    ],
+    "/api/universities/route": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/app/api/universities/route-cad7aa11c9f66839.js"
+    ],
+    "/api/ai/providers/route": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/app/api/ai/providers/route-cad7aa11c9f66839.js"
+    ],
+    "/auth/login/page": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/6182-6d3fcde944ae1cc5.js",
+      "static/chunks/9972-e2eed67b4aad59cd.js",
+      "static/chunks/3884-72b5501f1d3f4e79.js",
+      "static/chunks/app/auth/login/page-7d832358f53f2b22.js"
+    ],
+    "/dashboard/page": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/6182-6d3fcde944ae1cc5.js",
+      "static/chunks/9972-e2eed67b4aad59cd.js",
+      "static/chunks/8553-dd94e0bd5ee6c711.js",
+      "static/chunks/3884-72b5501f1d3f4e79.js",
+      "static/chunks/1250-ee3aeaecb01d82d4.js",
+      "static/chunks/1821-6e6a7a7770134fb5.js",
+      "static/chunks/app/dashboard/page-06d14fa5c08c7d76.js"
+    ],
+    "/login/page": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/app/login/page-cad7aa11c9f66839.js"
+    ],
+    "/faculty/page": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/6182-6d3fcde944ae1cc5.js",
+      "static/chunks/9972-e2eed67b4aad59cd.js",
+      "static/chunks/8553-dd94e0bd5ee6c711.js",
+      "static/chunks/3884-72b5501f1d3f4e79.js",
+      "static/chunks/7188-437e6c5701f65cc3.js",
+      "static/chunks/app/faculty/page-c3a966f99a62b3f8.js"
+    ],
+    "/page": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/6182-6d3fcde944ae1cc5.js",
+      "static/chunks/8553-dd94e0bd5ee6c711.js",
+      "static/chunks/1250-ee3aeaecb01d82d4.js",
+      "static/chunks/2619-38012e79151e370a.js",
+      "static/chunks/app/page-a2d8c5924c9146bd.js"
+    ],
+    "/mcp-test/page": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/2619-38012e79151e370a.js",
+      "static/chunks/app/mcp-test/page-38e3fe4fb68035b1.js"
+    ],
+    "/phq9-survey/page": [
+      "static/chunks/webpack-1c819081f1f082b1.js",
+      "static/chunks/4bd1b696-f785427dddbba9fb.js",
+      "static/chunks/39-9bb4d58f94693743.js",
+      "static/chunks/main-app-049bb69a87617621.js",
+      "static/chunks/6182-6d3fcde944ae1cc5.js",
+      "static/chunks/9972-e2eed67b4aad59cd.js",
+      "static/chunks/4785-65fe8c74cc23ffc0.js",
+      "static/chunks/app/phq9-survey/page-67f07b2509c5a087.js"
+>>>>>>> 84ebef8 (fix eslinting)
     ]
   }
 =======

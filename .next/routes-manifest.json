@@ -1,1 +1,128 @@
-{"version":3,"caseSensitive":false,"basePath":"","rewrites":{"beforeFiles":[],"afterFiles":[],"fallback":[]},"redirects":[{"source":"/:path+/","destination":"/:path+","permanent":true,"internal":true,"regex":"^(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))\\/$"}],"headers":[]}
+{
+  "version": 3,
+  "pages404": true,
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [
+    {
+      "page": "/api/institutes/[id]/upload-students",
+      "regex": "^/api/institutes/([^/]+?)/upload\\-students(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/institutes/(?<nxtPid>[^/]+?)/upload\\-students(?:/)?$"
+    },
+    {
+      "page": "/api/students/by-enrollment/[enrollmentId]",
+      "regex": "^/api/students/by\\-enrollment/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPenrollmentId": "nxtPenrollmentId"
+      },
+      "namedRegex": "^/api/students/by\\-enrollment/(?<nxtPenrollmentId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/universities/[id]/institutes",
+      "regex": "^/api/universities/([^/]+?)/institutes(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/universities/(?<nxtPid>[^/]+?)/institutes(?:/)?$"
+    },
+    {
+      "page": "/api/universities/[id]/invite-admin",
+      "regex": "^/api/universities/([^/]+?)/invite\\-admin(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/universities/(?<nxtPid>[^/]+?)/invite\\-admin(?:/)?$"
+    }
+  ],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/auth/login",
+      "regex": "^/auth/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/auth/login(?:/)?$"
+    },
+    {
+      "page": "/dashboard",
+      "regex": "^/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard(?:/)?$"
+    },
+    {
+      "page": "/faculty",
+      "regex": "^/faculty(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/faculty(?:/)?$"
+    },
+    {
+      "page": "/favicon.ico",
+      "regex": "^/favicon\\.ico(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/favicon\\.ico(?:/)?$"
+    },
+    {
+      "page": "/login",
+      "regex": "^/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/mcp-test",
+      "regex": "^/mcp\\-test(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/mcp\\-test(?:/)?$"
+    },
+    {
+      "page": "/phq9-survey",
+      "regex": "^/phq9\\-survey(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/phq9\\-survey(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSuffix": ".prefetch.rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments"
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}
