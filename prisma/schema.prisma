@@ -31,17 +31,17 @@ model User {
 }
 
 model University {
-  id               String    @id @default(uuid())
-  name             String
-  domain           String    @unique
-  address          String
-  establishedYear  Int
-  contactEmail     String
-  contactPhone     String
-  website          String?
-  isActive         Boolean   @default(true)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id              String   @id @default(uuid())
+  name            String
+  domain          String   @unique
+  address         String
+  establishedYear Int
+  contactEmail    String
+  contactPhone    String
+  website         String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   // Relations
   users      User[]
@@ -62,7 +62,7 @@ model Institute {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  university   University   @relation(fields: [universityId], references: [id], onDelete: Cascade)
   universityId String
   users        User[]
   students     Student[]
@@ -82,7 +82,7 @@ model Department {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  institute   Institute @relation(fields: [instituteId], references: [id], onDelete: Cascade)
+  institute   Institute  @relation(fields: [instituteId], references: [id], onDelete: Cascade)
   instituteId String
   students    Student[]
   auditLogs   AuditLog[]
@@ -92,45 +92,46 @@ model Department {
 }
 
 model Student {
-  id               String   @id @default(uuid())
-  rollNumber       String   @unique
-  firstName        String
-  lastName         String
-  email            String   @unique
-  phone            String?
-  dateOfBirth      DateTime?
-  gender           Gender?
-  address          String?
-  admissionYear    Int
-  currentSemester  Int      @default(1)
-  cgpa             Float?
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id              String    @id @default(uuid())
+  rollNumber      String    @unique
+  firstName       String
+  lastName        String
+  email           String    @unique
+  phone           String?
+  dateOfBirth     DateTime?
+  gender          Gender?
+  address         String?
+  admissionYear   Int
+  currentSemester Int       @default(1)
+  cgpa            Float?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   // Relations
-  user         User?       @relation(fields: [userId], references: [id])
-  userId       String?     @unique
-  university   University  @relation(fields: [universityId], references: [id])
+  user         User?               @relation(fields: [userId], references: [id])
+  userId       String?             @unique
+  university   University          @relation(fields: [universityId], references: [id])
   universityId String
-  institute    Institute   @relation(fields: [instituteId], references: [id])
+  institute    Institute           @relation(fields: [instituteId], references: [id])
   instituteId  String
-  department   Department? @relation(fields: [departmentId], references: [id])
+  department   Department?         @relation(fields: [departmentId], references: [id])
   departmentId String?
   enrollments  StudentEnrollment[]
   auditLogs    AuditLog[]
+  phq9Surveys  PHQ9Survey[]
 
   @@map("students")
 }
 
 model StudentBatch {
-  id         String   @id @default(uuid())
-  batchName  String
-  year       Int
-  semester   Int
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(uuid())
+  batchName String
+  year      Int
+  semester  Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   enrollments StudentEnrollment[]
@@ -141,35 +142,35 @@ model StudentBatch {
 }
 
 model StudentEnrollment {
-  id            String   @id @default(uuid())
-  enrollmentDate DateTime @default(now())
-  status        EnrollmentStatus @default(ACTIVE)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             String           @id @default(uuid())
+  enrollmentDate DateTime         @default(now())
+  status         EnrollmentStatus @default(ACTIVE)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   // Relations
-  student      Student      @relation(fields: [studentId], references: [id])
-  studentId    String
-  batch        StudentBatch @relation(fields: [batchId], references: [id])
-  batchId      String
-  auditLogs    AuditLog[]
+  student   Student      @relation(fields: [studentId], references: [id])
+  studentId String
+  batch     StudentBatch @relation(fields: [batchId], references: [id])
+  batchId   String
+  auditLogs AuditLog[]
 
   @@unique([studentId, batchId])
   @@map("student_enrollments")
 }
 
 model StudentUpload {
-  id            String       @id @default(uuid())
-  fileName      String
-  filePath      String
-  totalRecords  Int
-  successCount  Int          @default(0)
-  errorCount    Int          @default(0)
-  status        UploadStatus @default(PENDING)
-  errorLog      Json?
-  uploadedBy    String
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  id           String       @id @default(uuid())
+  fileName     String
+  filePath     String
+  totalRecords Int
+  successCount Int          @default(0)
+  errorCount   Int          @default(0)
+  status       UploadStatus @default(PENDING)
+  errorLog     Json?
+  uploadedBy   String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   auditLogs AuditLog[]
 
@@ -201,26 +202,59 @@ model AuditLog {
   timestamp   DateTime @default(now())
 
   // Relations
-  user             User?            @relation(fields: [userId], references: [id])
-  userId           String?
-  university       University?      @relation(fields: [universityId], references: [id])
-  universityId     String?
-  institute        Institute?       @relation(fields: [instituteId], references: [id])
-  instituteId      String?
-  department       Department?      @relation(fields: [departmentId], references: [id])
-  departmentId     String?
-  student          Student?         @relation(fields: [studentId], references: [id])
-  studentId        String?
-  studentBatch     StudentBatch?    @relation(fields: [studentBatchId], references: [id])
-  studentBatchId   String?
-  studentEnrollment StudentEnrollment? @relation(fields: [studentEnrollmentId], references: [id])
+  user                User?              @relation(fields: [userId], references: [id])
+  userId              String?
+  university          University?        @relation(fields: [universityId], references: [id])
+  universityId        String?
+  institute           Institute?         @relation(fields: [instituteId], references: [id])
+  instituteId         String?
+  department          Department?        @relation(fields: [departmentId], references: [id])
+  departmentId        String?
+  student             Student?           @relation(fields: [studentId], references: [id])
+  studentId           String?
+  studentBatch        StudentBatch?      @relation(fields: [studentBatchId], references: [id])
+  studentBatchId      String?
+  studentEnrollment   StudentEnrollment? @relation(fields: [studentEnrollmentId], references: [id])
   studentEnrollmentId String?
-  studentUpload    StudentUpload?   @relation(fields: [studentUploadId], references: [id])
-  studentUploadId  String?
-  session          Session?         @relation(fields: [sessionId], references: [id])
-  sessionId        String?
+  studentUpload       StudentUpload?     @relation(fields: [studentUploadId], references: [id])
+  studentUploadId     String?
+  session             Session?           @relation(fields: [sessionId], references: [id])
+  sessionId           String?
 
   @@map("audit_logs")
+}
+
+model PHQ9Survey {
+  id           String   @id @default(uuid())
+  surveyNumber Int // 1, 2, or 3 (to track which of the 3 surveys)
+  completedAt  DateTime @default(now())
+
+  // PHQ-9 Questions (0=Not at all, 1=Several days, 2=More than half the time, 3=Nearly every day)
+  q1_interest      Int // Little interest or pleasure in doing things
+  q2_depressed     Int // Feeling down, depressed, or hopeless
+  q3_sleep         Int // Trouble falling/staying asleep, or sleeping too much
+  q4_energy        Int // Feeling tired or having little energy
+  q5_appetite      Int // Poor appetite or overeating
+  q6_failure       Int // Feeling bad about yourself or that you're a failure
+  q7_concentration Int // Trouble concentrating on things
+  q8_movement      Int // Moving or speaking slowly, or being fidgety/restless
+  q9_harm          Int // Thoughts that you would be better off dead or hurting yourself
+
+  // Calculated scores
+  totalScore Int // Sum of all questions (0-27)
+  severity   PHQ9Severity // NONE, MILD, MODERATE, MODERATELY_SEVERE, SEVERE
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId String
+
+  @@index([studentId, surveyNumber])
+  @@index([completedAt])
+  @@map("phq9_surveys")
 }
 
 enum Role {
@@ -249,4 +283,12 @@ enum UploadStatus {
   PROCESSING
   COMPLETED
   FAILED
+}
+
+enum PHQ9Severity {
+  NONE // 0-4
+  MILD // 5-9
+  MODERATE // 10-14
+  MODERATELY_SEVERE // 15-19
+  SEVERE // 20-27
 }

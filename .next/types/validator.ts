@@ -101,6 +101,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../src/app/phq9-survey/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/phq9-survey">> = Specific
+  const handler = {} as typeof import("../../src/app/phq9-survey/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../src/app/api/ai/providers/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/ai/providers">> = Specific
@@ -204,6 +213,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/mcp/sms-alert">> = Specific
   const handler = {} as typeof import("../../src/app/api/mcp/sms-alert/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/api/phq9-survey/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/phq9-survey">> = Specific
+  const handler = {} as typeof import("../../src/app/api/phq9-survey/route.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check

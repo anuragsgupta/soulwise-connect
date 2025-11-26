@@ -24,6 +24,7 @@ interface ParamMap {
   "/api/community-moderation": {}
   "/api/institutes/[id]/upload-students": { "id": string; }
   "/api/mcp/sms-alert": {}
+  "/api/phq9-survey": {}
   "/api/sentiment-analysis": {}
   "/api/students/by-enrollment/[enrollmentId]": { "enrollmentId": string; }
   "/api/universities": {}
@@ -34,6 +35,7 @@ interface ParamMap {
   "/faculty": {}
   "/login": {}
   "/mcp-test": {}
+  "/phq9-survey": {}
 }
 
 

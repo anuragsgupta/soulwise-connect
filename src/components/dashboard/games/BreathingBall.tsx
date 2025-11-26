@@ -48,6 +48,7 @@ export default function BreathingBall({ onClose }: BreathingBallProps) {
     }, 1000);
 
     return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying, phase]);
 
   const handleToggle = () => {
