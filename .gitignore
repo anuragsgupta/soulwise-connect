@@ -11,10 +11,12 @@ node_modules
 dist
 dist-ssr
 
-
 # Next.js
 .next/
+.next
 out/
+build/
+.vercel
 
 # Editor directories and files
 .vscode/*
