@@ -90,6 +90,37 @@ export default function LoginPage() {
     }
   };
 
+  const handleDemoStudentLogin = () => {
+    setIsLoading(true);
+    
+    // Create demo student user data
+    const demoUser = {
+      id: 'demo-student-123',
+      name: 'Demo Student',
+      email: 'demo.student@university.edu',
+      rollNumber: 'DEMO2024',
+      userType: 'STUDENT' as const,
+      isDemo: true
+    };
+    
+    const demoToken = 'demo-token-' + Date.now();
+    
+    // Store in localStorage with correct keys for AuthContext
+    localStorage.setItem('auth-token', demoToken);
+    localStorage.setItem('auth-user', JSON.stringify(demoUser));
+    
+    // Also trigger the auth context login (will use stored data)
+    toast({
+      title: '🎓 Welcome Demo Student!',
+      description: 'Exploring the student portal with demo credentials...',
+    });
+    
+    // Reload to trigger AuthContext useEffect
+    setTimeout(() => {
+      window.location.href = '/dashboard';
+    }, 500);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-background to-green-50 flex items-center justify-center p-4">
       <div className="w-full max-w-4xl">
@@ -269,6 +300,28 @@ export default function LoginPage() {
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading ? 'Signing in...' : 'Sign In'}
                     </Button>
+                    
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">
+                          Or
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      className="w-full border-dashed border-2 border-primary/50 hover:bg-primary/10"
+                      onClick={handleDemoStudentLogin}
+                      disabled={isLoading}
+                    >
+                      <GraduationCap className="w-4 h-4 mr-2" />
+                      Try Demo Student Account
+                    </Button>
                   </form>
                 </CardContent>
               </Card>
@@ -287,10 +340,19 @@ export default function LoginPage() {
                       Use your roll number and password to access the student portal.
                     </AlertDescription>
                   </Alert>
+                  
+                  <Alert className="bg-blue-50 border-blue-200">
+                    <GraduationCap className="w-4 h-4 text-blue-600" />
+                    <AlertDescription className="text-blue-800">
+                      <span className="font-semibold">Demo Mode Available!</span>
+                      <br />
+                      Try the student portal with a demo account while authentication is being set up.
+                    </AlertDescription>
+                  </Alert>
 
                   <div className="text-center mt-4">
                     <p className="text-sm text-muted-foreground">
-                      Don't have an account? Contact your institution administrator.
+                      Don&apos;t have an account? Contact your institution administrator.
                     </p>
                   </div>
                 </CardContent>
