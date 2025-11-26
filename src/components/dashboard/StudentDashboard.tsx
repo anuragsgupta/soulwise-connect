@@ -635,21 +635,11 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       </nav>
 
       {/* Main Content */}
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 9d97c67 (feat: add ChatBotMobile component for enhanced user interaction and mental health support)
       <main className={`max-w-7xl mx-auto ${
         activeTab === 'chat' 
           ? 'h-[calc(100vh-64px-76px)] flex flex-col p-0 w-full max-w-full md:px-4 md:py-8 md:pb-8 md:h-auto md:max-w-7xl' 
           : 'px-4 sm:px-6 lg:px-8 py-4 sm:py-8 pb-20 md:pb-8'
       }`}>
-<<<<<<< HEAD
-=======
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 pb-20 md:pb-8">
->>>>>>> 33ab2b9 (add bottom navbar)
-=======
->>>>>>> 9d97c67 (feat: add ChatBotMobile component for enhanced user interaction and mental health support)
         {renderContent()}
       </main>
 
