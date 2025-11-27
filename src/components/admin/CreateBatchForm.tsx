@@ -89,6 +89,28 @@ const CreateBatchForm: React.FC<CreateBatchFormProps> = ({
     }
   };
 
+  const calculateCurrentSemester = (startYear: number): number => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1; // 0-indexed, so add 1
+    
+    // Calculate years passed since start
+    const yearsPassed = currentYear - startYear;
+    
+    // Determine semester based on month (assuming: Jan-Jun = odd semester, Jul-Dec = even semester)
+    // Adjust this logic based on your institution's academic calendar
+    const semesterInCurrentYear = currentMonth >= 7 ? 1 : 2; // July onwards is semester 1 (odd), before July is semester 2 (even)
+    
+    // Calculate total semester: (yearsPassed * 2) + current semester offset
+    let semester = (yearsPassed * 2) + semesterInCurrentYear;
+    
+    // Ensure semester is within valid range (1-8)
+    if (semester < 1) semester = 1;
+    if (semester > 8) semester = 8;
+    
+    return semester;
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof BatchFormData, string>> = {};
 
@@ -142,6 +164,9 @@ const CreateBatchForm: React.FC<CreateBatchFormProps> = ({
 
     try {
       const token = localStorage.getItem('auth-token');
+      
+      // Calculate current semester based on start year
+      const calculatedSemester = calculateCurrentSemester(parseInt(formData.startYear));
       
       const response = await fetch('/api/batches', {
         method: 'POST',
@@ -208,6 +233,12 @@ const CreateBatchForm: React.FC<CreateBatchFormProps> = ({
       <Alert>
         <AlertDescription>
           Creating batch for <strong>{instituteName}</strong>
+        </AlertDescription>
+      </Alert>
+
+      <Alert>
+        <AlertDescription>
+          ℹ️ Current semester will be automatically calculated based on the start year and current date.
         </AlertDescription>
       </Alert>
 

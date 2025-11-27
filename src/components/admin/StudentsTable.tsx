@@ -5,7 +5,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Eye, Loader2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Eye, Loader2, Pencil, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import EditStudentForm from './EditStudentForm';
 
 interface Student {
   id: string;
@@ -40,6 +43,10 @@ export default function StudentsTable({ instituteId }: StudentsTableProps) {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [deletingStudent, setDeletingStudent] = useState<Student | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     loadStudents();
@@ -65,6 +72,42 @@ export default function StudentsTable({ instituteId }: StudentsTableProps) {
       console.error('Failed to load students:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletingStudent) return;
+
+    setIsDeleting(true);
+    try {
+      const token = localStorage.getItem('auth-token');
+      const response = await fetch(`/api/students/${deletingStudent.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to delete student');
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Student deleted successfully',
+      });
+
+      setDeletingStudent(null);
+      loadStudents();
+    } catch (error) {
+      console.error('Failed to delete student:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to delete student',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -133,13 +176,29 @@ export default function StudentsTable({ instituteId }: StudentsTableProps) {
                 <TableCell>{student.cgpa ? student.cgpa.toString() : 'N/A'}</TableCell>
                 <TableCell>{getStatusBadge(student.status)}</TableCell>
                 <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedStudent(student)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedStudent(student)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditingStudent(student)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDeletingStudent(student)}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-600" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -207,6 +266,55 @@ export default function StudentsTable({ instituteId }: StudentsTableProps) {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Edit Student Dialog */}
+      <Dialog open={!!editingStudent} onOpenChange={() => setEditingStudent(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Student</DialogTitle>
+          </DialogHeader>
+          {editingStudent && (
+            <EditStudentForm
+              student={editingStudent}
+              onSuccess={() => {
+                setEditingStudent(null);
+                loadStudents();
+              }}
+              onCancel={() => setEditingStudent(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingStudent} onOpenChange={() => setDeletingStudent(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Student</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong>{deletingStudent?.name}</strong> (Enrollment ID: {deletingStudent?.enrollmentId})?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

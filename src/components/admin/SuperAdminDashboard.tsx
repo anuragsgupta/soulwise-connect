@@ -6,13 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, University, Users, Mail, ExternalLink, UserPlus, Building2 } from 'lucide-react';
+import { Plus, University, Users, Mail, ExternalLink, UserPlus, Building2, Pencil, Trash2, Loader2 } from 'lucide-react';
 import CreateUniversityForm from './CreateUniversityForm';
 import CreateAdminForm from './CreateAdminForm';
 import CreateInstituteForm from './CreateInstituteForm';
+import EditUniversityForm from './EditUniversityForm';
 import InstitutesTable from './InstitutesTable';
 import AdminsTable from './AdminsTable';
 
@@ -44,6 +46,9 @@ export default function SuperAdminDashboard({ onLogout }: SuperAdminDashboardPro
   const [showCreateAdmin, setShowCreateAdmin] = useState(false);
   const [showCreateInstitute, setShowCreateInstitute] = useState(false);
   const [selectedUniversity, setSelectedUniversity] = useState<University | null>(null);
+  const [editingUniversity, setEditingUniversity] = useState<University | null>(null);
+  const [deletingUniversity, setDeletingUniversity] = useState<University | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [activeView, setActiveView] = useState<'universities' | 'institutes' | 'admins'>('universities');
   const { toast } = useToast();
 
@@ -146,6 +151,42 @@ export default function SuperAdminDashboard({ onLogout }: SuperAdminDashboardPro
       }
     } catch (error) {
       console.error('Failed to load admin count:', error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletingUniversity) return;
+
+    setIsDeleting(true);
+    try {
+      const token = localStorage.getItem('auth-token');
+      const response = await fetch(`/api/universities/${deletingUniversity.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to delete university');
+      }
+
+      toast({
+        title: 'Success',
+        description: 'University deleted successfully',
+      });
+
+      setDeletingUniversity(null);
+      loadUniversities();
+    } catch (error) {
+      console.error('Failed to delete university:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to delete university',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -338,6 +379,22 @@ export default function SuperAdminDashboard({ onLogout }: SuperAdminDashboardPro
                       <Building2 className="h-4 w-4 mr-2" />
                       View Details
                     </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full sm:w-auto"
+                      onClick={() => setEditingUniversity(university)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full sm:w-auto"
+                      onClick={() => setDeletingUniversity(university)}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-600" />
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -407,7 +464,7 @@ export default function SuperAdminDashboard({ onLogout }: SuperAdminDashboardPro
       </Dialog>
 
       {/* University Details Modal */}
-      <Dialog open={selectedUniversity !== null && !showCreateAdmin} onOpenChange={(open) => !open && setSelectedUniversity(null)}>
+      <Dialog open={selectedUniversity !== null && !showCreateAdmin && !editingUniversity} onOpenChange={(open) => !open && setSelectedUniversity(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -478,6 +535,63 @@ export default function SuperAdminDashboard({ onLogout }: SuperAdminDashboardPro
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Edit University Dialog */}
+      <Dialog open={!!editingUniversity} onOpenChange={() => setEditingUniversity(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit University</DialogTitle>
+          </DialogHeader>
+          {editingUniversity && (
+            <EditUniversityForm
+              university={editingUniversity}
+              onSuccess={() => {
+                setEditingUniversity(null);
+                loadUniversities();
+              }}
+              onCancel={() => setEditingUniversity(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingUniversity} onOpenChange={() => setDeletingUniversity(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete University</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong>{deletingUniversity?.name}</strong>?
+              {deletingUniversity && deletingUniversity._count.institutes > 0 && (
+                <>
+                  <br /><br />
+                  <strong className="text-red-600">Warning:</strong> This university has {deletingUniversity._count.institutes} institute(s). 
+                  You must delete or reassign these institutes first.
+                </>
+              )}
+              <br /><br />
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

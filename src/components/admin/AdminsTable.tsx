@@ -6,7 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { UserCog, Mail, Phone, MapPin, Building2, Shield } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { UserCog, Mail, Phone, MapPin, Building2, Shield, Edit, Trash2 } from 'lucide-react';
+import EditAdminForm from './EditAdminForm';
 
 interface Admin {
   id: string;
@@ -45,6 +48,10 @@ export default function AdminsTable({ universityId, instituteId }: AdminsTablePr
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
+  const [editingAdmin, setEditingAdmin] = useState<Admin | null>(null);
+  const [deletingAdmin, setDeletingAdmin] = useState<Admin | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     loadAdmins();
@@ -89,6 +96,53 @@ export default function AdminsTable({ universityId, instituteId }: AdminsTablePr
       console.error('Failed to load admins:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditSuccess = () => {
+    loadAdmins();
+    setEditingAdmin(null);
+    toast({
+      title: 'Success',
+      description: 'Admin updated successfully',
+    });
+  };
+
+  const handleDelete = async () => {
+    if (!deletingAdmin) return;
+
+    setIsDeleting(true);
+    try {
+      const token = localStorage.getItem('auth-token');
+      const response = await fetch(`/api/admins/${deletingAdmin.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to delete admin');
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Admin deleted successfully',
+      });
+
+      loadAdmins();
+      setDeletingAdmin(null);
+    } catch (error) {
+      console.error('Error deleting admin:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to delete admin',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -183,6 +237,24 @@ export default function AdminsTable({ universityId, instituteId }: AdminsTablePr
                     <Badge variant={admin.status === 'ACTIVE' ? 'default' : 'secondary'}>
                       {admin.status}
                     </Badge>
+                    {!admin.isSuperAdmin && (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setEditingAdmin(admin)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setDeletingAdmin(admin)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -285,11 +357,73 @@ export default function AdminsTable({ universityId, instituteId }: AdminsTablePr
                 <Button variant="outline" className="flex-1" onClick={() => setSelectedAdmin(null)}>
                   Close
                 </Button>
+                {!selectedAdmin.isSuperAdmin && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setEditingAdmin(selectedAdmin);
+                      setSelectedAdmin(null);
+                    }}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                )}
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Edit Admin Modal */}
+      <Dialog open={editingAdmin !== null} onOpenChange={(open) => !open && setEditingAdmin(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5 text-primary" />
+              Edit Administrator
+            </DialogTitle>
+            <DialogDescription>
+              Update administrator information
+            </DialogDescription>
+          </DialogHeader>
+          {editingAdmin && (
+            <EditAdminForm
+              admin={editingAdmin}
+              onSuccess={handleEditSuccess}
+              onCancel={() => setEditingAdmin(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deletingAdmin !== null} onOpenChange={(open) => !open && setDeletingAdmin(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the administrator account for <strong>{deletingAdmin?.name}</strong> ({deletingAdmin?.email}).
+              This action cannot be undone.
+              {deletingAdmin?.isSuperAdmin && (
+                <span className="block mt-2 text-red-600 font-semibold">
+                  Warning: This is a Super Admin account!
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete Admin'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
