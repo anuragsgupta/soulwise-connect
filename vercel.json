@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/batches/update-semesters",
+      "schedule": "0 0 1 1,7 *"
+    }
+  ]
+}
