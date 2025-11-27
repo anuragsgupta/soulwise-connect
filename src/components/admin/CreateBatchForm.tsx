@@ -20,6 +20,7 @@ interface BatchFormData {
   name: string;
   startYear: string;
   endYear: string;
+  currentSemester: string;
   departmentId: string;
 }
 
@@ -41,6 +42,7 @@ const CreateBatchForm: React.FC<CreateBatchFormProps> = ({
     name: '',
     startYear: currentYear.toString(),
     endYear: (currentYear + 4).toString(),
+    currentSemester: '1',
     departmentId: '',
   });
 
@@ -115,10 +117,12 @@ const CreateBatchForm: React.FC<CreateBatchFormProps> = ({
     if (!formData.name.trim()) newErrors.name = 'Batch name is required';
     if (!formData.startYear) newErrors.startYear = 'Start year is required';
     if (!formData.endYear) newErrors.endYear = 'End year is required';
+    if (!formData.currentSemester) newErrors.currentSemester = 'Current semester is required';
     if (!formData.departmentId) newErrors.departmentId = 'Department is required';
 
     const startYearNum = parseInt(formData.startYear);
     const endYearNum = parseInt(formData.endYear);
+    const semesterNum = parseInt(formData.currentSemester);
 
     if (isNaN(startYearNum) || startYearNum < 2000 || startYearNum > 2100) {
       newErrors.startYear = 'Invalid start year';
@@ -128,6 +132,9 @@ const CreateBatchForm: React.FC<CreateBatchFormProps> = ({
     }
     if (startYearNum >= endYearNum) {
       newErrors.endYear = 'End year must be after start year';
+    }
+    if (isNaN(semesterNum) || semesterNum < 1 || semesterNum > 8) {
+      newErrors.currentSemester = 'Semester must be between 1 and 8';
     }
 
     setErrors(newErrors);
@@ -171,7 +178,7 @@ const CreateBatchForm: React.FC<CreateBatchFormProps> = ({
           name: formData.name,
           startYear: parseInt(formData.startYear),
           endYear: parseInt(formData.endYear),
-          currentSemester: calculatedSemester,
+          currentSemester: parseInt(formData.currentSemester),
           departmentId: formData.departmentId,
         }),
       });
@@ -219,6 +226,7 @@ const CreateBatchForm: React.FC<CreateBatchFormProps> = ({
   }
 
   const yearOptions = Array.from({ length: 21 }, (_, i) => currentYear - 5 + i);
+  const semesterOptions = Array.from({ length: 8 }, (_, i) => i + 1);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -332,6 +340,31 @@ const CreateBatchForm: React.FC<CreateBatchFormProps> = ({
           <p className="text-sm text-red-500">{errors.name}</p>
         )}
         <p className="text-xs text-muted-foreground">Auto-generated from years, can be edited</p>
+      </div>
+
+      {/* Current Semester */}
+      <div className="space-y-2">
+        <Label htmlFor="currentSemester">
+          Current Semester <span className="text-red-500">*</span>
+        </Label>
+        <Select
+          value={formData.currentSemester}
+          onValueChange={(value) => handleInputChange('currentSemester', value)}
+        >
+          <SelectTrigger id="currentSemester" className={errors.currentSemester ? 'border-red-500' : ''}>
+            <SelectValue placeholder="Select current semester" />
+          </SelectTrigger>
+          <SelectContent>
+            {semesterOptions.map((sem) => (
+              <SelectItem key={sem} value={sem.toString()}>
+                Semester {sem}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {errors.currentSemester && (
+          <p className="text-sm text-red-500">{errors.currentSemester}</p>
+        )}
       </div>
 
       {/* Action Buttons */}

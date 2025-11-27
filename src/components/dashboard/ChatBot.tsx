@@ -1,24 +1,18 @@
 "use client";
 
-import { useState, useRef, useEffect, Suspense, lazy } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useRef, useEffect, Suspense } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import ChatMessages, { Message } from "./ChatMessages";
 import ChatInput from "./ChatInput";
-import QuickActions from "./QuickActions";
 import { 
-  MessageCircle, 
-  Send, 
   Bot, 
-  User, 
   Heart, 
   Brain,
   Phone,
   AlertTriangle,
-  Lightbulb,
   Calendar,
   Trash2,
   RefreshCw,
@@ -32,13 +26,12 @@ import {
 
 const ChatBot = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string>("");
-  const [splineLoaded, setSplineLoaded] = useState(false);
-  const [isChatStarted, setIsChatStarted] = useState(false);
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -56,10 +49,10 @@ const ChatBot = () => {
   useEffect(() => {
     const initializeChat = async () => {
       try {
-        // TODO: Replace with dynamic user ID from authentication
-        // For now, using hardcoded user ID for testing
-        const currentSessionId = 'user-1763748214213';
-        console.log('👤 Using hardcoded user ID:', currentSessionId);
+        // Use authenticated user ID or demo student for testing
+        const currentSessionId = user?.id || 'demo-student-1763748214213';
+        const userType = user?.userType || 'DEMO';
+        console.log('👤 User ID:', currentSessionId, '| Type:', userType);
         
         setSessionId(currentSessionId);
         
@@ -71,7 +64,7 @@ const ChatBot = () => {
           
           if (data.success && data.messages && data.messages.length > 0) {
             // Convert DynamoDB messages to UI Message format
-            const loadedMessages: Message[] = data.messages.map((msg: any) => ({
+            const loadedMessages: Message[] = data.messages.map((msg: { timestamp: string; message: string; role: string; created_at: string; risk_level?: string }) => ({
               id: msg.timestamp,
               content: msg.message,
               sender: msg.role === 'user' ? 'user' : 'bot',
@@ -121,7 +114,8 @@ const ChatBot = () => {
 
     initializeChat();
     checkLocationPermission();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // Check and request location permission
   const checkLocationPermission = async () => {
@@ -133,7 +127,7 @@ const ChatBot = () => {
         permission.addEventListener('change', () => {
           setLocationPermission(permission.state);
         });
-      } catch (error) {
+      } catch {
         console.log('Permission API not supported, will request directly');
         setLocationPermission('prompt');
       }
@@ -339,13 +333,7 @@ const ChatBot = () => {
 
     mediaQuery.addEventListener('change', handleChange);
     
-    // Load Spline after component mount
-    if (!reducedMotion) {
-      const timer = setTimeout(() => {
-        setSplineLoaded(true);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
+    
 
     return () => {
       mediaQuery.removeEventListener('change', handleChange);
@@ -395,7 +383,7 @@ const ChatBot = () => {
         body: JSON.stringify({ 
           message: userMessage,
           sessionId: sessionId,
-          userId: User // Pass userId for DynamoDB tracking
+          userId: sessionId // Pass userId for DynamoDB tracking
         }),
       });
 
@@ -656,35 +644,6 @@ const ChatBot = () => {
     }
   };
 
-  const handleQuickAction = (actionText: string) => {
-    setInputMessage(actionText);
-    
-    // Show feedback for quick action selection
-    toast({
-      title: "Quick Action Selected",
-      description: `"${actionText}" has been added to your message. Click send to continue.`,
-      duration: 3000,
-    });
-
-    // Auto-focus the input field
-    setTimeout(() => {
-      const inputElement = document.querySelector('input[placeholder="Share what\'s on your mind..."]') as HTMLInputElement;
-      if (inputElement) {
-        inputElement.focus();
-      }
-    }, 100);
-  };
-
-  const quickActions = [
-    { text: "I'm feeling anxious", icon: AlertTriangle },
-    { text: "Suggest me songs", icon: Lightbulb },
-    { text: "Suggest me motivational movies", icon: Lightbulb },
-    { text: "Tell me a motivational quote", icon: Lightbulb },
-    { text: "Book counselor appointment", icon: Calendar },
-    { text: "Find nearby mental health services", icon: MapPin },
-    { text: "Emergency support", icon: Phone }
-  ];
-
   return (
     <div className="relative h-full w-full md:space-y-6">
       {/* Spline Background - Fixed positioning */}
@@ -743,9 +702,9 @@ const ChatBot = () => {
             <>
               {/* Chat Messages Area with WhatsApp Background - Full screen on mobile */}
               <div 
-                className="flex-1 overflow-y-auto bg-gradient-to-br from-teal-50/30 to-green-50/30 relative h-full"
+                className="flex-1 overflow-y-auto bg-gradient-to-br from-teal-80/50 to-green-80/50 relative h-full"
                 style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2314b8a6' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2314b8a6' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
                   backgroundSize: '60px 60px'
                 }}
                 ref={scrollAreaRef}
@@ -822,12 +781,12 @@ const ChatBot = () => {
             <div className="flex-1">
               <h3 className="font-bold text-lg text-primary mb-3 flex items-center">
                 <Heart className="w-4 h-4 mr-2 text-red-500" />
-                You're Worth the Call
+                You&apos;re Worth the Call
               </h3>
               
               <p className="text-sm text-gray-700 mb-4 leading-relaxed">
                 Taking care of your mental health is one of the strongest things you can do. 
-                If you're struggling, reaching out is a sign of <strong>courage, not weakness</strong>.
+                If you&apos;re struggling, reaching out is a sign of <strong>courage, not weakness</strong>.
               </p>
 
               <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4 rounded-r-lg">
@@ -890,7 +849,7 @@ const ChatBot = () => {
 
               <div className="bg-primary/5 rounded-lg p-3 border border-primary/20 text-center">
                 <p className="text-sm text-primary font-medium">
-                  💡 Remember: Every step toward getting help is a victory. You're not alone! 🌈
+                  💡 Remember: Every step toward getting help is a victory. You&apos;re not alone! 🌈
                 </p>
               </div>
             </div>
