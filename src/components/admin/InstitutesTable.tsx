@@ -6,7 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Building2, Users, GraduationCap, BookOpen, Mail, Phone, MapPin } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { Building2, Users, GraduationCap, BookOpen, Mail, Phone, MapPin, Edit, Trash2 } from 'lucide-react';
+import EditInstituteForm from './EditInstituteForm';
 
 interface Institute {
   id: string;
@@ -40,6 +43,10 @@ export default function InstitutesTable({ onCreateInstitute, universityId }: Ins
   const [institutes, setInstitutes] = useState<Institute[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedInstitute, setSelectedInstitute] = useState<Institute | null>(null);
+  const [editingInstitute, setEditingInstitute] = useState<Institute | null>(null);
+  const [deletingInstitute, setDeletingInstitute] = useState<Institute | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     loadInstitutes();
@@ -59,6 +66,53 @@ export default function InstitutesTable({ onCreateInstitute, universityId }: Ins
       console.error('Failed to load institutes:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditSuccess = () => {
+    loadInstitutes();
+    setEditingInstitute(null);
+    toast({
+      title: 'Success',
+      description: 'Institute updated successfully',
+    });
+  };
+
+  const handleDelete = async () => {
+    if (!deletingInstitute) return;
+
+    setIsDeleting(true);
+    try {
+      const token = localStorage.getItem('auth-token');
+      const response = await fetch(`/api/institutes/${deletingInstitute.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to delete institute');
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Institute deleted successfully',
+      });
+
+      loadInstitutes();
+      setDeletingInstitute(null);
+    } catch (error) {
+      console.error('Error deleting institute:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to delete institute',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -140,6 +194,20 @@ export default function InstitutesTable({ onCreateInstitute, universityId }: Ins
                     <Badge variant={institute.status === 'ACTIVE' ? 'default' : 'secondary'}>
                       {institute.status}
                     </Badge>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setEditingInstitute(institute)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setDeletingInstitute(institute)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -241,11 +309,66 @@ export default function InstitutesTable({ onCreateInstitute, universityId }: Ins
                 <Button variant="outline" className="flex-1" onClick={() => setSelectedInstitute(null)}>
                   Close
                 </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setEditingInstitute(selectedInstitute);
+                    setSelectedInstitute(null);
+                  }}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Edit Institute Modal */}
+      <Dialog open={editingInstitute !== null} onOpenChange={(open) => !open && setEditingInstitute(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5 text-primary" />
+              Edit Institute
+            </DialogTitle>
+            <DialogDescription>
+              Update institute information
+            </DialogDescription>
+          </DialogHeader>
+          {editingInstitute && (
+            <EditInstituteForm
+              institute={editingInstitute}
+              onSuccess={handleEditSuccess}
+              onCancel={() => setEditingInstitute(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deletingInstitute !== null} onOpenChange={(open) => !open && setDeletingInstitute(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete <strong>{deletingInstitute?.name}</strong>.
+              This action cannot be undone. The institute can only be deleted if it has no departments, faculty, or students.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

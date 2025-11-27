@@ -5,7 +5,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Eye, Loader2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Eye, Loader2, Pencil, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import EditDepartmentForm from './EditDepartmentForm';
 
 interface Department {
   id: string;
@@ -30,6 +33,10 @@ export default function DepartmentsTable({ instituteId }: DepartmentsTableProps)
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
+  const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
+  const [deletingDepartment, setDeletingDepartment] = useState<Department | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     loadDepartments();
@@ -55,6 +62,42 @@ export default function DepartmentsTable({ instituteId }: DepartmentsTableProps)
       console.error('Failed to load departments:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletingDepartment) return;
+
+    setIsDeleting(true);
+    try {
+      const token = localStorage.getItem('auth-token');
+      const response = await fetch(`/api/departments/${deletingDepartment.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to delete department');
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Department deleted successfully',
+      });
+
+      setDeletingDepartment(null);
+      loadDepartments();
+    } catch (error) {
+      console.error('Failed to delete department:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to delete department',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -101,13 +144,29 @@ export default function DepartmentsTable({ instituteId }: DepartmentsTableProps)
                 <TableCell>{department._count?.students || 0}</TableCell>
                 <TableCell>{department._count?.faculties || 0}</TableCell>
                 <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedDepartment(department)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedDepartment(department)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditingDepartment(department)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDeletingDepartment(department)}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-600" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -153,6 +212,67 @@ export default function DepartmentsTable({ instituteId }: DepartmentsTableProps)
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Edit Department Dialog */}
+      <Dialog open={!!editingDepartment} onOpenChange={() => setEditingDepartment(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Department</DialogTitle>
+          </DialogHeader>
+          {editingDepartment && (
+            <EditDepartmentForm
+              department={editingDepartment}
+              onSuccess={() => {
+                setEditingDepartment(null);
+                loadDepartments();
+              }}
+              onCancel={() => setEditingDepartment(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingDepartment} onOpenChange={() => setDeletingDepartment(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Department</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong>{deletingDepartment?.name}</strong>?
+              {deletingDepartment && deletingDepartment._count && (
+                <>
+                  <br /><br />
+                  <strong className="text-red-600">Warning:</strong> This department has:
+                  <ul className="list-disc list-inside mt-2">
+                    {deletingDepartment._count.batches > 0 && <li>{deletingDepartment._count.batches} batch(es)</li>}
+                    {deletingDepartment._count.students > 0 && <li>{deletingDepartment._count.students} student(s)</li>}
+                    {deletingDepartment._count.faculties > 0 && <li>{deletingDepartment._count.faculties} faculty member(s)</li>}
+                  </ul>
+                  <br />
+                  You must reassign or delete these records first.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
