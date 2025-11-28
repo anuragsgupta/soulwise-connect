@@ -108,8 +108,22 @@ export const SENTIMENT_ANALYSIS_PROMPT_TOON = encode({
 /**
  * Response generation prompt in Toon format for Gemini
  */
-export function buildGeminiPromptToon(message: string): string {
-  return `${MANN_MITRA_SYSTEM_PROMPT_TOON}\n\n${formatUserMessageToon(message)}`;
+export function buildGeminiPromptToon(message: string, contextSummary?: string): string {
+  const contextBlock = contextSummary
+    ? encode({
+        recent_ctx: contextSummary,
+        keep_response_short: '2 friendly bursts, <=120 words total',
+        continuity: 'respect prior user concerns and promises',
+      })
+    : '';
+
+  return [
+    MANN_MITRA_SYSTEM_PROMPT_TOON,
+    contextBlock,
+    formatUserMessageToon(message),
+  ]
+    .filter(Boolean)
+    .join('\n\n');
 }
 
 /**
