@@ -26,6 +26,9 @@ import {
 import BreathingBall from "./games/BreathingBall";
 import BoxBreathing from "./games/BoxBreathing";
 import CalmCircle from "./games/CalmCircle";
+import ZenWaterRipple from "./games/ZenWaterRipple";
+import MandalaColorPicker from "./games/MandalaColorPicker";
+import FallingLeavesGrounding from "./games/FallingLeavesGrounding";
 
 interface Resource {
   id: string;
@@ -189,6 +192,39 @@ const ResourceHub = () => {
       duration: '7 min',
       rating: 4.9,
       downloads: 3500
+    },
+    {
+      id: '15',
+      title: 'Zen Water Ripple',
+      description: 'Create calming water ripples with each tap. Visual ASMR effect for instant relaxation.',
+      type: 'game',
+      category: 'games',
+      duration: 'Unlimited',
+      rating: 4.9,
+      downloads: 6200,
+      url: 'zen-water-ripple'
+    },
+    {
+      id: '16',
+      title: 'Mandala Color Therapy',
+      description: 'Fill mandala sections with calming colors. Color therapy meets pattern recognition.',
+      type: 'game',
+      category: 'games',
+      duration: '10-15 min',
+      rating: 4.8,
+      downloads: 5400,
+      url: 'mandala-color-picker'
+    },
+    {
+      id: '17',
+      title: 'Falling Leaves Grounding',
+      description: 'Drag autumn leaves into a basket. Grounding technique with slow deliberate movements.',
+      type: 'game',
+      category: 'games',
+      duration: '5-10 min',
+      rating: 4.7,
+      downloads: 4800,
+      url: 'falling-leaves'
     }
   ];
 
@@ -246,6 +282,15 @@ const ResourceHub = () => {
         setShowGame(true);
       } else if (resource.url === 'box-breathing') {
         setCurrentGame('box-breathing');
+        setShowGame(true);
+      } else if (resource.url === 'zen-water-ripple') {
+        setCurrentGame('zen-water-ripple');
+        setShowGame(true);
+      } else if (resource.url === 'mandala-color-picker') {
+        setCurrentGame('mandala-color-picker');
+        setShowGame(true);
+      } else if (resource.url === 'falling-leaves') {
+        setCurrentGame('falling-leaves');
         setShowGame(true);
       } else {
         // External URL
@@ -444,7 +489,7 @@ const ResourceHub = () => {
                 </p>
                 <div className="flex items-center text-xs sm:text-sm text-orange-700 font-medium">
                   <Gamepad2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                  3 Games
+                  6 Games
                 </div>
               </CardContent>
             </Card>
@@ -499,6 +544,15 @@ const ResourceHub = () => {
       )}
       {showGame && currentGame === 'box-breathing' && (
         <BoxBreathing onClose={() => setShowGame(false)} />
+      )}
+      {showGame && currentGame === 'zen-water-ripple' && (
+        <ZenWaterRipple onClose={() => setShowGame(false)} />
+      )}
+      {showGame && currentGame === 'mandala-color-picker' && (
+        <MandalaColorPicker onClose={() => setShowGame(false)} />
+      )}
+      {showGame && currentGame === 'falling-leaves' && (
+        <FallingLeavesGrounding onClose={() => setShowGame(false)} />
       )}
     </div>
   );
