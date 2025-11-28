@@ -30,6 +30,7 @@ import ChatBot from "./ChatBot";
 import AppointmentBooking from "./AppointmentBooking";
 import ResourceHub from "./ResourceHub";
 import PeerForum from "./PeerForum";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface StudentDashboardProps {
   onLogout: () => void;
@@ -37,6 +38,7 @@ interface StudentDashboardProps {
 
 const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'mood' | 'chat' | 'appointments' | 'resources' | 'forum'>('dashboard');
   const [wellnessScore, setWellnessScore] = useState(15);
   const [userLocation, setUserLocation] = useState<{
@@ -139,7 +141,8 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             
             // Log location for student safety and emergency purposes
             console.log('Student Location Logged:', {
-              studentId: 'current-student', // In real app, this would come from auth context
+              studentId: user?.id || 'unknown',
+              name: user?.name || 'Unknown Student',
               location: locationData,
               loginTime: new Date().toISOString()
             });
@@ -162,7 +165,8 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             
             // Still log even without address
             console.log('Student Location Logged:', {
-              studentId: 'current-student',
+              studentId: user?.id || 'unknown',
+              name: user?.name || 'Unknown Student',
               location: locationData,
               loginTime: new Date().toISOString()
             });
@@ -266,7 +270,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       // Show confirmation toast
       toast({
         title: "Logged Out Successfully",
-        description: "You have been safely logged out. Thank you for using Mann Mitra!",
+        description: `Goodbye ${user?.name || 'Student'}! You have been safely logged out. Thank you for using Mann Mitra!`,
         duration: 3000,
       });
       
@@ -296,7 +300,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       description: "Complete mental health survey",
       icon: ClipboardCheck,
       color: "from-purple-500 to-pink-500",
-      action: () => window.location.href = '/phq9-survey?studentId=current-student'
+      action: () => window.location.href = `/phq9-survey?studentId=${user?.id || 'unknown'}`
     },
     {
       title: "AI Support Chat",
@@ -342,11 +346,41 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-2xl font-bold text-foreground">
-                      Welcome back, Student! 👋
+                      Welcome back, {user?.name || 'Student'}! 👋
                     </CardTitle>
                     <CardDescription className="text-lg mt-2">
                       How are you feeling today? Let&apos;s check in on your wellness journey.
                     </CardDescription>
+                    {user?.rollNumber && (
+                      <div className="mt-2 flex items-center text-sm text-muted-foreground">
+                        <ClipboardCheck className="w-4 h-4 mr-1 text-blue-600" />
+                        <span>Roll Number: {user.rollNumber}</span>
+                        {user.batch?.name && (
+                          <span className="ml-4">
+                            <Users className="w-4 h-4 mr-1 inline text-green-600" />
+                            Batch: {user.batch.name}
+                          </span>
+                        )}
+                        {user?.currentSemester && (
+                          <span className="ml-4">
+                            <Calendar className="w-4 h-4 mr-1 inline text-orange-600" />
+                            Semester: {user.currentSemester}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {(user?.department?.name || user?.institute?.name) && (
+                      <div className="mt-1 flex items-center text-sm text-muted-foreground">
+                        <BookOpen className="w-4 h-4 mr-1 text-purple-600" />
+                        {user.department?.name && <span>Department: {user.department.name}</span>}
+                        {user.institute?.name && (
+                          <span className={user.department?.name ? "ml-4" : ""}>
+                            <Heart className="w-4 h-4 mr-1 inline text-red-600" />
+                            Institute: {user.institute.name}
+                          </span>
+                        )}
+                      </div>
+                    )}
                     {userLocation && (
                       <div className="mt-2 flex items-center text-sm text-muted-foreground">
                         <MapPin className="w-4 h-4 mr-1 text-green-600" />
