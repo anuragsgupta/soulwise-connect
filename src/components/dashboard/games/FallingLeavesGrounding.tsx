@@ -29,22 +29,23 @@ const FallingLeavesGrounding = ({ onClose }: FallingLeavesProps) => {
   const [leaves, setLeaves] = useState<Leaf[]>([]);
   const [score, setScore] = useState(0);
   const [draggedLeaf, setDraggedLeaf] = useState<number | null>(null);
-  const [canvasSize, setCanvasSize] = useState({ width: 700, height: 600 });
+  const [canvasSize, setCanvasSize] = useState({ width: 640, height: 520 });
   const animationRef = useRef<number | undefined>(undefined);
   const leafIdRef = useRef(0);
 
-  const basketY = canvasSize.height - 80;
-  const basketX = canvasSize.width / 2 - 100;
-  const basketWidth = 200;
+  const basketWidth = Math.max(160, Math.min(220, canvasSize.width * 0.5));
+  const basketHeight = Math.max(70, Math.min(100, canvasSize.height * 0.18));
+  const basketX = (canvasSize.width - basketWidth) / 2;
+  const basketY = canvasSize.height - basketHeight - 20;
 
   // Handle responsive canvas sizing
   useEffect(() => {
     const handleResize = () => {
-      if (containerRef.current) {
-        const width = Math.min(containerRef.current.clientWidth - 48, 800);
-        const height = Math.min(containerRef.current.clientHeight - 48, 600);
-        setCanvasSize({ width, height });
-      }
+      const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 768;
+      const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 1024;
+      const width = Math.max(280, Math.min(viewportWidth - 48, 720));
+      const height = Math.max(320, Math.min(viewportHeight - 220, 560));
+      setCanvasSize({ width, height });
     };
 
     handleResize();
@@ -53,10 +54,10 @@ const FallingLeavesGrounding = ({ onClose }: FallingLeavesProps) => {
   }, []);
 
   useEffect(() => {
-    // Initialize leaves
-    const initialLeaves: Leaf[] = Array.from({ length: 12 }, () => ({
+    // Initialize leaves with reduced count for calmer pacing
+    const initialLeaves: Leaf[] = Array.from({ length: 8 }, () => ({
       id: leafIdRef.current++,
-      x: Math.random() * (canvasSize.width - 50),
+      x: Math.random() * Math.max(50, canvasSize.width - 50),
       y: -20 - Math.random() * 200,
       vx: (Math.random() - 0.5) * 0.5,
       vy: 0.5 + Math.random() * 0.5,
@@ -82,8 +83,8 @@ const FallingLeavesGrounding = ({ onClose }: FallingLeavesProps) => {
           if (newY > canvasSize.height) {
             return {
               ...leaf,
-              x: Math.random() * (canvasSize.width - 50),
-              y: -20,
+              x: Math.random() * Math.max(50, canvasSize.width - 50),
+              y: -100 - Math.random() * 200,
               vx: (Math.random() - 0.5) * 0.5,
               vy: 0.5 + Math.random() * 0.5,
               rotation: Math.random() * 360,
@@ -131,8 +132,8 @@ const FallingLeavesGrounding = ({ onClose }: FallingLeavesProps) => {
     ctx.beginPath();
     ctx.moveTo(basketX, basketY);
     ctx.lineTo(basketX + basketWidth, basketY);
-    ctx.lineTo(basketX + basketWidth - 20, basketY + 60);
-    ctx.lineTo(basketX + 20, basketY + 60);
+    ctx.lineTo(basketX + basketWidth - 25, basketY + basketHeight);
+    ctx.lineTo(basketX + 25, basketY + basketHeight);
     ctx.closePath();
     ctx.fill();
     ctx.strokeStyle = '#654321';
@@ -166,7 +167,7 @@ const FallingLeavesGrounding = ({ onClose }: FallingLeavesProps) => {
 
       ctx.restore();
     });
-  }, [leaves, basketX, basketY, canvasSize]);
+  }, [leaves, basketX, basketY, basketHeight, basketWidth, canvasSize]);
 
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -221,7 +222,7 @@ const FallingLeavesGrounding = ({ onClose }: FallingLeavesProps) => {
             leaf.x >= basketX &&
             leaf.x <= basketX + basketWidth &&
             leaf.y >= basketY &&
-            leaf.y <= basketY + 60
+            leaf.y <= basketY + basketHeight
           ) {
             setScore(s => s + 1);
             // Remove this leaf
@@ -262,13 +263,14 @@ const FallingLeavesGrounding = ({ onClose }: FallingLeavesProps) => {
         {/* Game Canvas */}
         <div 
           ref={containerRef}
-          className="flex-1 flex items-center justify-center p-6 bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50"
+          className="flex-1 flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50"
+          style={{ minHeight: '50vh' }}
         >
           <canvas
             ref={canvasRef}
             width={canvasSize.width}
             height={canvasSize.height}
-            className="border-2 border-gray-200 rounded-lg shadow-lg bg-gradient-to-b from-sky-100 to-sky-50 cursor-grab active:cursor-grabbing max-w-full"
+            className="border-2 border-gray-200 rounded-lg shadow-lg bg-gradient-to-b from-sky-100 to-sky-50 cursor-grab active:cursor-grabbing w-full h-full"
             onMouseDown={handleCanvasMouseDown}
             onMouseMove={handleCanvasMouseMove}
             onMouseUp={handleCanvasMouseUp}
@@ -276,8 +278,6 @@ const FallingLeavesGrounding = ({ onClose }: FallingLeavesProps) => {
             onTouchStart={(e) => {
               e.preventDefault();
               const touch = e.touches[0];
-              const rect = canvasRef.current?.getBoundingClientRect();
-              if (!rect) return;
               const syntheticEvent = {
                 clientX: touch.clientX,
                 clientY: touch.clientY,
@@ -289,8 +289,6 @@ const FallingLeavesGrounding = ({ onClose }: FallingLeavesProps) => {
             onTouchMove={(e) => {
               e.preventDefault();
               const touch = e.touches[0];
-              const rect = canvasRef.current?.getBoundingClientRect();
-              if (!rect) return;
               const syntheticEvent = {
                 clientX: touch.clientX,
                 clientY: touch.clientY,
