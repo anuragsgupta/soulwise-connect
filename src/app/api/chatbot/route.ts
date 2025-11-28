@@ -7,8 +7,9 @@ import {
 import { sendDirectSMSAlert } from '@/lib/directSMSService';
 import { buildGeminiPromptToon } from '@/lib/ai/toon-prompts';
 import { analyzeSentiment, detectEmotions, assessRiskLevel } from '@/lib/ai/sentiment-analyzer';
-import { saveChatMessage } from '@/lib/dynamodb/chatMemory';
+import { saveChatMessage, getConversationContext } from '@/lib/dynamodb/chatMemory';
 import type { SentimentLabel, RiskLevel, EmotionScores } from '@/lib/ai/types';
+import type { ChatMemoryItem } from '@/lib/dynamodb/schema';
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,6 +31,7 @@ export async function POST(request: NextRequest) {
 
     // Generate user ID if not provided (for anonymous users)
     const effectiveUserId = userId || sessionId || generateSessionId();
+    let contextSummary = '';
 
     // ========================================
     // STEP 1: SENTIMENT ANALYSIS ON USER MESSAGE
@@ -65,6 +67,13 @@ export async function POST(request: NextRequest) {
     } catch (dbError) {
       console.error('⚠️ Failed to save user message to DynamoDB:', dbError);
       // Continue processing even if DB save fails
+    }
+
+    try {
+      const contextData = await getConversationContext(effectiveUserId, 12);
+      contextSummary = summarizeConversationForPrompt(contextData);
+    } catch (contextError) {
+      console.error('⚠️ Failed to build context summary:', contextError);
     }
 
     // ========================================
@@ -177,7 +186,7 @@ export async function POST(request: NextRequest) {
           {
             parts: [
               {
-                text: buildGeminiPromptToon(message)
+                text: buildGeminiPromptToon(message, contextSummary)
               }
             ]
           }
@@ -370,4 +379,63 @@ function getFallbackResponse(): string {
   ];
   
   return fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
+}
+
+interface ConversationContextSnapshot {
+  messages: ChatMemoryItem[];
+  overallSentiment: 'positive' | 'neutral' | 'negative';
+  riskLevel: 'normal' | 'mild' | 'severe';
+  emotionSummary: EmotionScores;
+}
+
+function summarizeConversationForPrompt(context: ConversationContextSnapshot): string {
+  if (!context.messages.length) return '';
+
+  const sanitizeSnippet = (text: string, limit = 140) =>
+    text
+      .replace(/\s+/g, ' ')
+      .replace(/[\*`_~]/g, '')
+      .trim()
+      .slice(0, limit);
+
+  const userSnippets = context.messages
+    .filter((msg) => msg.role === 'user')
+    .slice(-3)
+    .map((msg) => sanitizeSnippet(msg.message));
+
+  const botSnippets = context.messages
+    .filter((msg) => msg.role === 'assistant')
+    .slice(-2)
+    .map((msg) => sanitizeSnippet(msg.message));
+
+  const summaryParts = [] as string[];
+
+  if (userSnippets.length) {
+    summaryParts.push(`usr:${userSnippets.join(' || ')}`);
+  }
+
+  if (botSnippets.length) {
+    summaryParts.push(`bot:${botSnippets.join(' || ')}`);
+  }
+
+  summaryParts.push(`sentiment:${context.overallSentiment}`);
+  summaryParts.push(`risk:${context.riskLevel}`);
+
+  const emotionSnapshot = formatDominantEmotions(context.emotionSummary);
+  if (emotionSnapshot) {
+    summaryParts.push(`mood:${emotionSnapshot}`);
+  }
+
+  const summary = summaryParts.join(' | ');
+  return summary.length > 900 ? `${summary.slice(0, 900)}...` : summary;
+}
+
+function formatDominantEmotions(emotions: EmotionScores): string | undefined {
+  const ranked = Object.entries(emotions)
+    .sort((a, b) => b[1] - a[1])
+    .filter(([, score]) => score > 0.15)
+    .slice(0, 2)
+    .map(([emotion, score]) => `${emotion}:${score.toFixed(2)}`);
+
+  return ranked.length ? ranked.join(', ') : undefined;
 }

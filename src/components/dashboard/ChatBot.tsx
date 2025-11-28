@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import ChatMessages, { Message } from "./ChatMessages";
+import ChatMessages, { Message, QuickReply, ResourceAction } from "./ChatMessages";
 import ChatInput from "./ChatInput";
 import { 
   Bot, 
@@ -22,6 +22,313 @@ import {
 
 // Lazy load Spline component
 // const Spline = lazy(() => import('@splinetool/react-spline/next'));
+
+type SupportOptions = Pick<Message, 'quickReplies' | 'resourceCard'>;
+
+const randomId = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
+
+const buildQuickReplies = (items: Array<{ label: string; value: string }>): QuickReply[] =>
+  items.map((item) => ({
+    id: randomId('qr'),
+    label: item.label,
+    value: item.value,
+  }));
+
+const buildResourceActions = (actions: Array<Omit<ResourceAction, 'id'>>): ResourceAction[] =>
+  actions.map((action) => ({
+    ...action,
+    id: randomId('act'),
+  }));
+
+const buildResourceCard = (config: {
+  title: string;
+  subtitle?: string;
+  description: string;
+  tag?: string;
+  actions: Array<Omit<ResourceAction, 'id'>>;
+}): SupportOptions['resourceCard'] => ({
+  title: config.title,
+  subtitle: config.subtitle,
+  description: config.description,
+  tag: config.tag,
+  actions: buildResourceActions(config.actions),
+});
+
+const splitIntoFriendlyBursts = (text: string): string[] => {
+  if (!text) return [];
+  const normalized = text.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!normalized) return [];
+
+  const sentences = normalized.split(/(?<=[.!?])\s+/);
+  const bursts: string[] = [];
+  let current = '';
+
+  const flushCurrent = () => {
+    if (current.trim()) {
+      bursts.push(current.trim());
+      current = '';
+    }
+  };
+
+  for (const sentence of sentences) {
+    if (!sentence) continue;
+    const candidate = current ? `${current} ${sentence}`.trim() : sentence;
+
+    if (candidate.length <= 120) {
+      current = candidate;
+      continue;
+    }
+
+    flushCurrent();
+
+    if (sentence.length <= 120) {
+      current = sentence;
+      continue;
+    }
+
+    let chunk = sentence;
+    while (chunk.length > 120) {
+      bursts.push(chunk.slice(0, 120).trim());
+      chunk = chunk.slice(120);
+    }
+    current = chunk.trim();
+  }
+
+  flushCurrent();
+
+  return bursts.length ? bursts.slice(0, 4) : [normalized];
+};
+
+const buildFriendlyMessages = (
+  baseMessage: Message,
+  quickReplies?: QuickReply[],
+  resourceCard?: SupportOptions['resourceCard']
+): Message[] => {
+  const baseId = baseMessage.id || randomId('msg');
+  const bursts = splitIntoFriendlyBursts(baseMessage.content);
+
+  if (bursts.length === 0) {
+    return [{
+      ...baseMessage,
+      id: baseId,
+      quickReplies,
+      resourceCard,
+    }];
+  }
+
+  return bursts.map((content, index) => ({
+    ...baseMessage,
+    id: bursts.length === 1 ? baseId : `${baseId}-${index + 1}`,
+    content,
+    quickReplies: index === bursts.length - 1 ? quickReplies : undefined,
+    resourceCard: index === bursts.length - 1 ? resourceCard : undefined,
+  }));
+};
+
+const cleanForQuickReply = (text: string) =>
+  text
+    .replace(/[*_`]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const extractFollowUpQuestions = (text?: string): string[] => {
+  if (!text) return [];
+  const sanitized = cleanForQuickReply(text);
+  const matches = sanitized.match(/[^?.!]*\?/g);
+  return matches ? matches.map((q) => q.trim()).filter(Boolean) : [];
+};
+
+const transformQuestionToResponse = (question: string): string => {
+  const trimmed = cleanForQuickReply(question).replace(/\?+$/, '');
+  if (!trimmed) return '';
+
+  const templates: Array<{ regex: RegExp; build: (match: RegExpMatchArray) => string }> = [
+    {
+      regex: /^would you like me to (.+)$/i,
+      build: (match) => `Yes, please ${match[1].trim()}.`,
+    },
+    {
+      regex: /^would you like to (.+)$/i,
+      build: (match) => `Yes, I'd like to ${match[1].trim()}.`,
+    },
+    {
+      regex: /^do you want to (.+)$/i,
+      build: (match) => `Yes, let's ${match[1].trim()}.`,
+    },
+    {
+      regex: /^should we (.+)$/i,
+      build: (match) => `Yes, let's ${match[1].trim()}.`,
+    },
+    {
+      regex: /^can i (.+)$/i,
+      build: (match) => `Please ${match[1].trim()}.`,
+    },
+    {
+      regex: /^can you (.+)$/i,
+      build: (match) => `Please ${match[1].trim()}.`,
+    },
+    {
+      regex: /^would it help if i (.+)$/i,
+      build: (match) => `Yes, it would help if you ${match[1].trim()}.`,
+    },
+  ];
+
+  for (const template of templates) {
+    const match = trimmed.match(template.regex);
+    if (match) {
+      return template.build(match).replace(/\s+/g, ' ').trim();
+    }
+  }
+
+  return `${trimmed}?`;
+};
+
+const buildKeywordFallbackReplies = (context: string): Array<{ label: string; value: string }> => {
+  const normalized = context.toLowerCase();
+  const suggestions: Array<{ label: string; value: string }> = [];
+  const pushUnique = (label: string, value: string) => {
+    if (!suggestions.some((item) => item.value === value)) {
+      suggestions.push({ label, value });
+    }
+  };
+
+  if (/(breath|calm|ground|anxious|anxiety)/.test(normalized)) {
+    pushUnique('Guide a calming exercise', 'Can you guide me through that calming exercise you mentioned?');
+  }
+
+  if (/(sleep|rest|insomnia|bedtime)/.test(normalized)) {
+    pushUnique('Share a sleep routine', 'Could you help me build that sleep routine you referenced?');
+  }
+
+  if (/(study|exam|assignment|focus|productivity)/.test(normalized)) {
+    pushUnique('Help with study plan', "Let's create the focused study plan you suggested.");
+  }
+
+  if (/(counsel|therap|support group|appointment)/.test(normalized)) {
+    pushUnique('Connect me to support', 'Please connect me with a counselor or support pathway.');
+  }
+
+  if (!suggestions.length) {
+    pushUnique('Tell me more ideas', 'Can you share a few more ideas based on that?');
+  }
+
+  return suggestions.slice(0, 3);
+};
+
+const buildContextualQuickReplies = (botContent?: string, userMessage?: string): QuickReply[] => {
+  if (!botContent) return [];
+  const questionReplies = extractFollowUpQuestions(botContent)
+    .map((question) => transformQuestionToResponse(question))
+    .filter((reply) => reply && reply.length > 0)
+    .slice(0, 3)
+    .map((reply) => ({
+      id: randomId('qr'),
+      label: reply.length > 48 ? `${reply.slice(0, 45)}...` : reply,
+      value: reply,
+    }));
+
+  if (questionReplies.length) {
+    return questionReplies;
+  }
+
+  return buildKeywordFallbackReplies(`${botContent} ${userMessage || ''}`).map((suggestion) => ({
+    id: randomId('qr'),
+    label: suggestion.label,
+    value: suggestion.value,
+  }));
+};
+
+const calmingSupportOptions = (): SupportOptions => ({
+  quickReplies: buildQuickReplies([
+    { label: 'Breathing exercise', value: 'Can you guide me through a calming breathing exercise?' },
+    { label: 'Grounding games', value: 'Show me a grounding activity to help me feel calmer.' },
+    { label: 'Talk to counselor', value: 'I would like to speak with a counselor.' },
+  ]),
+  resourceCard: buildResourceCard({
+    title: 'Calming Support Toolkit',
+    subtitle: 'Take a mindful pause',
+    description: 'Try guided breathing, grounding games, or connect with a counselor when anxiety feels heavy.',
+    tag: 'Guided Support',
+    actions: [
+      { label: 'Open calming tools', type: 'navigate', value: 'resources', variant: 'primary' },
+      { label: 'Lead a breathing exercise', type: 'message', value: 'Lead me through a breathing exercise right now.' },
+      { label: 'Maybe later', type: 'dismiss', variant: 'ghost' },
+    ],
+  }),
+});
+
+const sleepSupportOptions = (): SupportOptions => ({
+  quickReplies: buildQuickReplies([
+    { label: 'Better sleep tips', value: 'Share more tips to improve my sleep.' },
+    { label: 'Relaxation audio', value: 'Do you have a relaxation exercise for bedtime?' },
+    { label: 'Track my sleep', value: 'Help me build a simple sleep routine.' },
+  ]),
+  resourceCard: buildResourceCard({
+    title: 'Rest & Recharge Plan',
+    subtitle: 'Sleep hygiene boosts mood',
+    description: 'Explore bedtime routines, calming audio, and reflective journaling to reset your sleep.',
+    tag: 'Sleep Care',
+    actions: [
+      { label: 'Open sleep resources', type: 'navigate', value: 'resources', variant: 'primary' },
+      { label: 'Set a bedtime reminder', type: 'message', value: 'Help me set a bedtime reminder routine.' },
+      { label: 'Maybe later', type: 'dismiss', variant: 'ghost' },
+    ],
+  }),
+});
+
+const professionalSupportOptions = (): SupportOptions => ({
+  quickReplies: buildQuickReplies([
+    { label: 'Book a counselor', value: 'Please help me book a counseling appointment.' },
+    { label: 'Peer support', value: 'Show me peer support groups I can join.' },
+    { label: 'Crisis helplines', value: 'Share crisis helpline information with me.' },
+  ]),
+  resourceCard: buildResourceCard({
+    title: 'Personalised Support Pathways',
+    subtitle: 'You deserve professional care',
+    description: 'Connect with campus counselors, peer groups, or crisis teams tailored to your needs.',
+    tag: 'Professional Support',
+    actions: [
+      { label: 'Book a session', type: 'navigate', value: 'appointments', variant: 'primary' },
+      { label: 'Explore resources', type: 'navigate', value: 'resources', variant: 'secondary' },
+      { label: 'Maybe later', type: 'dismiss', variant: 'ghost' },
+    ],
+  }),
+});
+
+const locationSupportOptions = (): SupportOptions => ({
+  quickReplies: buildQuickReplies([
+    { label: 'Nearby services', value: 'Yes, show me mental health services near me.' },
+    { label: 'Emergency contacts', value: 'Share emergency contacts for my area.' },
+    { label: 'Maybe later', value: 'Maybe later, thanks.' },
+  ]),
+  resourceCard: buildResourceCard({
+    title: 'Location-Aware Help',
+    subtitle: 'Personalised to where you are',
+    description: 'Access nearby clinics, crisis centers, and peer spaces so you can get support quickly.',
+    tag: 'Safety First',
+    actions: [
+      { label: 'Find nearby support', type: 'message', value: 'Please share nearby mental health services.' },
+      { label: 'Share location', type: 'message', value: 'I want to share my current location details.' },
+      { label: 'Maybe later', type: 'dismiss', variant: 'ghost' },
+    ],
+  }),
+});
+
+const generalSupportOptions = (): SupportOptions => ({
+  quickReplies: buildQuickReplies([
+    { label: 'Share how I feel', value: "I want to talk more about how I'm feeling right now." },
+    { label: 'Need coping idea', value: 'Can you share a simple coping idea I can try today?' },
+    { label: 'Study pressure help', value: 'Can we talk about managing study or exam stress?' },
+  ]),
+});
+
+type ProcessMessageOrigin = 'quick-reply' | 'resource-card' | 'default';
+
+interface ProcessMessageOptions {
+  showSendToast?: boolean;
+  showResponseToast?: boolean;
+  origin?: ProcessMessageOrigin;
+}
 
 
 const ChatBot = () => {
@@ -76,13 +383,19 @@ const ChatBot = () => {
             setTimeout(() => scrollToBottom(), 300);
           } else {
             // Set initial welcome message if no saved messages
-            const welcomeMessage: Message = {
-              id: '1',
-              content: "**Hello! I'm Mann Mitra, your AI mental health companion.** 🤗\n\nI'm here to:\n\n• **Listen** to your concerns\n• **Support** you through challenges  \n• **Guide** you toward helpful resources\n\n**How are you feeling today?** ✨",
-              sender: 'bot',
-              timestamp: new Date(),
-            };
-            setMessages([welcomeMessage]);
+            const generalOptions = generalSupportOptions();
+            const welcomeMessages = buildFriendlyMessages(
+              {
+                id: '1',
+                content: "Hey, I'm Mann Mitra 👋 Think of me as that friend who checks in late at night. How's your headspace today?",
+                sender: 'bot',
+                timestamp: new Date(),
+                type: 'suggestion',
+              },
+              generalOptions.quickReplies,
+              generalOptions.resourceCard
+            );
+            setMessages(welcomeMessages);
             
             // Save welcome message to DynamoDB
             await fetch('/api/chat-memory', {
@@ -91,7 +404,7 @@ const ChatBot = () => {
               body: JSON.stringify({
                 userId: currentSessionId,
                 role: 'assistant',
-                message: welcomeMessage.content,
+                message: welcomeMessages.map((msg) => msg.content).join('\n\n'),
               }),
             });
           }
@@ -101,12 +414,20 @@ const ChatBot = () => {
       } catch (error) {
         console.error('Failed to initialize chat storage:', error);
         // Fallback to default welcome message
-        setMessages([{
-          id: '1',
-          content: "**Hello! I'm Mann Mitra, your AI mental health companion.** 🤗\n\nI'm here to:\n\n• **Listen** to your concerns\n• **Support** you through challenges  \n• **Guide** you toward helpful resources\n\n**How are you feeling today?** ✨",
-          sender: 'bot',
-          timestamp: new Date(),
-        }]);
+        const generalOptions = generalSupportOptions();
+        setMessages(
+          buildFriendlyMessages(
+            {
+              id: '1',
+              content: "Hey, I'm Mann Mitra 👋 Dropping by to check in whenever you need me. What's the vibe today?",
+              sender: 'bot',
+              timestamp: new Date(),
+              type: 'suggestion',
+            },
+            generalOptions.quickReplies,
+            generalOptions.resourceCard
+          )
+        );
       } finally {
         setIsLoading(false);
       }
@@ -274,15 +595,20 @@ const ChatBot = () => {
 
         // Bot response with location-based services
         setTimeout(async () => {
-          const botResponse: Message = {
-            id: (Date.now() + 1).toString(),
-            content: `**Thank you for sharing your location!** 📍\n\nI can now help you with:\n\n• **Nearby mental health services** 🏥\n• **Emergency contacts** in your area 📞\n• **Local support groups** 👥\n• **Crisis centers** near you 🆘\n\nWould you like me to find **mental health resources** in your area?`,
-            sender: 'bot',
-            timestamp: new Date(),
-            type: 'suggestion'
-          };
+          const locationOptions = locationSupportOptions();
+          const locationResponses = buildFriendlyMessages(
+            {
+              id: (Date.now() + 1).toString(),
+              content: 'Awesome, got your location pinned. Want me to pull nearby clinics, helplines, or student support rooms?',
+              sender: 'bot',
+              timestamp: new Date(),
+              type: 'suggestion',
+            },
+            locationOptions.quickReplies,
+            locationOptions.resourceCard
+          );
 
-          setMessages(prev => [...prev, botResponse]);
+          setMessages(prev => [...prev, ...locationResponses]);
           
           try {
             // Save location messages to DynamoDB
@@ -302,7 +628,7 @@ const ChatBot = () => {
               body: JSON.stringify({
                 userId: sessionId,
                 role: 'assistant',
-                message: botResponse.content,
+                message: locationResponses.map((res) => res.content).join('\n\n'),
               }),
             });
           } catch (error) {
@@ -372,7 +698,7 @@ const ChatBot = () => {
     return () => clearTimeout(timer);
   }, [messages, isTyping]);
 
-  const generateBotResponse = async (userMessage: string): Promise<Message> => {
+  const generateBotResponse = async (userMessage: string): Promise<Message[]> => {
     try {
       // Call our enhanced chatbot API route with crisis detection
       const response = await fetch('/api/chatbot', {
@@ -404,7 +730,7 @@ const ChatBot = () => {
             });
           }
 
-          return {
+          const botMessage: Message = {
             id: Date.now().toString(),
             content: data.message,
             sender: 'bot',
@@ -414,6 +740,13 @@ const ChatBot = () => {
                   data.crisisLevel === 'high' ? 'warning' : 
                   data.crisisLevel === 'medium' ? 'suggestion' : undefined,
           };
+
+          const dynamicQuickReplies = buildContextualQuickReplies(botMessage.content, userMessage);
+
+          return buildFriendlyMessages(
+            botMessage,
+            dynamicQuickReplies.length ? dynamicQuickReplies : undefined
+          );
         }
       }
     } catch (error) {
@@ -425,175 +758,299 @@ const ChatBot = () => {
     
     // Analyze user message for keywords and provide appropriate responses with formatting
     if (lowerMessage.includes('anxious') || lowerMessage.includes('anxiety') || lowerMessage.includes('worried')) {
-      return {
-        id: Date.now().toString(),
-        content: "**I understand you're feeling anxious.** 💙\n\nAnxiety is common during college years. Here's a **quick breathing exercise**:\n\n1. **Breathe in** for 4 counts\n2. **Hold** for 4 counts  \n3. **Exhale** for 6 counts\n\nTry this 3 times. Would you like me to guide you through more **coping strategies**?",
-        sender: 'bot',
-        timestamp: new Date(),
-        type: 'suggestion'
-      };
+      const calmingOptions = calmingSupportOptions();
+      return buildFriendlyMessages(
+        {
+          id: Date.now().toString(),
+          content: "Hey, I hear the jitters in your note. Slow breath can reset everything. Want me to walk you through that 4-4-6 breath right now?",
+          sender: 'bot',
+          timestamp: new Date(),
+          type: 'suggestion',
+        },
+        calmingOptions.quickReplies,
+        calmingOptions.resourceCard
+      );
     }
     
     if (lowerMessage.includes('stressed') || lowerMessage.includes('overwhelmed') || lowerMessage.includes('pressure')) {
-      return {
-        id: Date.now().toString(),
-        content: "**Feeling overwhelmed is completely normal** when dealing with academic pressures. 🎓\n\nLet's break this down:\n\n• What's the **main source** of your stress right now?\n• Sometimes just **talking about it** helps us find manageable solutions\n\n**You're not alone** in feeling this way.",
-        sender: 'bot',
-        timestamp: new Date(),
-      };
+      const calmingOptions = calmingSupportOptions();
+      return buildFriendlyMessages(
+        {
+          id: Date.now().toString(),
+          content: "Totally get how heavy that stack of stress can feel. Let's zoom in on the one thing bugging you most. We can tag-team it from there.",
+          sender: 'bot',
+          timestamp: new Date(),
+          type: 'suggestion',
+        },
+        calmingOptions.quickReplies,
+        calmingOptions.resourceCard
+      );
     }
     
     if (lowerMessage.includes('depressed') || lowerMessage.includes('sad') || lowerMessage.includes('hopeless')) {
-      return {
-        id: Date.now().toString(),
-        content: "**I'm concerned about how you're feeling.** ❤️\n\nThese emotions are important and deserve attention. While I can offer support, I **strongly recommend** speaking with a professional counselor.\n\n**Would you like me to help you:**\n• Schedule an appointment with campus mental health services\n• Find crisis support resources\n\n**You deserve professional care.**",
-        sender: 'bot',
-        timestamp: new Date(),
-        type: 'warning'
-      };
+      const professionalOptions = professionalSupportOptions();
+      return buildFriendlyMessages(
+        {
+          id: Date.now().toString(),
+          content: "Hey, I'm really glad you told me. You deserve backup on days like this. Want me to line up a counselor or crisis support so you're not carrying it solo?",
+          sender: 'bot',
+          timestamp: new Date(),
+          type: 'warning',
+        },
+        professionalOptions.quickReplies,
+        professionalOptions.resourceCard
+      );
     }
     
     if (lowerMessage.includes('sleep') || lowerMessage.includes('insomnia') || lowerMessage.includes('tired')) {
-      return {
-        id: Date.now().toString(),
-        content: "**Sleep issues can significantly impact your mental health.** 😴\n\n**Here are some tips:**\n\n1. Set a **consistent sleep schedule**\n2. **Avoid screens** 1 hour before bed\n3. Try **relaxation techniques** like progressive muscle relaxation\n\nWould you like me to share some **guided sleep resources**?",
-        sender: 'bot',
-        timestamp: new Date(),
-        type: 'resource'
-      };
+      const sleepOptions = sleepSupportOptions();
+      return buildFriendlyMessages(
+        {
+          id: Date.now().toString(),
+          content: "Ugh, broken sleep throws everything off. We can build a chill bedtime loop or try a mini relaxation audio. Want to try that?",
+          sender: 'bot',
+          timestamp: new Date(),
+          type: 'resource',
+        },
+        sleepOptions.quickReplies,
+        sleepOptions.resourceCard
+      );
     }
     
     if (lowerMessage.includes('exam') || lowerMessage.includes('test') || lowerMessage.includes('study')) {
-      return {
-        id: Date.now().toString(),
-        content: "**Academic stress is very common!** 📚\n\n**Effective study strategies:**\n\n1. Break sessions into **25-minute chunks**\n2. Practice **active recall** instead of re-reading\n3. Take **regular breaks** to prevent burnout\n\n**Remember:** Your worth isn't defined by grades. How can I help you create a **manageable study plan**?",
-        sender: 'bot',
-        timestamp: new Date(),
-        type: 'suggestion'
-      };
+      const generalOptions = generalSupportOptions();
+      return buildFriendlyMessages(
+        {
+          id: Date.now().toString(),
+          content: "Exam brain is real. Let's carve the work into tiny chunks or sketch a quick study map. Where do you want to start?",
+          sender: 'bot',
+          timestamp: new Date(),
+          type: 'suggestion',
+        },
+        generalOptions.quickReplies,
+        generalOptions.resourceCard
+      );
     }
     
     if (lowerMessage.includes('help') || lowerMessage.includes('counselor') || lowerMessage.includes('therapy')) {
-      return {
-        id: Date.now().toString(),
-        content: "**I'm glad you're seeking help** - that takes courage! 🌟\n\nOur campus has **excellent mental health resources**. I can help you:\n\n1. **Schedule** a counseling appointment\n2. Find **peer support groups**\n3. Access **crisis support** if needed\n4. **Find nearby services** with your location 📍\n\n**What kind of support** would be most helpful for you right now?",
-        sender: 'bot',
-        timestamp: new Date(),
-        type: 'resource'
-      };
+      const professionalOptions = professionalSupportOptions();
+      return buildFriendlyMessages(
+        {
+          id: Date.now().toString(),
+          content: "Love that you're reaching out. I can help lock a counselor slot, find peer folks, or share helplines. Which lane feels best?",
+          sender: 'bot',
+          timestamp: new Date(),
+          type: 'resource',
+        },
+        professionalOptions.quickReplies,
+        professionalOptions.resourceCard
+      );
     }
 
     if (lowerMessage.includes('nearby') || lowerMessage.includes('location') || lowerMessage.includes('near me') || lowerMessage.includes('find mental health')) {
-      return {
-        id: Date.now().toString(),
-        content: `**I can help you find nearby mental health services!** 📍\n\n${userLocation ? 
-          `Based on your location: **${userLocation.address || 'Current location'}**\n\n` : 
-          'To find services near you, please **share your location** first.\n\n'
-        }**Available nearby services:**\n\n• **Mental health clinics** 🏥\n• **Crisis intervention centers** 🆘\n• **Support groups** 👥\n• **Emergency services** 📞\n\n${!userLocation ? 'Click the **location button** below to share your location securely.' : 'Would you like specific contact information for any of these services?'}`,
-        sender: 'bot',
-        timestamp: new Date(),
-        type: 'resource'
-      };
+      const locationOptions = locationSupportOptions();
+      return buildFriendlyMessages(
+        {
+          id: Date.now().toString(),
+          content: userLocation
+            ? `Got your location noted (${userLocation.address || 'current spot'}). Want nearby clinics, helplines, or peer spaces?`
+            : 'Happy to scout nearby support, just tap the location share so I can pull the right list.',
+          sender: 'bot',
+          timestamp: new Date(),
+          type: 'resource',
+        },
+        locationOptions.quickReplies,
+        locationOptions.resourceCard
+      );
     }
     
     if (lowerMessage.includes('good') || lowerMessage.includes('better') || lowerMessage.includes('fine') || lowerMessage.includes('okay')) {
-      return {
-        id: Date.now().toString(),
-        content: "**That's wonderful to hear!** 🎉\n\nI'm glad you're doing well. Remember:\n\n• It's great to **check in** even when things are going smoothly\n• **Self-care** is important during good times too\n\nIs there anything specific that's been helping you maintain your **positive mood**? Sharing strategies can help other students too! ✨",
-        sender: 'bot',
-        timestamp: new Date(),
-      };
+      const generalOptions = generalSupportOptions();
+      return buildFriendlyMessages(
+        {
+          id: Date.now().toString(),
+          content: "Love that you're feeling okay! Let's still stash a few go-to habits for the next wobbly day. What's been working lately?",
+          sender: 'bot',
+          timestamp: new Date(),
+          type: 'suggestion',
+        },
+        generalOptions.quickReplies,
+        generalOptions.resourceCard
+      );
     }
 
-    // Default supportive responses with formatting
+    // Default supportive responses, short and friendly
     const defaultResponses = [
-      "**Thank you for sharing that with me.** 💙\n\nYour feelings are **valid and important**. Can you tell me more about what's been on your mind?\n\n• I'm here to listen\n• Your mental health matters\n• You're not alone",
-      "**I appreciate you opening up.** 🌟\n\nMental health is a journey, and I'm here to support you through it.\n\n**What would be most helpful for you right now?**\n• Coping strategies\n• Someone to listen\n• Professional resources",
-      "**It sounds like you're going through something important.** ❤️\n\nWould you like to:\n\n• Explore some **coping strategies**\n• Talk about what's bothering you\n• Learn about **support resources**\n\n**I'm here for you.**",
-      "**I'm here to listen and support you.** 🤗\n\nEvery step you take toward caring for your mental health matters, no matter how small it might seem.\n\n**You're taking a positive step** by reaching out today."
+      "Thanks for trusting me with that. Want to unpack it a bit more?",
+      "Sounds like a lot. I'm hanging out right here with you.",
+      "Totally here for the messy middle. What's the part bugging you most?",
+      "Got you. Want ideas, a vent space, or just a reminder to breathe?"
     ];
     
-    return {
-      id: Date.now().toString(),
-      content: defaultResponses[Math.floor(Math.random() * defaultResponses.length)],
-      sender: 'bot',
-      timestamp: new Date(),
-    };
+    const generalOptions = generalSupportOptions();
+    return buildFriendlyMessages(
+      {
+        id: Date.now().toString(),
+        content: defaultResponses[Math.floor(Math.random() * defaultResponses.length)],
+        sender: 'bot',
+        timestamp: new Date(),
+        type: 'suggestion',
+      },
+      generalOptions.quickReplies,
+      generalOptions.resourceCard
+    );
   };
 
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return;
+  const processUserMessage = async (messageContent: string, options: ProcessMessageOptions = {}) => {
+    const trimmedMessage = messageContent.trim();
+    if (!trimmedMessage) return;
 
-    const messageContent = inputMessage.trim();
-
-    // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: messageContent,
+      content: trimmedMessage,
       sender: 'user',
       timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setInputMessage("");
+    setMessages((prev) => [...prev, userMessage]);
     setIsTyping(true);
 
-    // Scroll to bottom after adding user message
     setTimeout(() => scrollToBottom(), 50);
 
-    // Show confirmation toast
-    toast({
-      title: "Message sent",
-      description: "Your message has been received. Our AI is thinking...",
-      duration: 2000,
-    });
+    const shouldShowSendToast = options.showSendToast ?? true;
+    if (shouldShowSendToast) {
+      toast({
+        title: options.origin === 'quick-reply' ? 'Quick reply sent' : 'Message sent',
+        description:
+          options.origin === 'quick-reply'
+            ? 'Sending your response to Mann Mitra...'
+            : 'Your message has been received. Our AI is thinking...',
+        duration: 2000,
+      });
+    }
 
-    // Simulate bot typing delay
     setTimeout(async () => {
-      // Get AI response with integrated crisis detection
-      const botResponse = await generateBotResponse(messageContent);
+      const botResponses = await generateBotResponse(trimmedMessage);
+      const responsesToUse = botResponses.length
+        ? botResponses
+        : buildFriendlyMessages({
+            id: Date.now().toString(),
+            content: "Hey, I'm still here. Mind sending that once more?",
+            sender: 'bot',
+            timestamp: new Date(),
+          });
 
-      setMessages(prev => [...prev, botResponse]);
+      setMessages((prev) => [...prev, ...responsesToUse]);
       setIsTyping(false);
-      
-      // Save messages to DynamoDB
+
       try {
-        // Save user message
         await fetch('/api/chat-memory', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId: sessionId,
             role: 'user',
-            message: messageContent,
+            message: trimmedMessage,
           }),
         });
-        
-        // Save bot response
+
         await fetch('/api/chat-memory', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId: sessionId,
             role: 'assistant',
-            message: botResponse.content,
-            risk_level: botResponse.type === 'warning' ? 'mild' : 'normal',
+            message: responsesToUse.map((res) => res.content).join('\n\n'),
+            risk_level: responsesToUse[responsesToUse.length - 1]?.type === 'warning' ? 'mild' : 'normal',
           }),
         });
       } catch (error) {
         console.error('Failed to save messages:', error);
       }
-      
-      // Scroll to bottom after bot response
+
       setTimeout(() => scrollToBottom(), 100);
-      
-      // Show response notification
+
+      const shouldShowResponseToast = options.showResponseToast ?? true;
+      if (shouldShowResponseToast) {
+        toast({
+          title: 'AI Response Ready',
+          description: 'Your mental health companion has responded.',
+          duration: 3000,
+        });
+      } else if (options.origin === 'quick-reply') {
+        toast({
+          title: 'Response ready',
+          description: 'Mann Mitra replied to your quick response.',
+          duration: 2500,
+        });
+      }
+    }, 1200);
+  };
+
+  const handleSendMessage = () => {
+    if (!inputMessage.trim() || isTyping) return;
+
+    const outgoingMessage = inputMessage;
+    setInputMessage('');
+    processUserMessage(outgoingMessage, { origin: 'default' });
+  };
+
+  const handleQuickReply = (messageId: string, value: string) => {
+    if (isTyping) return;
+
+    setMessages((prev) =>
+      prev.map((msg) => (msg.id === messageId ? { ...msg, quickReplies: undefined } : msg))
+    );
+
+    processUserMessage(value, {
+      showSendToast: false,
+      origin: 'quick-reply',
+    });
+  };
+
+  const handleResourceAction = (messageId: string, action: ResourceAction) => {
+    const removeResourceCard = () => {
+      setMessages((prev) =>
+        prev.map((msg) => (msg.id === messageId ? { ...msg, resourceCard: undefined } : msg))
+      );
+    };
+
+    if (action.type === 'message' && action.value) {
+      if (isTyping) return;
+
+      removeResourceCard();
+      processUserMessage(action.value, {
+        showSendToast: false,
+        origin: 'resource-card',
+      });
+      return;
+    }
+
+    if (action.type === 'navigate' && action.value) {
+      removeResourceCard();
+
+      window.dispatchEvent(
+        new CustomEvent('dashboard:navigate', {
+          detail: { tab: action.value, source: 'chatbot', triggeredAt: Date.now() },
+        })
+      );
+
       toast({
-        title: "AI Response Ready",
-        description: "Your mental health companion has responded.",
+        title: 'Opening support space',
+        description:
+          action.value === 'resources'
+            ? 'Switching to the resource hub for guided support.'
+            : action.value === 'appointments'
+            ? 'Routing you to the counselor booking experience.'
+            : 'Navigating to the requested support area.',
         duration: 3000,
       });
-    }, 1500);
+      return;
+    }
+
+    if (action.type === 'dismiss') {
+      removeResourceCard();
+    }
   };
 
   // Clear chat history and start new session
@@ -608,14 +1065,20 @@ const ChatBot = () => {
       const newSessionId = `user-${Date.now()}`;
       setSessionId(newSessionId);
       
-      const welcomeMessage: Message = {
-        id: Date.now().toString(),
-        content: "**Hello! I'm Mann Mitra, your AI mental health companion.** 🤗\n\nI'm here to:\n\n• **Listen** to your concerns\n• **Support** you through challenges  \n• **Guide** you toward helpful resources\n\n**How are you feeling today?** ✨",
-        sender: 'bot',
-        timestamp: new Date(),
-      };
+      const generalOptions = generalSupportOptions();
+      const welcomeMessages = buildFriendlyMessages(
+        {
+          id: Date.now().toString(),
+          content: "Fresh start! I'm still here anytime you need a quick vent. What's going on right now?",
+          sender: 'bot',
+          timestamp: new Date(),
+          type: 'suggestion',
+        },
+        generalOptions.quickReplies,
+        generalOptions.resourceCard
+      );
       
-      setMessages([welcomeMessage]);
+      setMessages(welcomeMessages);
       
       // Save welcome message to new session
       await fetch('/api/chat-memory', {
@@ -624,7 +1087,7 @@ const ChatBot = () => {
         body: JSON.stringify({
           userId: newSessionId,
           role: 'assistant',
-          message: welcomeMessage.content,
+          message: welcomeMessages.map((msg) => msg.content).join('\n\n'),
         }),
       });
       
@@ -723,7 +1186,13 @@ const ChatBot = () => {
                 </div>
                 
                 <div className="py-4">
-                  <ChatMessages messages={messages} isTyping={isTyping} messagesEndRef={messagesEndRef} />
+                  <ChatMessages
+                    messages={messages}
+                    isTyping={isTyping}
+                    messagesEndRef={messagesEndRef}
+                    onQuickReply={handleQuickReply}
+                    onResourceAction={handleResourceAction}
+                  />
                 </div>
               </div>
 

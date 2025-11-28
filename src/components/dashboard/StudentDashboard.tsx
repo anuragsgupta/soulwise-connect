@@ -36,11 +36,14 @@ interface StudentDashboardProps {
   onLogout: () => void;
 }
 
+type DashboardTab = 'dashboard' | 'mood' | 'chat' | 'appointments' | 'resources' | 'forum';
+
 const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'mood' | 'chat' | 'appointments' | 'resources' | 'forum'>('dashboard');
+  const [activeTab, setActiveTab] = useState<DashboardTab>('dashboard');
   const [wellnessScore, setWellnessScore] = useState(15);
+  const currentSemester = (user as { currentSemester?: string } | null)?.currentSemester;
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -74,6 +77,41 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locationPermission]);
+
+  useEffect(() => {
+    const handleDashboardNavigation = (event: Event) => {
+      const { detail } = event as CustomEvent<{ tab?: DashboardTab; source?: string }>;
+      const targetTab = detail?.tab;
+
+      if (!targetTab) return;
+
+      const allowedTabs: DashboardTab[] = ['dashboard', 'mood', 'chat', 'appointments', 'resources', 'forum'];
+      if (allowedTabs.includes(targetTab)) {
+        setActiveTab(targetTab);
+
+        if (detail?.source === 'chatbot') {
+          toast({
+            title:
+              targetTab === 'resources'
+                ? 'Resource hub ready'
+                : targetTab === 'appointments'
+                ? 'Counselor booking ready'
+                : 'Switching views',
+            description:
+              targetTab === 'resources'
+                ? 'Surfacing calming tools recommended by Mann Mitra.'
+                : targetTab === 'appointments'
+                ? 'Opening counselor booking as recommended by Mann Mitra.'
+                : 'Showing the requested dashboard area.',
+            duration: 3000,
+          });
+        }
+      }
+    };
+
+    window.addEventListener('dashboard:navigate', handleDashboardNavigation as EventListener);
+    return () => window.removeEventListener('dashboard:navigate', handleDashboardNavigation as EventListener);
+  }, [toast]);
 
   // Check and request location permission
   const checkLocationPermission = async () => {
@@ -255,7 +293,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   };
 
   // Handle tab change
-  const handleTabChange = (tab: 'dashboard' | 'mood' | 'chat' | 'appointments' | 'resources' | 'forum') => {
+  const handleTabChange = (tab: DashboardTab) => {
     setActiveTab(tab);
   };
 
@@ -361,10 +399,10 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                             Batch: {user.batch.name}
                           </span>
                         )}
-                        {user?.currentSemester && (
+                        {currentSemester && (
                           <span className="ml-4">
                             <Calendar className="w-4 h-4 mr-1 inline text-orange-600" />
-                            Semester: {user.currentSemester}
+                            Semester: {currentSemester}
                           </span>
                         )}
                       </div>
