@@ -55,7 +55,7 @@ const ZenWaterRipple = ({ onClose }: ZenWaterRippleProps) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <div>
@@ -75,7 +75,7 @@ const ZenWaterRipple = ({ onClose }: ZenWaterRippleProps) => {
         </div>
 
         {/* Game Canvas */}
-        <div className="flex-1 relative overflow-hidden bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50">
+        <div className="flex-1 min-h-[50vh] relative overflow-hidden bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50">
           <div
             ref={containerRef}
             className="absolute inset-0 cursor-pointer"
@@ -121,7 +121,7 @@ const ZenWaterRipple = ({ onClose }: ZenWaterRippleProps) => {
         </div>
       </div>
 
-      <style>{`
+      <style jsx global>{`
         @keyframes rippleExpand {
           0% {
             transform: scale(1);
