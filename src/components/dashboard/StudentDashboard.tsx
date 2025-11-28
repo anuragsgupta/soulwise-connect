@@ -7,14 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { 
   Heart, 
   MessageCircle, 
@@ -33,11 +25,11 @@ import {
   ClipboardCheck,
   UserCircle,
   NotebookPen,
-  ChevronDown,
-  MoreVertical,
   Settings,
   HelpCircle,
-  User
+  User,
+  Plus,
+  X
 } from "lucide-react";
 import mannMitraLogo from "@/assets/mann-mitra-logo.png";
 import MoodTracker from "./MoodTracker";
@@ -53,12 +45,13 @@ interface StudentDashboardProps {
   onLogout: () => void;
 }
 
-type DashboardTab = 'dashboard' | 'mood' | 'chat' | 'mentor' | 'diary' | 'appointments' | 'resources' | 'forum' | 'more' | 'profile';
+type DashboardTab = 'dashboard' | 'mood' | 'chat' | 'mentor' | 'diary' | 'appointments' | 'resources' | 'forum' | 'profile' | 'more';
 
 const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<DashboardTab>('dashboard');
+  const [isFabOpen, setIsFabOpen] = useState(false);
   const [wellnessScore, setWellnessScore] = useState(15);
   const currentSemester = (user as { currentSemester?: string } | null)?.currentSemester;
   const [userLocation, setUserLocation] = useState<{
@@ -396,59 +389,39 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
         return <ResourceHub />;
       case 'forum':
         return <PeerForum />;
-      case 'more':
+      case 'profile':
         return (
           <div className="space-y-6">
             <Card className="bg-gradient-to-r from-primary/10 via-wellness/10 to-support/10 border-0 shadow-lg">
               <CardHeader>
-                <CardTitle className="text-2xl">More Options</CardTitle>
-                <CardDescription>Access additional features and settings</CardDescription>
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-primary to-wellness rounded-full flex items-center justify-center">
+                    <User className="w-8 h-8 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl">{user?.name || 'Student'}</CardTitle>
+                    <CardDescription>{user?.email}</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Wellness Score</span>
+                    <Badge variant="secondary">{wellnessScore}/100</Badge>
+                  </div>
+                  {currentSemester && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Current Semester</span>
+                      <Badge variant="outline">{currentSemester}</Badge>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
             </Card>
             
+            {/* Settings and Help Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('mentor')}>
-                <CardHeader>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <UserCircle className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">Anonymous Mentor Chat</CardTitle>
-                      <CardDescription>Connect with peer mentors</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-              </Card>
-              
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('diary')}>
-                <CardHeader>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <NotebookPen className="w-6 h-6 text-purple-600" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">My Diary</CardTitle>
-                      <CardDescription>Personal journal & mood tracking</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-              </Card>
-              
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('forum')}>
-                <CardHeader>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                      <Users className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">Peer Forum</CardTitle>
-                      <CardDescription>Join community discussions</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-              </Card>
-              
               <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                 <CardHeader>
                   <div className="flex items-center space-x-3">
@@ -477,44 +450,18 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                 </CardHeader>
               </Card>
             </div>
-          </div>
-        );
-      case 'profile':
-        return (
-          <div className="space-y-6">
-            <Card className="bg-gradient-to-r from-primary/10 via-wellness/10 to-support/10 border-0 shadow-lg">
-              <CardHeader>
-                <div className="flex items-center space-x-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-primary to-wellness rounded-full flex items-center justify-center">
-                    <User className="w-8 h-8 text-white" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-2xl">{user?.name || 'Student'}</CardTitle>
-                    <CardDescription>{user?.email}</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Wellness Score</span>
-                    <Badge variant="secondary">{wellnessScore}/100</Badge>
-                  </div>
-                  {currentSemester && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Current Semester</span>
-                      <Badge variant="outline">{currentSemester}</Badge>
-                    </div>
-                  )}
-                  <Button
-                    variant="destructive"
-                    className="w-full mt-4"
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Logout
-                  </Button>
-                </div>
+            
+            {/* Logout Button */}
+            <Card>
+              <CardContent className="pt-6">
+                <Button
+                  variant="destructive"
+                  className="w-full"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </Button>
               </CardContent>
             </Card>
           </div>
@@ -774,7 +721,8 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                 { id: 'mood', label: 'Mood', icon: Smile },
                 { id: 'chat', label: 'Chat', icon: MessageCircle },
                 { id: 'appointments', label: 'Appointments', icon: Calendar },
-                { id: 'resources', label: 'Resources', icon: BookOpen }
+                { id: 'resources', label: 'Resources', icon: BookOpen },
+                { id: 'forum', label: 'Community', icon: Users }
               ].map((item) => (
                 <Button
                   key={item.id}
@@ -791,51 +739,6 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                   <span>{item.label}</span>
                 </Button>
               ))}
-              
-              {/* More Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant={['mentor', 'diary', 'forum', 'more'].includes(activeTab) ? 'default' : 'ghost'}
-                    size="sm"
-                    className={`flex items-center space-x-2 ${
-                      ['mentor', 'diary', 'forum', 'more'].includes(activeTab)
-                        ? 'bg-primary text-white' 
-                        : 'hover:bg-primary/10 hover:text-primary'
-                    }`}
-                  >
-                    <MoreVertical className="w-4 h-4" />
-                    <span>More</span>
-                    <ChevronDown className="w-3 h-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>Additional Features</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleTabChange('mentor')} className="cursor-pointer">
-                    <UserCircle className="w-4 h-4 mr-2" />
-                    Anonymous Mentor Chat
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleTabChange('diary')} className="cursor-pointer">
-                    <NotebookPen className="w-4 h-4 mr-2" />
-                    My Diary
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleTabChange('forum')} className="cursor-pointer">
-                    <Users className="w-4 h-4 mr-2" />
-                    Peer Forum
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel>Other</DropdownMenuLabel>
-                  <DropdownMenuItem className="cursor-pointer">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Settings
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer">
-                    <HelpCircle className="w-4 h-4 mr-2" />
-                    Help & Support
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
 
             {/* Desktop Right Side */}
@@ -910,7 +813,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             { id: 'dashboard', label: 'Home', icon: Heart },
             { id: 'mood', label: 'Mood', icon: Smile },
             { id: 'chat', label: 'Chat', icon: MessageCircle },
-            { id: 'more', label: 'More', icon: MoreVertical },
+            { id: 'resources', label: 'Resources', icon: BookOpen },
             { id: 'profile', label: 'Profile', icon: User }
           ].map((item) => (
             <button
@@ -993,6 +896,64 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
           </Card>
         </div>
       )}
+
+      {/* Floating Action Button (FAB) - Mobile & Desktop */}
+      <div className="fixed bottom-24 right-6 z-50 md:bottom-8">
+        {/* FAB Menu Items */}
+        {isFabOpen && (
+          <>
+            {/* Backdrop */}
+            <div 
+              className="fixed inset-0 bg-black/20 backdrop-blur-sm -z-10"
+              onClick={() => setIsFabOpen(false)}
+            />
+            
+            {/* Menu Items */}
+            <div className="absolute bottom-16 right-0 space-y-3 mb-2">
+              {[
+                { id: 'mentor', label: 'Mentor Chat', icon: UserCircle, color: 'bg-blue-500 hover:bg-blue-600' },
+                { id: 'diary', label: 'My Diary', icon: NotebookPen, color: 'bg-purple-500 hover:bg-purple-600' },
+                { id: 'forum', label: 'Peer Forum', icon: Users, color: 'bg-green-500 hover:bg-green-600' },
+              ].map((item, index) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-end space-x-3 animate-in slide-in-from-bottom-2 fade-in"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <span className="bg-white px-3 py-1.5 rounded-lg shadow-lg text-sm font-medium text-gray-700">
+                    {item.label}
+                  </span>
+                  <button
+                    onClick={() => {
+                      handleTabChange(item.id as DashboardTab);
+                      setIsFabOpen(false);
+                    }}
+                    className={`${item.color} w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-white transition-all duration-200 hover:scale-110`}
+                  >
+                    <item.icon className="w-5 h-5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Main FAB Button */}
+        <button
+          onClick={() => setIsFabOpen(!isFabOpen)}
+          className={`w-14 h-14 rounded-full shadow-xl flex items-center justify-center text-white transition-all duration-300 hover:scale-110 ${
+            isFabOpen 
+              ? 'bg-red-500 hover:bg-red-600 rotate-45' 
+              : 'bg-gradient-to-r from-primary to-wellness hover:shadow-2xl'
+          }`}
+        >
+          {isFabOpen ? (
+            <X className="w-6 h-6" />
+          ) : (
+            <Plus className="w-6 h-6" />
+          )}
+        </button>
+      </div>
     </div>
   );
 };
