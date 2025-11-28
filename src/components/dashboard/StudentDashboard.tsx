@@ -7,6 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { 
   Heart, 
   MessageCircle, 
@@ -22,7 +30,14 @@ import {
   Navigation,
   AlertTriangle,
   Phone,
-  ClipboardCheck
+  ClipboardCheck,
+  UserCircle,
+  NotebookPen,
+  ChevronDown,
+  MoreVertical,
+  Settings,
+  HelpCircle,
+  User
 } from "lucide-react";
 import mannMitraLogo from "@/assets/mann-mitra-logo.png";
 import MoodTracker from "./MoodTracker";
@@ -30,13 +45,15 @@ import ChatBot from "./ChatBot";
 import AppointmentBooking from "./AppointmentBooking";
 import ResourceHub from "./ResourceHub";
 import PeerForum from "./PeerForum";
+import AnonymousMentorChat from "./AnonymousMentorChat";
+import Diary from "./Diary";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface StudentDashboardProps {
   onLogout: () => void;
 }
 
-type DashboardTab = 'dashboard' | 'mood' | 'chat' | 'appointments' | 'resources' | 'forum';
+type DashboardTab = 'dashboard' | 'mood' | 'chat' | 'mentor' | 'diary' | 'appointments' | 'resources' | 'forum' | 'more' | 'profile';
 
 const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   const { toast } = useToast();
@@ -85,7 +102,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
 
       if (!targetTab) return;
 
-      const allowedTabs: DashboardTab[] = ['dashboard', 'mood', 'chat', 'appointments', 'resources', 'forum'];
+      const allowedTabs: DashboardTab[] = ['dashboard', 'mood', 'chat', 'mentor', 'diary', 'appointments', 'resources', 'forum', 'more', 'profile'];
       if (allowedTabs.includes(targetTab)) {
         setActiveTab(targetTab);
 
@@ -369,12 +386,139 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
         return <MoodTracker onScoreUpdate={setWellnessScore} />;
       case 'chat':
         return <ChatBot />;
+      case 'mentor':
+        return <AnonymousMentorChat />;
+      case 'diary':
+        return <Diary />;
       case 'appointments':
         return <AppointmentBooking />;
       case 'resources':
         return <ResourceHub />;
       case 'forum':
         return <PeerForum />;
+      case 'more':
+        return (
+          <div className="space-y-6">
+            <Card className="bg-gradient-to-r from-primary/10 via-wellness/10 to-support/10 border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-2xl">More Options</CardTitle>
+                <CardDescription>Access additional features and settings</CardDescription>
+              </CardHeader>
+            </Card>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('mentor')}>
+                <CardHeader>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <UserCircle className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">Anonymous Mentor Chat</CardTitle>
+                      <CardDescription>Connect with peer mentors</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+              
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('diary')}>
+                <CardHeader>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <NotebookPen className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">My Diary</CardTitle>
+                      <CardDescription>Personal journal & mood tracking</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+              
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('forum')}>
+                <CardHeader>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                      <Users className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">Peer Forum</CardTitle>
+                      <CardDescription>Join community discussions</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+              
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                <CardHeader>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <Settings className="w-6 h-6 text-gray-600" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">Settings</CardTitle>
+                      <CardDescription>Preferences & notifications</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+              
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                <CardHeader>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                      <HelpCircle className="w-6 h-6 text-yellow-600" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">Help & Support</CardTitle>
+                      <CardDescription>FAQs and contact support</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+            </div>
+          </div>
+        );
+      case 'profile':
+        return (
+          <div className="space-y-6">
+            <Card className="bg-gradient-to-r from-primary/10 via-wellness/10 to-support/10 border-0 shadow-lg">
+              <CardHeader>
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-primary to-wellness rounded-full flex items-center justify-center">
+                    <User className="w-8 h-8 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl">{user?.name || 'Student'}</CardTitle>
+                    <CardDescription>{user?.email}</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Wellness Score</span>
+                    <Badge variant="secondary">{wellnessScore}/100</Badge>
+                  </div>
+                  {currentSemester && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Current Semester</span>
+                      <Badge variant="outline">{currentSemester}</Badge>
+                    </div>
+                  )}
+                  <Button
+                    variant="destructive"
+                    className="w-full mt-4"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
       default:
         return (
           <div className="space-y-6">
@@ -624,20 +768,19 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             </div>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-2">
               {[
                 { id: 'dashboard', label: 'Dashboard', icon: Heart },
                 { id: 'mood', label: 'Mood', icon: Smile },
-                { id: 'chat', label: 'AI Chat', icon: MessageCircle },
+                { id: 'chat', label: 'Chat', icon: MessageCircle },
                 { id: 'appointments', label: 'Appointments', icon: Calendar },
-                { id: 'resources', label: 'Resources', icon: BookOpen },
-                { id: 'forum', label: 'Community', icon: Users }
+                { id: 'resources', label: 'Resources', icon: BookOpen }
               ].map((item) => (
                 <Button
                   key={item.id}
                   variant={activeTab === item.id ? 'default' : 'ghost'}
                   size="sm"
-                  onClick={() => handleTabChange(item.id as 'dashboard' | 'mood' | 'chat' | 'appointments' | 'resources' | 'forum')}
+                  onClick={() => handleTabChange(item.id as DashboardTab)}
                   className={`flex items-center space-x-2 ${
                     activeTab === item.id 
                       ? 'bg-primary text-white' 
@@ -648,6 +791,51 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                   <span>{item.label}</span>
                 </Button>
               ))}
+              
+              {/* More Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant={['mentor', 'diary', 'forum', 'more'].includes(activeTab) ? 'default' : 'ghost'}
+                    size="sm"
+                    className={`flex items-center space-x-2 ${
+                      ['mentor', 'diary', 'forum', 'more'].includes(activeTab)
+                        ? 'bg-primary text-white' 
+                        : 'hover:bg-primary/10 hover:text-primary'
+                    }`}
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                    <span>More</span>
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>Additional Features</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleTabChange('mentor')} className="cursor-pointer">
+                    <UserCircle className="w-4 h-4 mr-2" />
+                    Anonymous Mentor Chat
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleTabChange('diary')} className="cursor-pointer">
+                    <NotebookPen className="w-4 h-4 mr-2" />
+                    My Diary
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleTabChange('forum')} className="cursor-pointer">
+                    <Users className="w-4 h-4 mr-2" />
+                    Peer Forum
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Other</DropdownMenuLabel>
+                  <DropdownMenuItem className="cursor-pointer">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer">
+                    <HelpCircle className="w-4 h-4 mr-2" />
+                    Help & Support
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             {/* Desktop Right Side */}
@@ -708,7 +896,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
 
       {/* Main Content */}
       <main className={`max-w-7xl mx-auto ${
-        activeTab === 'chat' 
+        activeTab === 'chat' || activeTab === 'mentor'
           ? 'h-[calc(100vh-64px-76px)] flex flex-col p-0 w-full max-w-full md:px-4 md:py-8 md:pb-8 md:h-auto md:max-w-7xl' 
           : 'px-4 sm:px-6 lg:px-8 py-4 sm:py-8 pb-20 md:pb-8'
       }`}>
@@ -722,13 +910,12 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             { id: 'dashboard', label: 'Home', icon: Heart },
             { id: 'mood', label: 'Mood', icon: Smile },
             { id: 'chat', label: 'Chat', icon: MessageCircle },
-            { id: 'appointments', label: 'Book', icon: Calendar },
-            { id: 'resources', label: 'Learn', icon: BookOpen },
-            { id: 'forum', label: 'Community', icon: Users }
+            { id: 'more', label: 'More', icon: MoreVertical },
+            { id: 'profile', label: 'Profile', icon: User }
           ].map((item) => (
             <button
               key={item.id}
-              onClick={() => handleTabChange(item.id as 'dashboard' | 'mood' | 'chat' | 'appointments' | 'resources' | 'forum')}
+              onClick={() => handleTabChange(item.id as DashboardTab)}
               className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-all duration-200 ${
                 activeTab === item.id 
                   ? 'text-primary' 
