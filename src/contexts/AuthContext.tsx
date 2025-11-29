@@ -45,28 +45,83 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Check for existing session on mount
   useEffect(() => {
-    try {
-      const savedToken = localStorage.getItem('auth-token');
-      const savedUser = localStorage.getItem('auth-user');
-      
-      if (savedToken && savedUser) {
-        try {
-          const parsedUser = JSON.parse(savedUser);
-          setToken(savedToken);
-          setUser(parsedUser);
-        } catch (parseError) {
-          console.error('Error parsing saved user:', parseError);
-          // Clear invalid data
+    const verifySession = async () => {
+      try {
+        // First check localStorage for quick initial load
+        const savedToken = localStorage.getItem('auth-token');
+        const savedUser = localStorage.getItem('auth-user');
+        
+        if (savedToken && savedUser) {
+          try {
+            const parsedUser = JSON.parse(savedUser);
+            setToken(savedToken);
+            setUser(parsedUser);
+          } catch (parseError) {
+            console.error('Error parsing saved user:', parseError);
+            localStorage.removeItem('auth-token');
+            localStorage.removeItem('auth-user');
+          }
+        }
+        
+        // Then verify session with server (checks HTTP-only cookie)
+        const response = await fetch('/api/auth/verify', {
+          method: 'GET',
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            setUser(result.data.user);
+            setToken(result.data.token);
+            // Update localStorage
+            localStorage.setItem('auth-token', result.data.token);
+            localStorage.setItem('auth-user', JSON.stringify(result.data.user));
+          }
+        } else {
+          // Session expired or invalid, clear everything
+          setUser(null);
+          setToken(null);
           localStorage.removeItem('auth-token');
           localStorage.removeItem('auth-user');
         }
+      } catch (error) {
+        console.error('Error verifying session:', error);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error('Error loading auth state:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    };
+    
+    verifySession();
   }, []);
+
+  // Auto-refresh session every 30 minutes to keep it alive
+  useEffect(() => {
+    if (!user) return;
+
+    const refreshInterval = setInterval(async () => {
+      try {
+        const response = await fetch('/api/auth/verify', {
+          method: 'GET',
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            setUser(result.data.user);
+            setToken(result.data.token);
+            localStorage.setItem('auth-token', result.data.token);
+            localStorage.setItem('auth-user', JSON.stringify(result.data.user));
+          }
+        }
+      } catch (error) {
+        console.error('Session refresh error:', error);
+      }
+    }, 30 * 60 * 1000); // 30 minutes
+
+    return () => clearInterval(refreshInterval);
+  }, [user]);
 
   const login = async (email: string, password: string, enrollmentId?: string): Promise<boolean> => {
     setIsLoading(true);
@@ -77,6 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Important: Include cookies in request
         body: JSON.stringify({ 
           email: enrollmentId ? undefined : email, 
           password,
@@ -92,6 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setToken(authToken);
         setUser(userData);
         
+        // Keep localStorage as fallback for client-side checks
         localStorage.setItem('auth-token', authToken);
         localStorage.setItem('auth-user', JSON.stringify(userData));
         
@@ -153,6 +210,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(null);
     localStorage.removeItem('auth-token');
     localStorage.removeItem('auth-user');
+    
+    // Clear HTTP-only cookies via API
+    fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include'
+    }).catch(err => console.error('Logout error:', err));
   };
 
   return (

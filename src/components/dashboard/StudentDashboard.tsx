@@ -905,9 +905,11 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       )}
 
       {/* Floating Action Button (FAB) - Mobile & Desktop */}
-      <div className="fixed bottom-24 right-6 z-50 md:bottom-8">
-        {/* FAB Menu Items */}
-        {isFabOpen && (
+      {/* Hidden on chat/mentor tabs to avoid conflict with send button */}
+      {activeTab !== 'chat' && activeTab !== 'mentor' && (
+        <div className="fixed bottom-28 right-4 z-40 md:bottom-8 md:right-8">
+          {/* FAB Menu Items */}
+          {isFabOpen && (
           <>
             {/* Backdrop */}
             <div 
@@ -962,7 +964,8 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             <Plus className="w-6 h-6" />
           )}
         </button>
-      </div>
+        </div>
+      )}
     </div>
   );
 };

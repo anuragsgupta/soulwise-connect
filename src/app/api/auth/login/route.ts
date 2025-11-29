@@ -208,7 +208,12 @@ export async function POST(request: NextRequest) {
         token,
         user: responseUser,
       }),
-      { status: 200 }
+      { 
+        status: 200,
+        headers: {
+          'Set-Cookie': `auth-token=${token}; HttpOnly; Secure=${process.env.NODE_ENV === 'production'}; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}; Path=/`
+        }
+      }
     );
 
   } catch (error) {

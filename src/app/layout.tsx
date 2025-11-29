@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "@/components/ui/toaster";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import AuthLoadingWrapper from "@/components/AuthLoadingWrapper";
 import { fontHeading, fontBody, fontAccent, getFontVariables } from "@/config/fonts";
 import "./globals.css";
 
@@ -51,7 +52,9 @@ export default function RootLayout({
       </head>
       <body className="antialiased font-body">
         <AuthProvider>
-          {children}
+          <AuthLoadingWrapper>
+            {children}
+          </AuthLoadingWrapper>
         </AuthProvider>
         <Toaster />
         <PWAInstallPrompt />
