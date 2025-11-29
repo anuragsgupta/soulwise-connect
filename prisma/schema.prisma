@@ -247,6 +247,8 @@ model Student {
   moodCheckIns  MoodCheckIn[]
   crisisAlerts  CrisisAlert[]
   chatSessions  ChatSession[]
+  diaryEntries  DiaryEntry[]
+  tasks         Task[]
   auditLogs     AuditLog[]    @relation("StudentAuditLogs")
   sessions      Session[]
 
@@ -449,6 +451,50 @@ model AuditLog {
   @@index([performedById, performedByType])
   @@index([timestamp])
   @@map("audit_logs")
+}
+
+model DiaryEntry {
+  id         String   @id @default(uuid())
+  title      String
+  content    String   @db.Text
+  mood       String // happy, neutral, sad
+  tags       Json? // Array of tags
+  wordCount  Int      @default(0) @map("word_count")
+  charCount  Int      @default(0) @map("char_count")
+  entryDate  DateTime @default(now()) @map("entry_date")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId String  @map("student_id")
+
+  @@index([studentId, entryDate])
+  @@index([entryDate])
+  @@map("diary_entries")
+}
+
+model Task {
+  id          String    @id @default(uuid())
+  title       String
+  description String?   @db.Text
+  priority    String // low, medium, high, urgent
+  category    String // personal, academic, health, work, other
+  status      String // pending, in-progress, completed
+  dueDate     DateTime? @map("due_date")
+  completed   Boolean   @default(false)
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId String  @map("student_id")
+
+  @@index([studentId, completed])
+  @@index([studentId, dueDate])
+  @@index([status])
+  @@map("tasks")
 }
 
 // ==================== ENUMS ====================

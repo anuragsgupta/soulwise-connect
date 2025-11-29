@@ -25,6 +25,7 @@ import {
   ClipboardCheck,
   UserCircle,
   NotebookPen,
+  CheckSquare,
   Settings,
   HelpCircle,
   User,
@@ -39,13 +40,15 @@ import ResourceHub from "./ResourceHub";
 import PeerForum from "./PeerForum";
 import AnonymousMentorChat from "./AnonymousMentorChat";
 import Diary from "./Diary";
+import TodoList from "./TodoList";
+import CalendarView from "./CalendarView";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface StudentDashboardProps {
   onLogout: () => void;
 }
 
-type DashboardTab = 'dashboard' | 'mood' | 'chat' | 'mentor' | 'diary' | 'appointments' | 'resources' | 'forum' | 'profile' | 'more';
+type DashboardTab = 'dashboard' | 'mood' | 'chat' | 'mentor' | 'diary' | 'tasks' | 'calendar' | 'appointments' | 'resources' | 'forum' | 'profile' | 'more';
 
 const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   const { toast } = useToast();
@@ -383,6 +386,10 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
         return <AnonymousMentorChat />;
       case 'diary':
         return <Diary />;
+      case 'tasks':
+        return <TodoList />;
+      case 'calendar':
+        return <CalendarView />;
       case 'appointments':
         return <AppointmentBooking />;
       case 'resources':
@@ -913,6 +920,8 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
               {[
                 { id: 'mentor', label: 'Mentor Chat', icon: UserCircle, color: 'bg-blue-500 hover:bg-blue-600' },
                 { id: 'diary', label: 'My Diary', icon: NotebookPen, color: 'bg-purple-500 hover:bg-purple-600' },
+                { id: 'tasks', label: 'My Tasks', icon: CheckSquare, color: 'bg-indigo-500 hover:bg-indigo-600' },
+                { id: 'calendar', label: 'Calendar', icon: Calendar, color: 'bg-pink-500 hover:bg-pink-600' },
                 { id: 'forum', label: 'Peer Forum', icon: Users, color: 'bg-green-500 hover:bg-green-600' },
               ].map((item, index) => (
                 <div
