@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
     const universityId = searchParams.get('universityId');
     const fieldId = searchParams.get('fieldId');
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {};
     
     if (universityId) {
@@ -64,7 +65,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, code, email, phone, address, universityId, fieldId } = body;
+    const { name, code, email, phone, address, universityId, fieldId, aisheCode } = body;
 
     // Validate required fields
     if (!name || !code || !email || !phone || !address || !universityId || !fieldId) {
@@ -81,6 +82,17 @@ export async function POST(request: NextRequest) {
         createResponse(false, 'Invalid email format'),
         { status: 400 }
       );
+    }
+
+    // Validate AISHE code format (must start with C for College/Institute)
+    if (aisheCode) {
+      const trimmedCode = aisheCode.trim().toUpperCase();
+      if (!trimmedCode.startsWith('C-')) {
+        return NextResponse.json(
+          createResponse(false, 'Invalid AISHE code for Institute. College/Institute AISHE codes must start with "C-" (e.g., C-36022). University codes start with "U-".'),
+          { status: 400 }
+        );
+      }
     }
 
     // Check if university exists
@@ -131,18 +143,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if AISHE code already exists (if provided)
+    if (aisheCode) {
+      const existingByAISHE = await prisma.institute.findFirst({
+        where: { aisheCode: aisheCode.trim() } as never,
+      });
+
+      if (existingByAISHE) {
+        return NextResponse.json(
+          createResponse(false, 'Institute with this AISHE code already exists'),
+          { status: 400 }
+        );
+      }
+    }
+
     // Create institute
     const institute = await prisma.institute.create({
       data: {
         name,
         code,
+        aisheCode: aisheCode?.trim() || null,
         email,
         phone,
         address,
         universityId,
         fieldId,
         status: 'ACTIVE',
-      },
+      } as never,
       include: {
         university: {
           select: {

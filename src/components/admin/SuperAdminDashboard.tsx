@@ -3,14 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, University, Users, Mail, ExternalLink, UserPlus, Building2, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Plus, University, Users, UserPlus, Building2, Pencil, Trash2, Loader2 } from 'lucide-react';
 import CreateUniversityForm from './CreateUniversityForm';
 import CreateAdminForm from './CreateAdminForm';
 import CreateInstituteForm from './CreateInstituteForm';
@@ -41,7 +39,6 @@ export default function SuperAdminDashboard({ onLogout }: SuperAdminDashboardPro
   const [universities, setUniversities] = useState<University[]>([]);
   const [adminCount, setAdminCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
-  const [isCreating, setIsCreating] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showCreateAdmin, setShowCreateAdmin] = useState(false);
   const [showCreateInstitute, setShowCreateInstitute] = useState(false);
@@ -55,6 +52,7 @@ export default function SuperAdminDashboard({ onLogout }: SuperAdminDashboardPro
   useEffect(() => {
     loadUniversities();
     loadAdminCount();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadUniversities = async () => {

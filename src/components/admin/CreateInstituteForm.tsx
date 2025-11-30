@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Building2, Check } from 'lucide-react';
+import { Loader2, Building2, Check, RefreshCw, AlertCircle } from 'lucide-react';
 
 interface CreateInstituteFormProps {
   universityId: string;
@@ -23,6 +23,7 @@ interface InstituteFormData {
   phone: string;
   address: string;
   fieldId: string;
+  aisheCode?: string;
 }
 
 interface Field {
@@ -51,6 +52,9 @@ const CreateInstituteForm: React.FC<CreateInstituteFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoadingFields, setIsLoadingFields] = useState(true);
+  const [isFetchingAISHE, setIsFetchingAISHE] = useState(false);
+  const [aisheError, setAisheError] = useState<string | null>(null);
+  const [aisheSuccess, setAisheSuccess] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -74,6 +78,71 @@ const CreateInstituteForm: React.FC<CreateInstituteFormProps> = ({
       });
     } finally {
       setIsLoadingFields(false);
+    }
+  };
+
+  const handleFetchAISHE = async () => {
+    if (!formData.aisheCode?.trim()) {
+      toast({
+        title: 'AISHE Code Required',
+        description: 'Please enter an AISHE code to fetch data',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate AISHE code format for Institute (must start with C-)
+    const code = formData.aisheCode.trim().toUpperCase();
+    if (!code.startsWith('C-')) {
+      toast({
+        title: 'Invalid AISHE Code',
+        description: 'College/Institute AISHE codes must start with "C-" (e.g., C-36022). University codes start with "U-".',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsFetchingAISHE(true);
+    setAisheError(null);
+    setAisheSuccess(false);
+
+    try {
+      const response = await fetch(`/api/institutes/fetch-aishe?code=${encodeURIComponent(code)}`);
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch AISHE data');
+      }
+
+      // Auto-fill form with AISHE data
+      setFormData(prev => ({
+        ...prev,
+        code: code, // Use AISHE code as institute code
+        name: result.data.name || prev.name,
+        email: result.data.email || prev.email,
+        phone: result.data.phone || prev.phone,
+        address: result.data.address || prev.address,
+      }));
+
+      setAisheSuccess(true);
+      toast({
+        title: 'Success!',
+        description: 'Institute details fetched and auto-filled from AISHE database',
+      });
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setAisheSuccess(false), 3000);
+    } catch (error) {
+      console.error('Error fetching AISHE data:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch AISHE data';
+      setAisheError(errorMessage);
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsFetchingAISHE(false);
     }
   };
 
@@ -181,19 +250,69 @@ const CreateInstituteForm: React.FC<CreateInstituteFormProps> = ({
         </AlertDescription>
       </Alert>
 
+      {/* AISHE Code with Auto-fetch */}
+      <div className="space-y-2">
+        <Label htmlFor="aisheCode">AISHE Code (Optional - Auto-fill)</Label>
+        <div className="flex gap-2">
+          <Input
+            id="aisheCode"
+            type="text"
+            placeholder="e.g., C-36022"
+            value={formData.aisheCode || ''}
+            onChange={(e) => handleInputChange('aisheCode', e.target.value.toUpperCase())}
+            disabled={isFetchingAISHE}
+          />
+          <Button
+            type="button"
+            onClick={handleFetchAISHE}
+            disabled={isFetchingAISHE || !formData.aisheCode?.trim()}
+            variant="outline"
+          >
+            {isFetchingAISHE ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4" />
+              </>
+            )}
+          </Button>
+        </div>
+        {aisheSuccess && (
+          <Alert className="bg-green-50 border-green-200">
+            <Check className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-700">
+              Institute details fetched successfully from AISHE database!
+            </AlertDescription>
+          </Alert>
+        )}
+        {aisheError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{aisheError}</AlertDescription>
+          </Alert>
+        )}
+        <p className="text-xs text-muted-foreground">
+          Enter AISHE code (starts with C-) to auto-fill institute details. Leave blank to enter manually.
+        </p>
+      </div>
+
       {/* Institute Code */}
       <div className="space-y-2">
         <Label htmlFor="code">Institute Code *</Label>
         <Input
           id="code"
           type="text"
-          placeholder="e.g., ENGCOL001"
+          placeholder="e.g., ENGCOL001 or C-36022"
           value={formData.code}
           onChange={(e) => handleInputChange('code', e.target.value.toUpperCase())}
           className={errors.code ? 'border-red-500' : ''}
         />
         {errors.code && <p className="text-sm text-red-500">{errors.code}</p>}
-        <p className="text-xs text-muted-foreground">Unique code for the institute</p>
+        <p className="text-xs text-muted-foreground">
+          Unique code for the institute (auto-filled from AISHE if fetched)
+        </p>
       </div>
 
       {/* Institute Name */}

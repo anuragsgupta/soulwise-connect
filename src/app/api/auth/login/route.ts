@@ -9,8 +9,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password, enrollmentId } = body;
 
+    console.log('🔐 Login attempt:', { email, enrollmentId: !!enrollmentId });
+
     // Validate required fields
     if ((!email && !enrollmentId) || !password) {
+      console.log('❌ Missing credentials');
       return NextResponse.json(
         createResponse(false, 'Email/Enrollment ID and password are required'),
         { status: 400 }
@@ -93,6 +96,7 @@ export async function POST(request: NextRequest) {
       passwordHash = student.passwordHash;
     } else {
       // Try to find admin first
+      console.log('🔍 Looking for admin with email:', email);
       const admin = await prisma.admin.findUnique({
         where: { email },
         include: {
@@ -101,15 +105,25 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      console.log('📋 Admin found:', admin ? {
+        id: admin.id,
+        email: admin.email,
+        adminType: admin.adminType,
+        isSuperAdmin: admin.isSuperAdmin,
+        status: admin.status
+      } : 'null');
+
       if (admin) {
         // Check if admin is active
         if (admin.status !== 'ACTIVE') {
+          console.log('❌ Admin account not active:', admin.status);
           return NextResponse.json(
             createResponse(false, 'Admin account is not active. Please contact administrator.'),
             { status: 403 }
           );
         }
 
+        console.log('✅ Admin found and active');
         userType = 'ADMIN';
         userData = admin;
         passwordHash = admin.passwordHash;
@@ -152,8 +166,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify password
+    console.log('🔑 Verifying password...');
+    console.log('🔑 Password from request:', password);
+    console.log('🔑 Password hash from DB:', passwordHash);
+    console.log('🔑 Password hash type:', typeof passwordHash);
     const isValidPassword = await verifyPassword(password, passwordHash);
+    console.log('🔑 Password valid:', isValidPassword);
+
     if (!isValidPassword) {
+      console.log('❌ Invalid password');
       return NextResponse.json(
         createResponse(false, 'Invalid credentials'),
         { status: 401 }
@@ -165,6 +186,7 @@ export async function POST(request: NextRequest) {
       id: string;
       email?: string | null;
       userType: string;
+      role: string;
       adminType?: string;
       isSuperAdmin?: boolean;
       universityId?: string | null;
@@ -178,6 +200,7 @@ export async function POST(request: NextRequest) {
       id: userData.id,
       email: userData.email,
       userType,
+      role: userType === 'ADMIN' ? (userData.adminType || 'ADMIN') : userType,
     };
 
     if (userType === 'ADMIN') {
@@ -185,6 +208,12 @@ export async function POST(request: NextRequest) {
       tokenPayload.isSuperAdmin = userData.isSuperAdmin;
       tokenPayload.universityId = userData.universityId;
       tokenPayload.instituteId = userData.instituteId;
+      tokenPayload.role = userData.adminType || 'ADMIN';
+      console.log('🎫 Admin token payload:', {
+        adminType: userData.adminType,
+        isSuperAdmin: userData.isSuperAdmin,
+        role: tokenPayload.role
+      });
     } else if (userType === 'FACULTY') {
       tokenPayload.facultyType = userData.facultyType;
       tokenPayload.departmentId = userData.departmentId;
@@ -200,6 +229,7 @@ export async function POST(request: NextRequest) {
 
     // Generate JWT token
     const token = generateToken(tokenPayload);
+    console.log('🎫 Token generated successfully');
 
     // Log audit event
     await prisma.auditLog.create({
@@ -223,6 +253,7 @@ export async function POST(request: NextRequest) {
       email?: string | null;
       name: string;
       userType: string;
+      role?: string;
       adminType?: string;
       isSuperAdmin?: boolean;
       universityId?: string | null;
@@ -241,6 +272,7 @@ export async function POST(request: NextRequest) {
       email: userData.email,
       name: userData.name,
       userType,
+      role: userType === 'ADMIN' ? (userData.adminType || 'ADMIN') : userType,
     };
 
     if (userType === 'ADMIN') {
@@ -250,6 +282,7 @@ export async function POST(request: NextRequest) {
       responseUser.instituteId = userData.instituteId;
       responseUser.university = userData.university;
       responseUser.institute = userData.institute;
+      responseUser.role = userData.adminType || 'ADMIN';
     } else if (userType === 'FACULTY') {
       responseUser.facultyType = userData.facultyType;
       responseUser.departmentId = userData.departmentId;
@@ -280,6 +313,13 @@ export async function POST(request: NextRequest) {
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60, // 7 days
       path: '/',
+    });
+
+    console.log('✅ Login successful for:', {
+      email: userData.email,
+      userType,
+      adminType: userData.adminType,
+      isSuperAdmin: userData.isSuperAdmin
     });
 
     return response;

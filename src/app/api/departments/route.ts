@@ -114,14 +114,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if department code already exists
-    const existingDepartment = await prisma.department.findUnique({
-      where: { code },
+    // Check if department code already exists in this institute
+    const existingDepartment = await prisma.department.findFirst({
+      where: { 
+        code: code,
+        instituteId: instituteId
+      },
     });
 
     if (existingDepartment) {
       return NextResponse.json(
-        createResponse(false, 'Department with this code already exists'),
+        createResponse(false, 'Department with this code already exists in this institute'),
         { status: 409 }
       );
     }

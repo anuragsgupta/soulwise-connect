@@ -48,17 +48,21 @@ model Admin {
 }
 
 model University {
-  id        String           @id @default(uuid())
-  name      String
-  email     String           @unique
-  domain    String           @unique // For email validation (e.g., "du.ac.in")
-  phone     String
-  address   String
-  city      String
-  state     String
-  status    UniversityStatus @default(ACTIVE)
-  createdAt DateTime         @default(now()) @map("created_at")
-  updatedAt DateTime         @updatedAt @map("updated_at")
+  id         String           @id @default(uuid())
+  aisheCode  String?          @unique @map("aishe_code") // AISHE ID for auto-fetching data (e.g., "C-36022")
+  name       String
+  email      String           @unique
+  domain     String           @unique // For email validation (e.g., "du.ac.in")
+  phone      String
+  address    String
+  city       String
+  state      String
+  district   String? // Additional field from AISHE data
+  contactFirstName String?     @map("contact_first_name") // From AISHE data
+  contactLastName  String?     @map("contact_last_name") // From AISHE data
+  status     UniversityStatus @default(ACTIVE)
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
 
   // Relations
   admins     Admin[]
@@ -89,6 +93,7 @@ model Field {
 model Institute {
   id        String           @id @default(uuid())
   code      String           @unique
+  aisheCode String?          @unique @map("aishe_code")
   name      String
   email     String           @unique
   phone     String
@@ -122,7 +127,7 @@ model Institute {
 model Department {
   id        String   @id @default(uuid())
   name      String
-  code      String   @unique
+  code      String
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -139,6 +144,7 @@ model Department {
   invites   Invite[]
   auditLogs AuditLog[] @relation("DepartmentAuditLogs")
 
+  @@unique([code, instituteId])
   @@index([code])
   @@index([instituteId])
   @@map("departments")

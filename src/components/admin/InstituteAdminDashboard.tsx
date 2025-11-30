@@ -26,6 +26,21 @@ interface InstituteStats {
   admins: number;
 }
 
+interface InstituteWithCounts {
+  id: string;
+  name: string;
+  _count: {
+    departments: number;
+    faculties: number;
+    students: number;
+  };
+}
+
+interface Admin {
+  id: string;
+  instituteId?: string;
+}
+
 interface InstituteAdminDashboardProps {
   onLogout: () => void;
 }
@@ -46,6 +61,7 @@ export default function InstituteAdminDashboard({ onLogout }: InstituteAdminDash
     if (user?.instituteId) {
       loadInstituteData();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.instituteId]);
 
   const loadInstituteData = async () => {
@@ -77,13 +93,13 @@ export default function InstituteAdminDashboard({ onLogout }: InstituteAdminDash
       console.log('Admins result:', adminsResult);
       
       if (instituteResult.success) {
-        const myInstitute = instituteResult.data.institutes.find((inst: any) => inst.id === user.instituteId);
+        const myInstitute = (instituteResult.data.institutes as InstituteWithCounts[]).find(inst => inst.id === user.instituteId);
         console.log('My institute:', myInstitute);
         
         if (myInstitute && myInstitute._count) {
           // Filter admins for this institute
           const instituteAdmins = adminsResult.success 
-            ? adminsResult.data.admins.filter((admin: any) => admin.instituteId === user.instituteId)
+            ? (adminsResult.data.admins as Admin[]).filter(admin => admin.instituteId === user.instituteId)
             : [];
           
           console.log('Institute admins:', instituteAdmins);

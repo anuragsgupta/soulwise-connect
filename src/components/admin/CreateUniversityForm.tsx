@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, University, Building, Phone, Mail, Globe, Calendar, MapPin, Check } from 'lucide-react';
+import { Loader2, University, Building, Phone, Mail, Globe, Calendar, MapPin, Check, Download, RefreshCw } from 'lucide-react';
 
 interface CreateUniversityFormProps {
   isOpen: boolean;
@@ -18,16 +18,21 @@ interface CreateUniversityFormProps {
 }
 
 interface UniversityFormData {
+  aisheCode?: string;
   name: string;
   domain: string;
   address: string;
   city: string;
   state: string;
+  district?: string;
   email: string;
   phone: string;
+  contactFirstName?: string;
+  contactLastName?: string;
 }
 
 interface UniversityFormErrors {
+  aisheCode?: string;
   name?: string;
   domain?: string;
   address?: string;
@@ -43,18 +48,24 @@ const CreateUniversityForm: React.FC<CreateUniversityFormProps> = ({
   onSuccess
 }) => {
   const [formData, setFormData] = useState<UniversityFormData>({
+    aisheCode: '',
     name: '',
     domain: '',
     address: '',
     city: '',
     state: '',
+    district: '',
     email: '',
     phone: '',
+    contactFirstName: '',
+    contactLastName: '',
   });
 
   const [errors, setErrors] = useState<UniversityFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFetchingAISHE, setIsFetchingAISHE] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [useManualEntry, setUseManualEntry] = useState(false);
   const { toast } = useToast();
 
   const validateForm = (): boolean => {
@@ -111,6 +122,58 @@ const CreateUniversityForm: React.FC<CreateUniversityFormProps> = ({
         ...prev,
         [field]: undefined
       }));
+    }
+  };
+
+  const handleFetchAISHE = async () => {
+    if (!formData.aisheCode?.trim()) {
+      toast({
+        title: 'AISHE Code Required',
+        description: 'Please enter an AISHE code to fetch data',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate AISHE code format for University (must start with U-)
+    const code = formData.aisheCode.trim().toUpperCase();
+    if (!code.startsWith('U-')) {
+      toast({
+        title: 'Invalid AISHE Code',
+        description: 'University AISHE codes must start with "U-" (e.g., U-12345). College/Institute codes start with "C-".',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsFetchingAISHE(true);
+    try {
+      const response = await fetch(`/api/universities/fetch-aishe?code=${formData.aisheCode}`);
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch AISHE data');
+      }
+
+      // Auto-fill form with AISHE data
+      setFormData(prev => ({
+        ...prev,
+        ...result.data,
+      }));
+
+      toast({
+        title: 'Data Fetched Successfully!',
+        description: 'University details have been auto-filled from AISHE database',
+      });
+    } catch (error) {
+      console.error('Error fetching AISHE data:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to fetch AISHE data',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsFetchingAISHE(false);
     }
   };
 
@@ -181,16 +244,21 @@ const CreateUniversityForm: React.FC<CreateUniversityFormProps> = ({
   const handleClose = () => {
     if (!isSubmitting) {
       setFormData({
+        aisheCode: '',
         name: '',
         domain: '',
         address: '',
         city: '',
         state: '',
+        district: '',
         email: '',
         phone: '',
+        contactFirstName: '',
+        contactLastName: '',
       });
       setErrors({});
       setIsSuccess(false);
+      setUseManualEntry(false);
       onClose();
     }
   };
@@ -204,7 +272,7 @@ const CreateUniversityForm: React.FC<CreateUniversityFormProps> = ({
             Create New University
           </DialogTitle>
           <DialogDescription>
-            Add a new university to the system. All fields marked with * are required.
+            Use AISHE code for auto-fill or enter details manually. All fields marked with * are required.
           </DialogDescription>
         </DialogHeader>
 
@@ -220,6 +288,87 @@ const CreateUniversityForm: React.FC<CreateUniversityFormProps> = ({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* AISHE Code Auto-Fetch Section */}
+            <Card className="bg-blue-50/50 border-blue-200">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Download className="h-4 w-4" />
+                    Auto-Fill from AISHE Database
+                  </CardTitle>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setUseManualEntry(!useManualEntry)}
+                  >
+                    {useManualEntry ? 'Use AISHE' : 'Manual Entry'}
+                  </Button>
+                </div>
+                <CardDescription>
+                  {useManualEntry 
+                    ? 'Filling details manually. Click "Use AISHE" to enable auto-fetch.'
+                    : 'Enter AISHE code (e.g., C-36022) to automatically fetch university details from the official database'}
+                </CardDescription>
+              </CardHeader>
+              {!useManualEntry && (
+                <CardContent className="space-y-4">
+                  <div className="flex gap-2">
+                    <div className="flex-1 space-y-2">
+                      <Label htmlFor="aisheCode">AISHE Code</Label>
+                      <Input
+                        id="aisheCode"
+                        type="text"
+                        placeholder="e.g., U-12345 (University codes start with U-)"
+                        value={formData.aisheCode || ''}
+                        onChange={(e) => handleInputChange('aisheCode', e.target.value.toUpperCase())}
+                        className={errors.aisheCode ? 'border-red-500' : ''}
+                      />
+                      {errors.aisheCode && (
+                        <p className="text-sm text-red-500">{errors.aisheCode}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        University AISHE codes start with U- (e.g., U-12345). College codes start with C-
+                      </p>
+                    </div>
+                    <div className="pt-8">
+                      <Button
+                        type="button"
+                        onClick={handleFetchAISHE}
+                        disabled={isFetchingAISHE || !formData.aisheCode?.trim()}
+                      >
+                        {isFetchingAISHE ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Fetching...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Fetch Details
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                  <Alert>
+                    <AlertDescription className="text-xs">
+                      <strong>Tip:</strong> AISHE codes can be found on the{' '}
+                      <a 
+                        href="https://www.sih.gov.in/" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        Smart India Hackathon website
+                      </a>
+                      . This will auto-fill all university details including name, address, and contact information.
+                    </AlertDescription>
+                  </Alert>
+                </CardContent>
+              )}
+            </Card>
+
             {/* Basic Information */}
             <Card>
               <CardHeader>

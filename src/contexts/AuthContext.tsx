@@ -138,6 +138,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     
     try {
+      console.log('🔐 AuthContext: Attempting login...', { email, enrollmentId: !!enrollmentId });
+      
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -152,9 +154,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       const result = await response.json();
+      console.log('📥 AuthContext: Login response:', { 
+        success: result.success, 
+        userType: result.data?.user?.userType,
+        adminType: result.data?.user?.adminType,
+        isSuperAdmin: result.data?.user?.isSuperAdmin
+      });
 
       if (result.success && result.data) {
         const { token: authToken, user: userData } = result.data;
+        
+        console.log('✅ AuthContext: Setting user data:', {
+          userType: userData.userType,
+          adminType: userData.adminType,
+          isSuperAdmin: userData.isSuperAdmin,
+          role: userData.role
+        });
         
         setToken(authToken);
         setUser(userData);

@@ -5,13 +5,17 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { 
+      aisheCode,
       name, 
       domain, 
       address,
       city,
-      state, 
+      state,
+      district,
       email, 
-      phone 
+      phone,
+      contactFirstName,
+      contactLastName 
     } = body;
 
     // Validate required fields
@@ -41,8 +45,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate AISHE code format (must start with U for University)
+    if (aisheCode) {
+      const trimmedCode = aisheCode.trim().toUpperCase();
+      if (!trimmedCode.startsWith('U-')) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            message: 'Invalid AISHE code for University. University AISHE codes must start with "U-" (e.g., U-12345). College/Institute codes start with "C-".' 
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // Test database connection first
     await prisma.$connect();
+
+    // Check if AISHE code already exists (if provided)
+    if (aisheCode) {
+      const existingByAISHE = await prisma.university.findUnique({
+        where: { aisheCode: aisheCode.trim() },
+      });
+
+      if (existingByAISHE) {
+        return NextResponse.json(
+          { success: false, message: 'University with this AISHE code already exists' },
+          { status: 400 }
+        );
+      }
+    }
 
     // Check if domain already exists
     const existingUniversity = await prisma.university.findUnique({
@@ -59,6 +91,7 @@ export async function POST(request: NextRequest) {
     // Create university
     const university = await prisma.university.create({
       data: {
+        aisheCode: aisheCode?.trim() || null,
         name: name.trim(),
         email: email.toLowerCase().trim(),
         domain: domain.toLowerCase().trim(),
@@ -66,6 +99,9 @@ export async function POST(request: NextRequest) {
         address: address.trim(),
         city: city.trim(),
         state: state.trim(),
+        district: district?.trim() || null,
+        contactFirstName: contactFirstName?.trim() || null,
+        contactLastName: contactLastName?.trim() || null,
         status: 'ACTIVE',
       },
     });
