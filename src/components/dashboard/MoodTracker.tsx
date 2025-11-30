@@ -7,22 +7,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Smile, 
-  Meh, 
-  Frown, 
   Heart, 
   Brain, 
   Zap,
   Coffee,
   Moon,
-  Sun,
   Activity,
   TrendingUp,
   Loader2,
-  Calendar
+  Calendar,
+  Sparkles
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import MoodCheckInFlow from "./mood-checkin/MoodCheckInFlow";
 
 const moods = [
   { emoji: "😄", label: "Excellent", value: 5, color: "text-green-500", bgColor: "bg-green-50 hover:bg-green-100 border-green-200" },
@@ -32,11 +30,18 @@ const moods = [
   { emoji: "😢", label: "Very Low", value: 1, color: "text-red-500", bgColor: "bg-red-50 hover:bg-red-100 border-red-200" }
 ];
 
+interface EnhancedFactors {
+  emotions?: string[];
+  activities?: string[];
+  company?: string[];
+  timestamp?: string;
+}
+
 interface MoodCheckIn {
   id: string;
   moodScore: number;
   moodLabel: string;
-  factors?: string[];
+  factors?: string[] | EnhancedFactors;
   notes?: string;
   checkInDate: string;
   createdAt: string;
@@ -54,12 +59,14 @@ const MoodTracker = ({ onScoreUpdate }: MoodTrackerProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [moodHistory, setMoodHistory] = useState<MoodCheckIn[]>([]);
   const [todayCheckIn, setTodayCheckIn] = useState<MoodCheckIn | null>(null);
+  const [showEnhancedFlow, setShowEnhancedFlow] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
   // Load mood data on component mount
   useEffect(() => {
     loadMoodData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadMoodData = async () => {
@@ -82,7 +89,13 @@ const MoodTracker = ({ onScoreUpdate }: MoodTrackerProps) => {
         if (result.data.todayCheckIn) {
           setSelectedMood(result.data.todayCheckIn.moodScore);
           setMoodNote(result.data.todayCheckIn.notes || '');
-          setFactors(result.data.todayCheckIn.factors || []);
+          // Handle both old array format and new object format
+          const checkInFactors = result.data.todayCheckIn.factors;
+          if (Array.isArray(checkInFactors)) {
+            setFactors(checkInFactors);
+          } else {
+            setFactors([]);
+          }
         }
       }
     } catch (error) {
@@ -184,6 +197,27 @@ const MoodTracker = ({ onScoreUpdate }: MoodTrackerProps) => {
     }
   };
 
+  // Handle completion of enhanced flow
+  const handleFlowComplete = async () => {
+    setShowEnhancedFlow(false);
+    await loadMoodData();
+    
+    toast({
+      title: "Mood logged successfully! 🌟",
+      description: "Your check-in has been saved. Thank you for tracking your wellness!",
+    });
+  };
+
+  // Show enhanced flow if requested
+  if (showEnhancedFlow) {
+    return (
+      <MoodCheckInFlow 
+        onComplete={handleFlowComplete}
+        onScoreUpdate={onScoreUpdate}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Show authentication warning if not a student */}
@@ -203,21 +237,59 @@ const MoodTracker = ({ onScoreUpdate }: MoodTrackerProps) => {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center text-2xl">
-            <Heart className="w-6 h-6 mr-3 text-wellness animate-pulse-soft" />
-            Daily Mood Check-In
+          <CardTitle className="flex items-center justify-between text-2xl">
+            <div className="flex items-center">
+              <Heart className="w-6 h-6 mr-3 text-wellness animate-pulse-soft" />
+              Daily Mood Check-In
+            </div>
+            <Button
+              onClick={() => setShowEnhancedFlow(true)}
+              className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white"
+              size="sm"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Enhanced Check-In
+            </Button>
           </CardTitle>
           <CardDescription>
             Taking a moment to reflect on your mental state helps build self-awareness and track your wellness journey.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">{/* Show today's check-in status if available */}
+        <CardContent className="space-y-6">
+          {/* Promote Enhanced Flow for users without today's check-in */}
+          {!todayCheckIn && user && user.userType === 'STUDENT' && (
+            <div className="bg-gradient-to-br from-teal-50 to-sky-50 border-2 border-teal-200 rounded-xl p-6 mb-6">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center mb-3">
+                    <Sparkles className="w-6 h-6 text-teal-600 mr-2" />
+                    <h3 className="text-lg font-bold text-gray-800">
+                      Try Our Enhanced Check-In!
+                    </h3>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Get deeper insights with our interactive 5-step mood journey. Track emotions, activities, and more!
+                  </p>
+                  <Button
+                    onClick={() => setShowEnhancedFlow(true)}
+                    className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white shadow-md"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Start Enhanced Check-In
+                  </Button>
+                </div>
+                <div className="text-5xl ml-4">🌟</div>
+              </div>
+            </div>
+          )}
+
+          {/* Show today's check-in status if available */}
           {todayCheckIn && (
             <div className="p-3 bg-green-50 border border-green-200 rounded-lg mb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <Calendar className="w-4 h-4 text-green-600 mr-2" />
-                  <span className="text-sm font-medium text-green-800">You've already checked in today!</span>
+                  <span className="text-sm font-medium text-green-800">You&apos;ve already checked in today!</span>
                 </div>
                 <Badge className="bg-green-100 text-green-800 border-green-200">
                   {moods.find(m => m.value === todayCheckIn.moodScore)?.label}
@@ -252,7 +324,7 @@ const MoodTracker = ({ onScoreUpdate }: MoodTrackerProps) => {
 
           {/* Mood Factors */}
           <div>
-            <Label className="text-base font-medium mb-4 block">What's affecting your mood today? (Optional)</Label>
+            <Label className="text-base font-medium mb-4 block">What&apos;s affecting your mood today? (Optional)</Label>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {moodFactors.map((factor) => (
                 <Button
@@ -315,7 +387,7 @@ const MoodTracker = ({ onScoreUpdate }: MoodTrackerProps) => {
             <TrendingUp className="w-5 h-5 mr-2 text-primary" />
             Your Mood Trends
           </CardTitle>
-          <CardDescription>Here's how your mood has been trending this week</CardDescription>
+          <CardDescription>Here&apos;s how your mood has been trending this week</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -357,18 +429,54 @@ const MoodTracker = ({ onScoreUpdate }: MoodTrackerProps) => {
               
               {/* Show today's status */}
               {todayCheckIn && (
-                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="flex items-center justify-between">
+                <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center">
                       <Calendar className="w-4 h-4 text-green-600 mr-2" />
-                      <span className="text-sm font-medium text-green-800">Today's Check-in Complete</span>
+                      <span className="text-sm font-medium text-green-800">Today&apos;s Check-in Complete</span>
                     </div>
                     <Badge className="bg-green-100 text-green-800 border-green-200">
                       {moods.find(m => m.value === todayCheckIn.moodScore)?.label}
                     </Badge>
                   </div>
+                  
+                  {/* Display enhanced data if available */}
+                  {todayCheckIn.factors && typeof todayCheckIn.factors === 'object' && !Array.isArray(todayCheckIn.factors) && (
+                    <div className="mt-3 space-y-2">
+                      {(todayCheckIn.factors as EnhancedFactors).emotions && (todayCheckIn.factors as EnhancedFactors).emotions!.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          <span className="text-xs text-green-700 font-medium">Emotions:</span>
+                          {(todayCheckIn.factors as EnhancedFactors).emotions!.map((emotion: string, idx: number) => (
+                            <span key={idx} className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
+                              {emotion}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {(todayCheckIn.factors as EnhancedFactors).activities && (todayCheckIn.factors as EnhancedFactors).activities!.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          <span className="text-xs text-green-700 font-medium">Activities:</span>
+                          {(todayCheckIn.factors as EnhancedFactors).activities!.map((activity: string, idx: number) => (
+                            <span key={idx} className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                              {activity}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {(todayCheckIn.factors as EnhancedFactors).company && (todayCheckIn.factors as EnhancedFactors).company!.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          <span className="text-xs text-green-700 font-medium">With:</span>
+                          {(todayCheckIn.factors as EnhancedFactors).company!.map((comp: string, idx: number) => (
+                            <span key={idx} className="text-xs bg-pink-100 text-pink-800 px-2 py-0.5 rounded-full">
+                              {comp}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {todayCheckIn.notes && (
-                    <p className="text-sm text-green-700 mt-2 italic">"{todayCheckIn.notes}"</p>
+                    <p className="text-sm text-green-700 mt-2 italic">&quot;{todayCheckIn.notes}&quot;</p>
                   )}
                 </div>
               )}
@@ -376,7 +484,7 @@ const MoodTracker = ({ onScoreUpdate }: MoodTrackerProps) => {
               {/* Show mood statistics */}
               {moodHistory.length > 0 && (
                 <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="text-sm font-medium text-blue-800 mb-2">This Week's Summary</div>
+                  <div className="text-sm font-medium text-blue-800 mb-2">This Week&apos;s Summary</div>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-blue-700">Average Mood:</span>

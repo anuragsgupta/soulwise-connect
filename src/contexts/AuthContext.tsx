@@ -66,7 +66,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Then verify session with server (checks HTTP-only cookie)
         const response = await fetch('/api/auth/verify', {
           method: 'GET',
-          credentials: 'include'
+          credentials: 'include',
+          cache: 'no-store' // Prevent caching of auth verification
         });
         
         if (response.ok) {
@@ -79,14 +80,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             localStorage.setItem('auth-user', JSON.stringify(result.data.user));
           }
         } else {
-          // Session expired or invalid, clear everything
-          setUser(null);
-          setToken(null);
-          localStorage.removeItem('auth-token');
-          localStorage.removeItem('auth-user');
+          // Only clear if we didn't have a saved session
+          // This prevents logout on network errors
+          if (!savedToken || !savedUser) {
+            setUser(null);
+            setToken(null);
+            localStorage.removeItem('auth-token');
+            localStorage.removeItem('auth-user');
+          }
         }
       } catch (error) {
         console.error('Error verifying session:', error);
+        // Don't clear session on network error, use cached data
       } finally {
         setIsLoading(false);
       }
@@ -103,7 +108,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const response = await fetch('/api/auth/verify', {
           method: 'GET',
-          credentials: 'include'
+          credentials: 'include',
+          cache: 'no-store'
         });
         
         if (response.ok) {
@@ -114,9 +120,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             localStorage.setItem('auth-token', result.data.token);
             localStorage.setItem('auth-user', JSON.stringify(result.data.user));
           }
+        } else {
+          // Session expired on server, logout
+          console.warn('Session expired, logging out...');
+          logout();
         }
       } catch (error) {
         console.error('Session refresh error:', error);
+        // Don't logout on network error
       }
     }, 30 * 60 * 1000); // 30 minutes
 

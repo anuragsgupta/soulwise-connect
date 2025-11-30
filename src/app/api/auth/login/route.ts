@@ -265,18 +265,24 @@ export async function POST(request: NextRequest) {
       responseUser.batch = userData.batch;
     }
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       createResponse(true, 'Login successful', {
         token,
         user: responseUser,
       }),
-      { 
-        status: 200,
-        headers: {
-          'Set-Cookie': `auth-token=${token}; HttpOnly; Secure=${process.env.NODE_ENV === 'production'}; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}; Path=/`
-        }
-      }
+      { status: 200 }
     );
+
+    // Set HTTP-only cookie with consistent settings
+    response.cookies.set('auth-token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/',
+    });
+
+    return response;
 
   } catch (error) {
     console.error('Login error:', error);

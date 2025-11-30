@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Return user data and token
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: {
         token,
@@ -92,6 +92,17 @@ export async function GET(request: NextRequest) {
         }
       }
     });
+
+    // Refresh the cookie to extend session
+    response.cookies.set('auth-token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/',
+    });
+
+    return response;
   } catch (error) {
     console.error('Session verification error:', error);
     return NextResponse.json(
