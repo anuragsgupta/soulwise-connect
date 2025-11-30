@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,6 +48,22 @@ const ResourceHub = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [showGame, setShowGame] = useState(false);
   const [currentGame, setCurrentGame] = useState<string | null>(null);
+
+  // Listen for exercise launch events from chatbot
+  useEffect(() => {
+    const handleLaunchExercise = (event: CustomEvent) => {
+      const { exerciseId } = event.detail;
+      if (exerciseId) {
+        setCurrentGame(exerciseId);
+        setShowGame(true);
+      }
+    };
+
+    window.addEventListener('resource:launch-exercise' as any, handleLaunchExercise);
+    return () => {
+      window.removeEventListener('resource:launch-exercise' as any, handleLaunchExercise);
+    };
+  }, []);
 
   const resources: Resource[] = [
     {

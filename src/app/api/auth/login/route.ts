@@ -18,7 +18,38 @@ export async function POST(request: NextRequest) {
     }
 
     let userType: 'ADMIN' | 'FACULTY' | 'STUDENT';
-    let userData: any;
+    let userData: {
+      id: string;
+      email?: string | null;
+      name: string;
+      passwordHash?: string;
+      status?: string;
+      adminType?: string;
+      isSuperAdmin?: boolean;
+      universityId?: string | null;
+      instituteId?: string | null;
+      facultyType?: string;
+      departmentId?: string | null;
+      rollNumber?: string | null;
+      enrollmentId?: string;
+      batchId?: string | null;
+      department?: {
+        instituteId?: string;
+        institute?: {
+          universityId?: string;
+        };
+      };
+      batch?: {
+        departmentId?: string;
+        department?: {
+          instituteId?: string;
+          institute?: {
+            universityId?: string;
+          };
+        };
+      };
+      [key: string]: unknown;
+    };
     let passwordHash: string;
 
     // Handle student login with enrollment ID
@@ -130,7 +161,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Build token payload based on user type
-    let tokenPayload: any = {
+    const tokenPayload: {
+      id: string;
+      email?: string | null;
+      userType: string;
+      adminType?: string;
+      isSuperAdmin?: boolean;
+      universityId?: string | null;
+      instituteId?: string | null;
+      facultyType?: string;
+      departmentId?: string | null;
+      rollNumber?: string | null;
+      batchId?: string | null;
+      [key: string]: unknown;
+    } = {
       id: userData.id,
       email: userData.email,
       userType,
@@ -174,7 +218,25 @@ export async function POST(request: NextRequest) {
     });
 
     // Build response user object
-    let responseUser: any = {
+    const responseUser: {
+      id: string;
+      email?: string | null;
+      name: string;
+      userType: string;
+      adminType?: string;
+      isSuperAdmin?: boolean;
+      universityId?: string | null;
+      instituteId?: string | null;
+      university?: unknown;
+      institute?: unknown;
+      facultyType?: string;
+      departmentId?: string | null;
+      department?: unknown;
+      rollNumber?: string | null;
+      batchId?: string | null;
+      batch?: unknown;
+      [key: string]: unknown;
+    } = {
       id: userData.id,
       email: userData.email,
       name: userData.name,

@@ -12,7 +12,7 @@ export interface QuickReply {
 export interface ResourceAction {
   id: string;
   label: string;
-  type: 'message' | 'navigate' | 'dismiss';
+  type: 'message' | 'navigate' | 'dismiss' | 'launch-exercise';
   value?: string;
   variant?: 'primary' | 'secondary' | 'ghost';
 }

@@ -252,8 +252,8 @@ const calmingSupportOptions = (): SupportOptions => ({
     description: 'Try guided breathing, grounding games, or connect with a counselor when anxiety feels heavy.',
     tag: 'Guided Support',
     actions: [
-      { label: 'Open calming tools', type: 'navigate', value: 'resources', variant: 'primary' },
-      { label: 'Lead a breathing exercise', type: 'message', value: 'Lead me through a breathing exercise right now.' },
+      { label: 'Play Exercise 🎯', type: 'launch-exercise', value: 'breathing-ball', variant: 'primary' },
+      { label: 'Browse all resources', type: 'navigate', value: 'resources', variant: 'secondary' },
       { label: 'Maybe later', type: 'dismiss', variant: 'ghost' },
     ],
   }),
@@ -1046,6 +1046,24 @@ const ChatBot = () => {
             : action.value === 'appointments'
             ? 'Routing you to the counselor booking experience.'
             : 'Navigating to the requested support area.',
+        duration: 3000,
+      });
+      return;
+    }
+
+    if (action.type === 'launch-exercise' && action.value) {
+      removeResourceCard();
+
+      // Dispatch event to open the specific exercise
+      window.dispatchEvent(
+        new CustomEvent('resource:launch-exercise', {
+          detail: { exerciseId: action.value, source: 'chatbot' },
+        })
+      );
+
+      toast({
+        title: '🌬️ Starting exercise',
+        description: 'Launching your breathing exercise now. Take a deep breath...',
         duration: 3000,
       });
       return;
