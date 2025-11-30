@@ -34,11 +34,22 @@ export default function LoginPage() {
       const success = await login(adminCredentials.email, adminCredentials.password);
 
       if (success) {
+        const userData = localStorage.getItem('auth-user');
+        const user = userData ? JSON.parse(userData) : null;
+        
         toast({
           title: 'Welcome!',
           description: 'Login successful. Redirecting to your dashboard...',
         });
-        router.push('/dashboard');
+        
+        // Redirect based on user type
+        if (user?.userType === 'FACULTY') {
+          router.push('/faculty');
+        } else if (user?.userType === 'STUDENT') {
+          router.push('/dashboard');
+        } else {
+          router.push('/dashboard');
+        }
       } else {
         toast({
           title: 'Login Failed',
@@ -66,11 +77,22 @@ export default function LoginPage() {
       const success = await login('', studentCredentials.password, studentCredentials.enrollmentId);
 
       if (success) {
+        const userData = localStorage.getItem('auth-user');
+        const user = userData ? JSON.parse(userData) : null;
+        
         toast({
           title: 'Welcome!',
           description: 'Login successful. Redirecting to your dashboard...',
         });
-        router.push('/dashboard');
+        
+        // Redirect based on user type
+        if (user?.userType === 'STUDENT') {
+          router.push('/dashboard');
+        } else if (user?.userType === 'FACULTY') {
+          router.push('/faculty');
+        } else {
+          router.push('/dashboard');
+        }
       } else {
         toast({
           title: 'Login Failed',

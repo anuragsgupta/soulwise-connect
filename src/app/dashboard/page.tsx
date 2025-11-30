@@ -14,6 +14,12 @@ export default function Dashboard() {
     // Redirect to login if not authenticated
     if (!isLoading && !user) {
       router.push('/login');
+      return;
+    }
+
+    // Redirect faculty users to their dedicated dashboard
+    if (!isLoading && user?.userType === 'FACULTY') {
+      router.push('/faculty');
     }
   }, [user, isLoading, router]);
 
@@ -42,6 +48,12 @@ export default function Dashboard() {
     return <StudentDashboard onLogout={handleLogout} />;
   }
 
+  // Faculty users should be redirected by useEffect above
+  // This is a fallback in case they navigate directly
+  if (user.userType === 'FACULTY') {
+    return null; // Will redirect to /faculty
+  }
+
   // For admin roles (check adminType field from new schema)
   if (user.userType === 'ADMIN' && user.adminType) {
     const roleMap: Record<string, string> = {
@@ -51,11 +63,6 @@ export default function Dashboard() {
     };
 
     return <AdminDashboard userRole={roleMap[user.adminType] || 'Admin'} onLogout={handleLogout} />;
-  }
-
-  // For faculty
-  if (user.userType === 'FACULTY') {
-    return <AdminDashboard userRole="Faculty" onLogout={handleLogout} />;
   }
 
   // Fallback for old schema or unknown types

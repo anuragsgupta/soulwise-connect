@@ -167,11 +167,15 @@ export default function InstitutesTable({ onCreateInstitute, universityId }: Ins
                               {institute.code}
                             </Badge>
                           </span>
-                          <span className="flex items-center gap-1">
-                            <BookOpen className="h-3 w-3" />
-                            {institute.field.name}
-                          </span>
-                          <span className="hidden sm:inline">•</span>
+                          {institute.field && (
+                            <>
+                              <span className="flex items-center gap-1">
+                                <BookOpen className="h-3 w-3" />
+                                {institute.field.name}
+                              </span>
+                              <span className="hidden sm:inline">•</span>
+                            </>
+                          )}
                           <span className="flex items-center gap-1">
                             <Users className="h-3 w-3" />
                             {institute._count.departments} depts

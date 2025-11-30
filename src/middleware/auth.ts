@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { verifyToken } from '@/lib/auth';
 
 // Define user context for authenticated requests
 export interface AuthenticatedUser {
   userId: string;
   email: string;
-  roles: Array<{
+  userType: 'STUDENT' | 'FACULTY' | 'ADMIN';
+  roles?: Array<{
     roleId: string;
     roleName: string;
     universityId?: string;
@@ -17,86 +19,53 @@ export interface AuthenticatedRequest extends NextRequest {
   user?: AuthenticatedUser;
 }
 
-// Mock JWT verification for now (replace with actual implementation)
-function verifyJWT(token: string): { userId: string } | null {
-  try {
-    // In production, use actual JWT verification
-    // const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    // For now, we'll extract userId from a simple token format
-    if (token.startsWith('user-')) {
-      return { userId: token.replace('user-', '') };
-    }
-    return null;
-  } catch (error) {
-    return null;
-  }
-}
-
 // Authentication middleware
 export async function authenticateUser(request: NextRequest): Promise<AuthenticatedUser | null> {
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log('No auth header or invalid format');
     return null;
   }
 
   const token = authHeader.substring(7);
-  const tokenPayload = verifyJWT(token);
   
-  if (!tokenPayload) {
-    return null;
-  }
-
   try {
-    const user = await prisma.user.findUnique({
-      where: { userId: tokenPayload.userId },
-      include: {
-        userRoles: {
-          include: {
-            role: true,
-          },
-        },
-      },
-    });
-
-    if (!user || user.status !== 'active') {
+    const decoded = verifyToken(token) as any;
+    
+    if (!decoded || (!decoded.userId && !decoded.id) || !decoded.userType) {
+      console.log('Invalid token payload:', decoded);
       return null;
     }
 
-    const authenticatedUser: AuthenticatedUser = {
-      userId: user.userId,
-      email: user.email,
-      roles: user.userRoles.map(ur => ({
-        roleId: ur.roleId,
-        roleName: ur.role.name,
-        universityId: ur.universityId || undefined,
-        instituteId: ur.instituteId || undefined,
-      })),
+    return {
+      userId: decoded.userId || decoded.id,
+      email: decoded.email,
+      userType: decoded.userType,
+      roles: decoded.roles,
     };
-
-    return authenticatedUser;
   } catch (error) {
-    console.error('Authentication error:', error);
+    console.error('Token verification error:', error);
     return null;
   }
 }
 
 // Role-based authorization
 export function hasRole(user: AuthenticatedUser, roleName: string): boolean {
-  return user.roles.some(role => role.roleName === roleName);
+  return user.roles?.some(role => role.roleName === roleName) || false;
 }
 
 export function hasUniversityAccess(user: AuthenticatedUser, universityId: string): boolean {
-  return user.roles.some(role => 
+  return user.roles?.some(role => 
     role.roleName === 'SuperAdmin' || role.universityId === universityId
-  );
+  ) || false;
 }
 
 export function hasInstituteAccess(user: AuthenticatedUser, instituteId: string): boolean {
-  return user.roles.some(role => 
+  return user.roles?.some(role => 
     role.roleName === 'SuperAdmin' || 
     role.instituteId === instituteId ||
     (role.roleName === 'UniversityAdmin' && role.universityId)
-  );
+  ) || false;
 }
 
 // Middleware factory for protecting routes

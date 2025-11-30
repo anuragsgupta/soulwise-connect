@@ -42,13 +42,16 @@ import AnonymousMentorChat from "./AnonymousMentorChat";
 import Diary from "./Diary";
 import TodoList from "./TodoList";
 import CalendarView from "./CalendarView";
+import NotificationBell from "@/components/notifications/NotificationBell";
+import NotificationsPage from "@/components/notifications/NotificationsPage";
+import BookSession from "@/components/sessions/BookSession";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface StudentDashboardProps {
   onLogout: () => void;
 }
 
-type DashboardTab = 'dashboard' | 'mood' | 'chat' | 'mentor' | 'diary' | 'tasks' | 'calendar' | 'appointments' | 'resources' | 'forum' | 'profile' | 'more';
+type DashboardTab = 'dashboard' | 'mood' | 'chat' | 'mentor' | 'diary' | 'tasks' | 'calendar' | 'appointments' | 'notifications' | 'resources' | 'forum' | 'profile' | 'more';
 
 const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   const { toast } = useToast();
@@ -98,7 +101,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
 
       if (!targetTab) return;
 
-      const allowedTabs: DashboardTab[] = ['dashboard', 'mood', 'chat', 'mentor', 'diary', 'appointments', 'resources', 'forum', 'more', 'profile'];
+      const allowedTabs: DashboardTab[] = ['dashboard', 'mood', 'chat', 'mentor', 'diary', 'appointments', 'notifications', 'resources', 'forum', 'more', 'profile'];
       if (allowedTabs.includes(targetTab)) {
         setActiveTab(targetTab);
 
@@ -361,10 +364,10 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       action: () => setActiveTab('chat')
     },
     {
-      title: "Book Counsellor",
-      description: "Schedule a professional session",
+      title: "Book Appointment",
+      description: "Schedule session with faculty/counsellor",
       icon: Calendar,
-      color: "from-support to-primary",
+      color: "from-blue-500 to-blue-600",
       action: () => setActiveTab('appointments')
     },
     {
@@ -391,7 +394,9 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       case 'calendar':
         return <CalendarView />;
       case 'appointments':
-        return <AppointmentBooking />;
+        return <BookSession />;
+      case 'notifications':
+        return <NotificationsPage />;
       case 'resources':
         return <ResourceHub />;
       case 'forum':
@@ -728,6 +733,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                 { id: 'mood', label: 'Mood', icon: Smile },
                 { id: 'chat', label: 'Chat', icon: MessageCircle },
                 { id: 'appointments', label: 'Appointments', icon: Calendar },
+                { id: 'notifications', label: 'Notifications', icon: Bell },
                 { id: 'resources', label: 'Resources', icon: BookOpen },
                 { id: 'forum', label: 'Community', icon: Users }
               ].map((item) => (
@@ -750,6 +756,9 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
 
             {/* Desktop Right Side */}
             <div className="hidden md:flex items-center space-x-3">
+              {/* Notification Bell */}
+              <NotificationBell />
+              
               {/* Location Status Indicator */}
               <div className="flex items-center space-x-2">
                 {userLocation ? (
@@ -783,6 +792,9 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
 
             {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center space-x-2">
+              {/* Mobile Notification Bell */}
+              <NotificationBell />
+              
               {/* Mobile Location Indicator */}
               <div className="flex items-center">
                 {userLocation ? (
@@ -820,7 +832,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             { id: 'dashboard', label: 'Home', icon: Heart },
             { id: 'mood', label: 'Mood', icon: Smile },
             { id: 'chat', label: 'Chat', icon: MessageCircle },
-            { id: 'resources', label: 'Resources', icon: BookOpen },
+            { id: 'notifications', label: 'Alerts', icon: Bell },
             { id: 'profile', label: 'Profile', icon: User }
           ].map((item) => (
             <button

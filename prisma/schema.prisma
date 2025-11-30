@@ -7,8 +7,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ==================== ADMIN SYSTEM ====================
@@ -36,6 +37,7 @@ model Admin {
   // Inverse relations
   createdInvites Invite[]    @relation("InviteCreator")
   auditLogs      AuditLog[]  @relation("AdminAuditLogs")
+  notifications  Notification[]
   sessions       Session[]
 
   @@index([email])
@@ -198,6 +200,8 @@ model Faculty {
   hodOfDepartments    Department[]   @relation("DepartmentHOD")
   createdInvites      Invite[]       @relation("FacultyInviteCreator")
   crisisAlerts        CrisisAlert[]
+  sessionBookings     SessionBooking[]
+  notifications       Notification[]
   auditLogs           AuditLog[]     @relation("FacultyAuditLogs")
   sessions            Session[]
 
@@ -249,6 +253,8 @@ model Student {
   chatSessions  ChatSession[]
   diaryEntries  DiaryEntry[]
   tasks         Task[]
+  sessionBookings SessionBooking[]
+  notifications Notification[]
   auditLogs     AuditLog[]    @relation("StudentAuditLogs")
   sessions      Session[]
 
@@ -497,6 +503,77 @@ model Task {
   @@map("tasks")
 }
 
+// ==================== SESSION BOOKING SYSTEM ====================
+
+model SessionBooking {
+  id                String              @id @default(uuid())
+  sessionType       SessionType         @map("session_type")
+  title             String
+  description       String?             @db.Text
+  scheduledDate     DateTime            @map("scheduled_date")
+  scheduledTime     String              @map("scheduled_time") // Time in HH:MM format
+  duration          Int                 @default(30) // Duration in minutes
+  status            SessionStatus       @default(PENDING)
+  meetingLink       String?             @map("meeting_link")
+  location          String?
+  studentNotes      String?             @map("student_notes") @db.Text
+  facultyNotes      String?             @map("faculty_notes") @db.Text
+  rejectionReason   String?             @map("rejection_reason") @db.Text
+  approvedAt        DateTime?           @map("approved_at")
+  rejectedAt        DateTime?           @map("rejected_at")
+  completedAt       DateTime?           @map("completed_at")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  student           Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId         String              @map("student_id")
+  faculty           Faculty             @relation(fields: [facultyId], references: [id], onDelete: Cascade)
+  facultyId         String              @map("faculty_id")
+
+  // Inverse relations
+  notifications     Notification[]
+
+  @@index([studentId, status])
+  @@index([facultyId, status])
+  @@index([scheduledDate, status])
+  @@index([createdAt])
+  @@map("session_bookings")
+}
+
+model Notification {
+  id            String           @id @default(uuid())
+  title         String
+  message       String           @db.Text
+  type          NotificationType
+  isRead        Boolean          @default(false) @map("is_read")
+  relatedId     String?          @map("related_id") // ID of related entity (e.g., session booking)
+  relatedType   String?          @map("related_type") // Type of related entity (e.g., "SESSION_BOOKING")
+  actionUrl     String?          @map("action_url")
+  recipientType UserType         @map("recipient_type")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  readAt        DateTime?        @map("read_at")
+
+  // Polymorphic relations for recipient
+  studentRecipient  Student?  @relation(fields: [studentRecipientId], references: [id], onDelete: Cascade)
+  studentRecipientId String?  @map("student_recipient_id")
+  facultyRecipient  Faculty?  @relation(fields: [facultyRecipientId], references: [id], onDelete: Cascade)
+  facultyRecipientId String?  @map("faculty_recipient_id")
+  adminRecipient    Admin?    @relation(fields: [adminRecipientId], references: [id], onDelete: Cascade)
+  adminRecipientId  String?   @map("admin_recipient_id")
+
+  // Optional relation to session booking
+  sessionBooking    SessionBooking? @relation(fields: [sessionBookingId], references: [id], onDelete: Cascade)
+  sessionBookingId  String?         @map("session_booking_id")
+
+  @@index([studentRecipientId, isRead])
+  @@index([facultyRecipientId, isRead])
+  @@index([adminRecipientId, isRead])
+  @@index([recipientType, isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
 // ==================== ENUMS ====================
 
 enum AdminType {
@@ -602,4 +679,34 @@ enum AuditAction {
   LOGIN
   LOGOUT
   PASSWORD_CHANGE
+}
+
+enum SessionType {
+  COUNSELING
+  MENTORING
+  ACADEMIC
+  CAREER_GUIDANCE
+  PERSONAL
+  OTHER
+}
+
+enum SessionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  RESCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum NotificationType {
+  SESSION_REQUEST
+  SESSION_APPROVED
+  SESSION_REJECTED
+  SESSION_RESCHEDULED
+  SESSION_REMINDER
+  SESSION_CANCELLED
+  SESSION_COMPLETED
+  CRISIS_ALERT
+  GENERAL
 }
