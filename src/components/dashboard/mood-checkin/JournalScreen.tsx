@@ -15,7 +15,7 @@ export default function JournalScreen({ onDone, onBack, initialJournal = "" }: J
   const [journal, setJournal] = useState(initialJournal);
 
   return (
-    <div className="fixed inset-0 z-50 bg-gradient-to-br from-sky-100 via-sky-50 to-blue-100 overflow-hidden">
+    <div className="fixed inset-0 z-[60] bg-gradient-to-br from-sky-100 via-sky-50 to-blue-100 overflow-hidden">
       <div className="h-full flex flex-col p-4 sm:p-6">
       {/* Header */}
       <div className="flex items-center mb-4 sm:mb-6 flex-shrink-0">

@@ -12,13 +12,13 @@ interface MoodSliderScreenProps {
 }
 
 const moodSteps = [
-  { value: 1, emoji: "😢", label: "Terrible", color: "from-red-400 to-red-500" },
+  { value: 1, emoji: "😢", label: "Terrible", color: "from-red-500 to-red-600" },
   { value: 2, emoji: "😟", label: "Bad", color: "from-orange-400 to-orange-500" },
-  { value: 3, emoji: "😐", label: "Okay", color: "from-yellow-400 to-yellow-500" },
-  { value: 4, emoji: "😊", label: "Good", color: "from-blue-400 to-blue-500" },
-  { value: 5, emoji: "😄", label: "Great", color: "from-green-400 to-green-500" },
-  { value: 6, emoji: "🤩", label: "Amazing", color: "from-teal-400 to-teal-500" },
-  { value: 7, emoji: "🥳", label: "Awesome", color: "from-purple-400 to-purple-500" },
+  { value: 3, emoji: "😐", label: "Okay", color: "from-yellow-400 to-amber-500" },
+  { value: 4, emoji: "😊", label: "Good", color: "from-lime-400 to-green-500" },
+  { value: 5, emoji: "😄", label: "Great", color: "from-green-400 to-emerald-500" },
+  { value: 6, emoji: "🤩", label: "Amazing", color: "from-teal-400 to-cyan-500" },
+  { value: 7, emoji: "🥳", label: "Awesome", color: "from-purple-400 to-violet-500" },
 ];
 
 export default function MoodSliderScreen({ onNext, onBack, initialMood = 4 }: MoodSliderScreenProps) {
@@ -27,7 +27,7 @@ export default function MoodSliderScreen({ onNext, onBack, initialMood = 4 }: Mo
   const currentMood = moodSteps.find(step => step.value === moodValue[0]) || moodSteps[3];
 
   return (
-    <div className="fixed inset-0 z-50 bg-gradient-to-br from-sky-100 via-sky-50 to-blue-100 overflow-hidden">
+    <div className="fixed inset-0 z-[60] bg-gradient-to-br from-sky-100 via-sky-50 to-blue-100 overflow-hidden">
       <div className="h-full flex flex-col p-4 sm:p-6">
       {/* Header */}
       <div className="flex items-center mb-4 sm:mb-6 flex-shrink-0">

@@ -141,7 +141,7 @@ export default function MoodCheckInFlow({ onComplete, onScoreUpdate }: MoodCheck
   // Completion modal
   if (showCompletion) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
         <div className="bg-white rounded-3xl p-8 max-w-sm mx-4 text-center shadow-2xl animate-scale-in">
           <div className="text-7xl mb-4 animate-bounce">😊</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">
@@ -160,7 +160,7 @@ export default function MoodCheckInFlow({ onComplete, onScoreUpdate }: MoodCheck
   // Loading state
   if (isSubmitting) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-sky-100 via-sky-50 to-blue-100">
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-gradient-to-br from-sky-100 via-sky-50 to-blue-100">
         <div className="text-center">
           <div className="text-6xl mb-4 animate-pulse">💭</div>
           <div className="text-xl font-semibold text-gray-700">Saving your mood...</div>
