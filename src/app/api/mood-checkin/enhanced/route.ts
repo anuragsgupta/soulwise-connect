@@ -15,12 +15,13 @@ function createResponse<T>(success: boolean, message: string, data?: T): ApiResp
 
 /**
  * Enhanced Mood Check-in API
- * Handles comprehensive mood tracking with emotions, activities, company, and journal
+ * Handles comprehensive mood tracking with emotions, activities, company, journal
+ * Includes sentiment analysis and automatic diary entry creation
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { studentId, moodLevel, emotions, activities, company, journal } = body;
+    const { studentId, moodLevel, emotions, moodFactors, activities, company, journal } = body;
 
     // Validation
     if (!studentId) {
@@ -45,13 +46,31 @@ export async function POST(request: NextRequest) {
     const today = new Date();
     const checkInDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-    // Prepare comprehensive factors object
-    const enhancedFactors = {
-      emotions: emotions || [],
-      activities: activities || [],
-      company: company || [],
-      timestamp: new Date().toISOString()
-    };
+    // Perform sentiment analysis if journal text exists
+    let sentimentScore = null;
+    if (journal && journal.trim().length > 0) {
+      try {
+        const sentimentResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/analyze-sentiment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: journal,
+            emotions: emotions || [],
+            moodLevel
+          })
+        });
+        
+        if (sentimentResponse.ok) {
+          const sentimentResult = await sentimentResponse.json();
+          if (sentimentResult.success && sentimentResult.data) {
+            sentimentScore = sentimentResult.data.score;
+          }
+        }
+      } catch (error) {
+        console.error('Sentiment analysis failed:', error);
+        // Continue without sentiment score
+      }
+    }
 
     // Check if student already has a mood check-in for today
     const existingCheckIn = await prisma.moodCheckIn.findFirst({
@@ -70,7 +89,11 @@ export async function POST(request: NextRequest) {
         data: {
           moodScore: moodLevel,
           moodLabel,
-          factors: enhancedFactors,
+          factors: moodFactors || [],
+          emotions: emotions || [],
+          activities: activities || [],
+          company: company || [],
+          sentiment: sentimentScore,
           notes: journal || null
         }
       });
@@ -81,16 +104,78 @@ export async function POST(request: NextRequest) {
           studentId,
           moodScore: moodLevel,
           moodLabel,
-          factors: enhancedFactors,
+          factors: moodFactors || [],
+          emotions: emotions || [],
+          activities: activities || [],
+          company: company || [],
+          sentiment: sentimentScore,
           notes: journal || null,
           checkInDate
         }
       });
     }
 
+    // Create diary entry if journal text exists
+    let diaryEntry = null;
+    if (journal && journal.trim().length > 0) {
+      // Generate title from current date
+      const diaryTitle = today.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+
+      // Calculate word and character count
+      const words = journal.trim().split(/\s+/);
+      const wordCount = words.length;
+      const charCount = journal.length;
+
+      // Check if diary entry exists for today
+      const existingDiary = await prisma.diaryEntry.findFirst({
+        where: {
+          studentId,
+          entryDate: {
+            gte: checkInDate,
+            lt: new Date(checkInDate.getTime() + 24 * 60 * 60 * 1000) // Next day
+          }
+        }
+      });
+
+      if (existingDiary) {
+        // Update existing diary
+        diaryEntry = await prisma.diaryEntry.update({
+          where: { id: existingDiary.id },
+          data: {
+            content: journal,
+            mood: moodLabel,
+            sentiment: sentimentScore,
+            emotions: emotions || [],
+            wordCount,
+            charCount
+          }
+        });
+      } else {
+        // Create new diary entry
+        diaryEntry = await prisma.diaryEntry.create({
+          data: {
+            studentId,
+            title: diaryTitle,
+            content: journal,
+            mood: moodLabel,
+            sentiment: sentimentScore,
+            emotions: emotions || [],
+            wordCount,
+            charCount,
+            entryDate: today
+          }
+        });
+      }
+    }
+
     return NextResponse.json(
       createResponse(true, existingCheckIn ? 'Mood updated successfully' : 'Mood check-in created successfully', {
         moodCheckIn,
+        diaryEntry,
         isUpdate: !!existingCheckIn
       }),
       { status: existingCheckIn ? 200 : 201 }

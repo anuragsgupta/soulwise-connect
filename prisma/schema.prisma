@@ -301,10 +301,14 @@ model Location {
 
 model MoodCheckIn {
   id          String   @id @default(uuid())
-  moodScore   Int      @map("mood_score") // 1-5
-  moodLabel   String   @map("mood_label") // Excellent, Good, Okay, Low, Very Low
-  factors     Json? // Array of factors: sleep, energy, stress, social, exercise, academic
-  notes       String?
+  moodScore   Int      @map("mood_score") // 1-7
+  moodLabel   String   @map("mood_label") // Terrible, Bad, Okay, Good, Great, Amazing, Awesome
+  factors     Json? // Array of factors: sleep, energy, stress, social, exercise
+  emotions    String[] // Array of emotions from EmotionTagScreen
+  activities  String[] // Array of activities
+  company     String[] // Who the student is with
+  sentiment   Decimal? @db.Decimal(3, 2) // Sentiment score from -1 to 1
+  notes       String?  @db.Text
   checkInDate DateTime @map("check_in_date") @db.Date
   createdAt   DateTime @default(now()) @map("created_at")
 
@@ -467,10 +471,12 @@ model AuditLog {
 
 model DiaryEntry {
   id         String   @id @default(uuid())
-  title      String
+  title      String // Auto-generated from date (e.g., "December 2, 2025")
   content    String   @db.Text
-  mood       String // happy, neutral, sad
-  tags       Json? // Array of tags
+  mood       String // Mood label from check-in
+  sentiment  Decimal? @db.Decimal(3, 2) // Sentiment score from -1 to 1
+  emotions   String[] // Array of emotions
+  tags       Json? // Array of additional tags
   wordCount  Int      @default(0) @map("word_count")
   charCount  Int      @default(0) @map("char_count")
   entryDate  DateTime @default(now()) @map("entry_date")

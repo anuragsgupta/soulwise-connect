@@ -12,7 +12,6 @@ interface CompanyTagScreenProps {
 }
 
 const predefinedCompany = [
-  { id: "girlfriend", label: "Girlfriend", icon: "👩‍❤️‍💋‍👨" },
   { id: "family", label: "Family", icon: "👨‍👩‍👧‍👦" },
   { id: "myself", label: "By Myself", icon: "🧘" },
   { id: "stranger", label: "Stranger", icon: "🤷" },
@@ -167,7 +166,7 @@ export default function CompanyTagScreen({ onNext, onBack, initialCompany = [] }
           <div
             key={step}
             className={`h-2 rounded-full transition-all ${
-              step === 4 ? 'w-8 bg-gray-800' : step < 4 ? 'w-2 bg-gray-800' : 'w-2 bg-gray-300'
+              step === 4 ? 'w-8 bg-gray-800' : 'w-2 bg-gray-300'
             }`}
           />
         ))}

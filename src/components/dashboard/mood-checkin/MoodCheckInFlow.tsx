@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import MoodSliderScreen from "./MoodSliderScreen";
-import EmotionTagScreen from "./EmotionTagScreen";
-import ActivityTagScreen from "./ActivityTagScreen";
 import CompanyTagScreen from "./CompanyTagScreen";
 import JournalScreen from "./JournalScreen";
 import { useToast } from "@/hooks/use-toast";
@@ -11,7 +9,9 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface MoodCheckInData {
   moodLevel: number;
+  selectedEmoji: string;
   emotions: string[];
+  moodFactors: Record<string, number>;
   activities: string[];
   company: string[];
   journal: string;
@@ -26,7 +26,9 @@ export default function MoodCheckInFlow({ onComplete, onScoreUpdate }: MoodCheck
   const [currentStep, setCurrentStep] = useState(1);
   const [checkInData, setCheckInData] = useState<MoodCheckInData>({
     moodLevel: 4,
+    selectedEmoji: "😊",
     emotions: [],
+    moodFactors: {},
     activities: [],
     company: [],
     journal: ""
@@ -49,29 +51,22 @@ export default function MoodCheckInFlow({ onComplete, onScoreUpdate }: MoodCheck
     };
   }, []);
 
-  const handleMoodNext = (moodLevel: number) => {
-    setCheckInData(prev => ({ ...prev, moodLevel }));
+  const handleMoodNext = (moodLevel: number, selectedEmoji: string, moodFactors: Record<string, number>) => {
+    setCheckInData(prev => ({ ...prev, moodLevel, selectedEmoji, moodFactors }));
     setCurrentStep(2);
   };
 
-  const handleEmotionsNext = (emotions: string[]) => {
-    setCheckInData(prev => ({ ...prev, emotions }));
-    setCurrentStep(3);
-  };
 
-  const handleActivitiesNext = (activities: string[]) => {
-    setCheckInData(prev => ({ ...prev, activities }));
-    setCurrentStep(4);
-  };
+
+
 
   const handleCompanyNext = (company: string[]) => {
     setCheckInData(prev => ({ ...prev, company }));
-    setCurrentStep(5);
+    setCurrentStep(3);
   };
 
   const handleJournalDone = async (journal: string) => {
     setCheckInData(prev => ({ ...prev, journal }));
-    
     // Submit to backend
     await submitCheckIn({ ...checkInData, journal });
   };
@@ -98,6 +93,7 @@ export default function MoodCheckInFlow({ onComplete, onScoreUpdate }: MoodCheck
           studentId: user.id,
           moodLevel: data.moodLevel,
           emotions: data.emotions,
+          moodFactors: data.moodFactors,
           activities: data.activities,
           company: data.company,
           journal: data.journal
@@ -175,37 +171,39 @@ export default function MoodCheckInFlow({ onComplete, onScoreUpdate }: MoodCheck
         <MoodSliderScreen
           onNext={handleMoodNext}
           initialMood={checkInData.moodLevel}
+          initialEmoji={checkInData.selectedEmoji}
+          initialFactors={checkInData.moodFactors}
         />
       )}
       
-      {currentStep === 2 && (
+      {/* {currentStep === 2 && (
         <EmotionTagScreen
           onNext={handleEmotionsNext}
           onBack={() => setCurrentStep(1)}
           initialEmotions={checkInData.emotions}
         />
-      )}
+      )} */}
       
-      {currentStep === 3 && (
+      {/* {currentStep === 2 && (
         <ActivityTagScreen
           onNext={handleActivitiesNext}
-          onBack={() => setCurrentStep(2)}
+          onBack={() => setCurrentStep(1)}
           initialActivities={checkInData.activities}
         />
-      )}
+      )} */}
       
-      {currentStep === 4 && (
+      {currentStep === 2 && (
         <CompanyTagScreen
           onNext={handleCompanyNext}
-          onBack={() => setCurrentStep(3)}
+          onBack={() => setCurrentStep(1)}
           initialCompany={checkInData.company}
         />
       )}
       
-      {currentStep === 5 && (
+      {currentStep === 3 && (
         <JournalScreen
           onDone={handleJournalDone}
-          onBack={() => setCurrentStep(4)}
+          onBack={() => setCurrentStep(2)}
           initialJournal={checkInData.journal}
         />
       )}

@@ -13,10 +13,11 @@ interface ActivityTagScreenProps {
 
 const predefinedActivities = [
   { id: "office", label: "Office Work", icon: "💼", color: "bg-blue-100" },
-  { id: "swimming", label: "Swimming", icon: "🏊", color: "bg-cyan-100" },
   { id: "studying", label: "Studying", icon: "📚", color: "bg-purple-100" },
-  { id: "driving", label: "Driving", icon: "🚗", color: "bg-red-100" },
-  { id: "eating", label: "Eating", icon: "🍽️", color: "bg-orange-100" },
+  { id: "nothing", label: "Doing Nothing", icon: "🛋️", color: "bg-gray-100" },
+  { id: "gaming", label: "Gaming", icon: "🎮", color: "bg-green-100" },
+  { id: "reading", label: "Reading", icon: "📖", color: "bg-yellow-100" },
+  { id: "music", label: "Listening Music", icon: "🎵", color: "bg-pink-100" },
 ];
 
 export default function ActivityTagScreen({ onNext, onBack, initialActivities = [] }: ActivityTagScreenProps) {
@@ -162,7 +163,7 @@ export default function ActivityTagScreen({ onNext, onBack, initialActivities = 
           <div
             key={step}
             className={`h-2 rounded-full transition-all ${
-              step === 3 ? 'w-8 bg-gray-800' : step < 3 ? 'w-2 bg-gray-800' : 'w-2 bg-gray-300'
+              step === 3 ? 'w-8 bg-gray-800' : 'w-2 bg-gray-300'
             }`}
           />
         ))}

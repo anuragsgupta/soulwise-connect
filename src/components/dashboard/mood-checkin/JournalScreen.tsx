@@ -35,7 +35,7 @@ export default function JournalScreen({ onDone, onBack, initialJournal = "" }: J
             <PenLine className="w-5 h-5 sm:w-6 sm:h-6 text-teal-600" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
-            Write your Journal
+            What are your thoughts?
           </h1>
         </div>
 
@@ -44,7 +44,7 @@ export default function JournalScreen({ onDone, onBack, initialJournal = "" }: J
           <Textarea
             value={journal}
             onChange={(e) => setJournal(e.target.value)}
-            placeholder="Meeting my old friend at my favorite cafe made me so happy today."
+            placeholder="Share your thoughts about today... What made you feel this way?"
             className="flex-1 border-none resize-none text-base focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent placeholder:text-gray-400"
             style={{ minHeight: '200px' }}
           />
@@ -81,7 +81,7 @@ export default function JournalScreen({ onDone, onBack, initialJournal = "" }: J
           <div
             key={step}
             className={`h-2 rounded-full transition-all ${
-              step === 5 ? 'w-8 bg-gray-800' : 'w-2 bg-gray-800'
+              step === 5 ? 'w-8 bg-gray-800' : 'w-2 bg-gray-300'
             }`}
           />
         ))}
