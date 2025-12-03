@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Slider } from "@/components/ui/slider"; // Assuming you have this, if not I'll simulate
 import {
   BookOpen,
   Play,
@@ -23,8 +24,15 @@ import {
   Wind,
   Gamepad2,
   Activity,
-  X, // Added for closing the modal
-  ExternalLink // Added for external link icon
+  X,
+  Pause,
+  Maximize2,
+  Minimize2,
+  SkipBack,
+  SkipForward,
+  Share2,
+  BookmarkPlus,
+  ThumbsUp 
 } from "lucide-react";
 
 // Game Imports
@@ -35,12 +43,13 @@ import ZenWaterRipple from "./games/ZenWaterRipple";
 import MandalaColorPicker from "./games/MandalaColorPicker";
 import FallingLeavesGrounding from "./games/FallingLeavesGrounding";
 
-// --- NEW EXERCISE IMPORTS ---
+// Exercise Imports
 import FourSevenEightBreathing from "./exercises/FourSevenEightBreathing";
 import BreathAwareness from "./exercises/BreathAwareness";
 import MorningEnergizer from "./exercises/MorningEnergizer";
 import AnxietyRelease from "./exercises/AnxietyRelease";
 
+// --- TYPES ---
 interface Resource {
   id: string;
   title: string;
@@ -52,24 +61,47 @@ interface Resource {
   downloads: number;
   thumbnail?: string;
   url?: string;
-  content?: string; // Added for modal content
+  content?: string;
 }
 
-// --- NEW COMPONENT: ResourceModal (For Articles/Guides) ---
-interface ResourceModalProps {
+// --- HELPER COMPONENT: Full Screen Modal Wrapper ---
+// This ensures Games, Exercises, and Audio cover the page consistently
+const FullScreenModalWrapper = ({ 
+  children, 
+  title, 
+  onClose, 
+  icon: Icon 
+}: { 
+  children: React.ReactNode, 
+  title: string, 
+  onClose: () => void,
+  icon?: any
+}) => {
+  return (
+    <div>
+    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col animate-in fade-in zoom-in-95 duration-200">
+      {/* Content Area - Full Width/Height */}
+      <div className="flex-1 overflow-y-auto w-full h-full relative">
+        {children}
+      </div>
+    </div>
+    </div>
+  );
+};
+
+// --- COMPONENT: VideoResourceModal ---
+interface VideoModalProps {
   resource: Resource;
   onClose: () => void;
 }
 
-
-// --- NEW COMPONENT: VideoResourceModal (For YouTube Videos) ---
 interface VideoModalProps {
   resource: Resource;
   onClose: () => void;
 }
 
 const VideoResourceModal = ({ resource, onClose }: VideoModalProps) => {
-  // Helper to get embed URL from standard YouTube link
+  // Helper to get embed URL
   const getYouTubeEmbedUrl = (url: string | undefined) => {
     if (!url) return null;
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -82,26 +114,46 @@ const VideoResourceModal = ({ resource, onClose }: VideoModalProps) => {
   const embedUrl = getYouTubeEmbedUrl(resource.url);
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <Card className="w-full max-w-5xl bg-background shadow-xl">
-        <CardHeader className="flex flex-row items-start justify-between border-b p-4 sm:p-6">
-          <div className="space-y-1 pr-6">
-            <CardTitle className="text-xl sm:text-2xl font-heading flex items-center">
-              <Video className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-red-600" />
+    // 1. Overlay: Dark backdrop with blur, fixed to cover entire screen
+    <div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
+      
+      {/* 2. Main Container: Responsive width, max-height handling */}
+      <div className="relative w-full max-w-5xl bg-background sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col h-full sm:h-auto sm:max-h-[90vh] border-none sm:border border-white/10">
+        
+        {/* Header: Sticky on mobile so Close button is always accessible */}
+        <div className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur z-10 sticky top-0 sm:static">
+          <div className="flex flex-col gap-1 pr-8">
+            <h2 className="text-lg sm:text-xl font-bold line-clamp-1 flex items-center gap-2">
+              <Video className="w-5 h-5 text-red-500 fill-red-500" />
               {resource.title}
-            </CardTitle>
-            <CardDescription className="text-sm">
-                 Category: <Badge variant="outline" className="text-xs mt-2">{resource.category}</Badge> | Type: <Badge variant="outline" className="text-xs">{resource.type}</Badge>
-            </CardDescription>
+            </h2>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+               <Badge variant="secondary" className="text-[10px] h-5 px-1.5 uppercase tracking-wider font-semibold">
+                 {resource.category}
+               </Badge>
+               <span className="hidden sm:inline">•</span>
+               <span className="flex items-center gap-1">
+                 <Clock className="w-3 h-3" /> {resource.duration}
+               </span>
+            </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
-            <X className="w-5 h-5" />
+          
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onClose} 
+            className="rounded-full hover:bg-muted/50 h-10 w-10 shrink-0"
+          >
+            <X className="w-6 h-6" />
           </Button>
-        </CardHeader>
+        </div>
 
-        <CardContent className="p-0">
-          {/* Responsive Video Container (16:9 Aspect Ratio) */}
-          <div className="relative w-full pt-[56.25%] bg-black">
+        {/* Content Scroll Wrapper: Allows description to scroll while modal stays fixed height */}
+        <div className="overflow-y-auto flex-1 bg-muted/5">
+          
+          {/* Video Player Container: 16:9 Aspect Ratio */}
+          <div className="relative w-full pt-[56.25%] bg-black shadow-inner">
             {embedUrl ? (
               <iframe
                 className="absolute top-0 left-0 w-full h-full"
@@ -111,36 +163,252 @@ const VideoResourceModal = ({ resource, onClose }: VideoModalProps) => {
                 allowFullScreen
               />
             ) : (
-              <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center text-white">
-                <p>Video URL not found</p>
+              <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center text-white/50 bg-neutral-900">
+                <Video className="w-12 h-12 mb-2 opacity-50" />
+                <p>Video unavailable</p>
               </div>
             )}
           </div>
-          
-          <div className="p-6">
-            <h3 className="font-semibold text-lg mb-2">Description</h3>
-            <p className="text-muted-foreground">{resource.description}</p>
+
+          {/* Description & Interaction Section */}
+          <div className="p-4 sm:p-6 space-y-6">
+            
+            {/* Action Bar */}
+            <div className="flex items-center justify-between flex-wrap gap-4 pb-4 border-b">
+               <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1 text-sm font-medium">
+                    <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                    {resource.rating}
+                  </div>
+                  <div className="w-px h-4 bg-border"></div>
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <Download className="w-4 h-4" />
+                    {resource.downloads} views
+                  </div>
+               </div>
+
+               <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="gap-2 rounded-full text-xs h-8">
+                    <ThumbsUp className="w-3 h-3" /> Like
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-2 rounded-full text-xs h-8">
+                    <Share2 className="w-3 h-3" /> Share
+                  </Button>
+               </div>
+            </div>
+
+            {/* Text Content */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-base sm:text-lg">About this video</h3>
+              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                {resource.description}
+              </p>
+            </div>
+            
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+    </div>
     </div>
   );
 };
-// --- END NEW COMPONENT ---
+
+// --- COMPONENT: AudioResourceModal (New Pop-up) ---
+interface AudioModalProps {
+  resource: Resource;
+  onClose: () => void;
+}
+
+const AudioResourceModal = ({ resource, onClose }: AudioModalProps) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  
+  // Parse duration from string (e.g. "8 min") to seconds, default to 300 (5 mins)
+  const getDurationInSeconds = () => {
+    if (!resource.duration) return 300;
+    const match = resource.duration.match(/(\d+)/);
+    return match ? parseInt(match[0]) * 60 : 300;
+  };
+
+  const [totalDuration, setTotalDuration] = useState(getDurationInSeconds());
+
+  useEffect(() => {
+    // Update duration if resource changes
+    setTotalDuration(getDurationInSeconds());
+    setCurrentTime(0);
+    setIsPlaying(true); // Auto-play when opened
+  }, [resource]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | undefined;
+    if (isPlaying) {
+      interval = setInterval(() => {
+        setCurrentTime(prev => {
+          if (prev >= totalDuration) {
+            setIsPlaying(false);
+            return totalDuration;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, totalDuration]);
+
+  // Calculate progress percentage
+  const progress = (currentTime / totalDuration) * 100;
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const togglePlay = () => {
+    setIsPlaying(!isPlaying);
+  };
+
+  const handleSkipBack = () => {
+    setCurrentTime(Math.max(0, currentTime - 15));
+  };
+
+  const handleSkipForward = () => {
+    setCurrentTime(Math.min(totalDuration, currentTime + 15));
+  };
+
+  return (
+    // Added 'fixed inset-0 z-50' to make it a full-screen overlay modal
+    <div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 min-h-screen bg-gradient-to-br from-purple-200 via-pink-100 to-blue-200 backdrop-blur-lg animate-in fade-in zoom-in-95 duration-200">
+      
+      {/* Close Button */}
+      <button 
+        onClick={onClose} 
+        className="absolute top-6 right-6 p-2 bg-white/50 hover:bg-white/80 backdrop-blur-sm rounded-full transition-colors z-50"
+      >
+        <X className="w-6 h-6 text-gray-700" />
+      </button>
+
+      {/* Decorative floating elements */}
+      <div className="absolute top-10 left-10 text-purple-300 text-6xl opacity-30 animate-pulse">✨</div>
+      <div className="absolute top-32 right-16 text-pink-300 text-5xl opacity-30 animate-bounce delay-700">🌸</div>
+      <div className="absolute bottom-20 left-20 text-blue-300 text-5xl opacity-30 animate-pulse">☁️</div>
+      <div className="absolute bottom-32 right-32 text-purple-300 text-4xl opacity-30">✨</div>
+
+      <div className="max-w-md w-full relative z-10">
+        {/* Main player card */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/50">
+          {/* Decorative clouds */}
+          <div className="relative mb-8">
+            <div className="flex justify-center items-center gap-8 mb-4">
+              <div className="text-4xl animate-bounce-slow">☁️</div>
+              <div className="text-5xl animate-bounce-slower">☁️</div>
+              <div className="text-4xl animate-bounce-slow">☁️</div>
+            </div>
+            <div className="flex justify-center">
+              <div className="text-3xl">☺️</div>
+            </div>
+          </div>
+
+          {/* Title - NOW DYNAMIC */}
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center mb-2 line-clamp-2">
+            {resource.title}
+          </h1>
+          <p className="text-sm text-gray-600 text-center mb-6 capitalize">
+            {resource.duration} • {resource.category}
+          </p>
+
+          {/* Action buttons */}
+          <div className="flex justify-center gap-4 mb-8">
+            <button className="bg-gray-100 hover:bg-gray-200 rounded-full p-3 transition-colors">
+              <Heart className="w-5 h-5 text-gray-700" />
+            </button>
+            <button className="bg-gray-100 hover:bg-gray-200 rounded-full p-3 transition-colors">
+              <Share2 className="w-5 h-5 text-gray-700" />
+            </button>
+            <button className="bg-gray-100 hover:bg-gray-200 rounded-full p-3 transition-colors">
+              <BookmarkPlus className="w-5 h-5 text-gray-700" />
+            </button>
+            <button className="bg-gray-100 hover:bg-gray-200 rounded-full p-3 transition-colors">
+              <Download className="w-5 h-5 text-gray-700" />
+            </button>
+          </div>
+
+          {/* Progress bar */}
+          <div className="mb-2 w-full cursor-pointer group">
+            <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gray-900 transition-all duration-300 ease-linear relative"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Time labels */}
+          <div className="flex justify-between text-xs text-gray-600 mb-6 font-mono">
+            <span>{formatTime(currentTime)}</span>
+            <span>{formatTime(totalDuration)}</span>
+          </div>
+
+          {/* Playback controls */}
+          <div className="flex items-center justify-center gap-6">
+            <button 
+              onClick={handleSkipBack}
+              className="hover:bg-gray-100 rounded-full p-2 transition-colors active:scale-95"
+            >
+              <SkipBack className="w-6 h-6 text-gray-700" fill="currentColor" />
+            </button>
+            
+            <button 
+              onClick={togglePlay}
+              className="bg-gray-900 hover:bg-gray-800 rounded-full p-5 transition-all transform hover:scale-105 shadow-lg active:scale-95"
+            >
+              {isPlaying ? (
+                <Pause className="w-8 h-8 text-white" fill="white" />
+              ) : (
+                <Play className="w-8 h-8 text-white ml-1" fill="white" />
+              )}
+            </button>
+            
+            <button 
+              onClick={handleSkipForward}
+              className="hover:bg-gray-100 rounded-full p-2 transition-colors active:scale-95"
+            >
+              <SkipForward className="w-6 h-6 text-gray-700" fill="currentColor" />
+            </button>
+          </div>
+
+          {/* Additional info - NOW DYNAMIC */}
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <h3 className="font-semibold text-gray-900 mb-2">About this session</h3>
+            <p className="text-sm text-gray-600 leading-relaxed line-clamp-4">
+              {resource.description}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+  );
+};
 
 
 const ResourceHub = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  
+  // Modal States
   const [showGame, setShowGame] = useState(false);
   const [showExercise, setShowExercise] = useState(false);
+  const [showAudio, setShowAudio] = useState(false); // NEW State for Audio
+  
+  // Current Item States
   const [currentGame, setCurrentGame] = useState<string | null>(null);
   const [currentExercise, setCurrentExercise] = useState<string | null>(null);
-
-  // New state for video modal (kept as video logic is unchanged)
-  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [currentAudio, setCurrentAudio] = useState<Resource | null>(null); // NEW State for Audio Item
   const [currentVideo, setCurrentVideo] = useState<Resource | null>(null);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
   // Audio playback state
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
@@ -176,6 +444,7 @@ const ResourceHub = () => {
     };
   }, [timerIntervalId]);
 
+  // Data
   const resources: Resource[] = [
     {
       id: '1',
@@ -207,7 +476,7 @@ const ResourceHub = () => {
       duration: '3 min',
       rating: 4.7,
       downloads: 890,
-      url: 'https://www.youtube.com/embed/PiMqc1XzOHs?si=N6Yad1DVOTY56KcP&amp;start=5" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin' // Added Sample YouTube URL
+      url: 'https://www.youtube.com/embed/PiMqc1XzOHs?si=N6Yad1DVOTY56KcP&amp;start=5" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin'
     },
     {
       id: '18',
@@ -218,7 +487,7 @@ const ResourceHub = () => {
       duration: '3.5 min',
       rating: 4.7,
       downloads: 890,
-      url: 'https://www.youtube.com/embed/xXGnjtLyUiI?si=NKijb3U-V2oo_JOw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin' // Added Sample YouTube URL
+      url: 'https://www.youtube.com/embed/xXGnjtLyUiI?si=NKijb3U-V2oo_JOw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin' 
     },
     {
       id: '19',
@@ -229,7 +498,7 @@ const ResourceHub = () => {
       duration: '6 min',
       rating: 4.7,
       downloads: 890,
-      url: 'https://youtu.be/0hxFR6tezAc?si=aeHEL0l6waNxgca7' // Added Sample YouTube URL
+      url: 'https://youtu.be/0hxFR6tezAc?si=aeHEL0l6waNxgca7'
     },
     {
       id: '4',
@@ -272,7 +541,7 @@ const ResourceHub = () => {
       duration: '5 min',
       rating: 4.9,
       downloads: 3200,
-      url: '4-7-8-breathing' // Added URL for exercise
+      url: '4-7-8-breathing'
     },
     {
       id: '9',
@@ -283,7 +552,7 @@ const ResourceHub = () => {
       duration: '10 min',
       rating: 4.7,
       downloads: 2400,
-      url: 'breath-awareness' // Added URL for exercise
+      url: 'breath-awareness'
     },
     {
       id: '10',
@@ -327,7 +596,7 @@ const ResourceHub = () => {
       duration: '6 min',
       rating: 4.6,
       downloads: 1900,
-      url: 'morning-energizer' // Added URL for exercise
+      url: 'morning-energizer'
     },
     {
       id: '14',
@@ -338,7 +607,7 @@ const ResourceHub = () => {
       duration: '7 min',
       rating: 4.9,
       downloads: 3500,
-      url: 'anxiety-release' // Added URL for exercise
+      url: 'anxiety-release'
     },
     {
       id: '15',
@@ -419,60 +688,46 @@ const ResourceHub = () => {
   });
 
   const handleResourceClick = (resource: Resource) => {
+    // 1. Games Logic
     if (resource.type === 'game' && resource.url) {
-      // Internal Games
       if (['breathing-ball', 'calm-circle', 'box-breathing', 'zen-water-ripple', 'mandala-color-picker', 'falling-leaves'].includes(resource.url)) {
         setCurrentGame(resource.url);
         setShowGame(true);
       } else {
-        // External URL for game
         window.open(resource.url, '_blank');
       }
       return;
     } 
     
+    // 2. Navigation for Article/Guide
     if (resource.type === 'guide' || resource.type === 'article') {
-      // If "artical" folder is in the SAME route segment as this page:
-      const newPath = `/artical/${resource.id}`;   // or just `artical/${resource.id}`
-
-      console.log(`Navigating to the clean resource path: ${newPath}`);
+      const newPath = `/artical/${resource.id}`;
       router.push(newPath);
       return;
     }
 
-    
-    // *** NEW LOGIC: Audio now starts or stops a fake timer ***
+    // 3. Audio Logic (UPDATED: Open Modal instead of Push)
     if (resource.type === 'audio') {
-      if (playingAudioId === resource.id) {
-        // Stop playback if already playing
-        if (timerIntervalId) clearInterval(timerIntervalId);
-        setPlayingAudioId(null);
-        setTimerIntervalId(null);
-        setAudioTimer(0);
-      } else {
-        startFakePlayback(resource);
-      }
+      setCurrentAudio(resource);
+      setShowAudio(true);
       return;
     }
     
-    // Video logic remains the same
+    // 4. Video Logic
     if (resource.type === 'video') {
-      // Open Video Modal
       setCurrentVideo(resource);
       setIsVideoModalOpen(true);
       return;
     } 
     
-    // Exercise logic remains the same
+    // 5. Exercise Logic
     if (resource.type === 'exercise' && resource.url) {
-        // --- Handle Exercise Modal ---
         setCurrentExercise(resource.url);
         setShowExercise(true);
         return;
     } 
     
-    // Fallback for other resource types (Audio, or Exercises without URL, which are handled above now)
-    console.log(`Opening external resource: ${resource.title}`);
+    // Fallback
     if (resource.url) {
       window.open(resource.url, '_blank');
     }
@@ -524,7 +779,6 @@ const ResourceHub = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {filteredResources.map((resource) => {
               const ResourceIcon = getResourceIcon(resource.type);
-              const isPlaying = resource.type === 'audio' && playingAudioId === resource.id;
               
               return (
                 <Card
@@ -570,13 +824,7 @@ const ResourceHub = () => {
                           handleResourceClick(resource);
                         }}
                       >
-                        {/* *** MODIFIED AUDIO/PLAY BUTTON LOGIC *** */}
-                        {isPlaying ? (
-                          <>
-                            <Volume2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 text-green-300 animate-pulse" />
-                            Playing: {formatTime(audioTimer)}
-                          </>
-                        ) : resource.type === 'video' ? (
+                         {resource.type === 'video' ? (
                           <>
                             <Play className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                             Watch
@@ -604,14 +852,12 @@ const ResourceHub = () => {
                         )}
                       </Button>
                       
-                      {/* MODIFIED: Download button only for articles and guides */}
                       {(resource.type === 'article' || resource.type === 'guide') && (
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            // Create a blob to download the PRD content
                             const element = document.createElement("a");
                             const contentToDownload = resource.content || resource.description;
                             const file = new Blob([contentToDownload], {type: 'text/html'});
@@ -631,7 +877,7 @@ const ResourceHub = () => {
               );
             })}
           </div>
-
+          
           {filteredResources.length === 0 && (
             <div className="text-center py-12">
               <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
@@ -642,7 +888,7 @@ const ResourceHub = () => {
         </CardContent>
       </Card>
 
-      {/* Featured Collections */}
+      {/* Featured Collections Section - (Kept same as original) */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center text-lg sm:text-xl font-heading">
@@ -693,38 +939,38 @@ const ResourceHub = () => {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-wellness/20 to-wellness-light cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 border-wellness/30">
+            <Card className="bg-gradient-to-br from-slate-100 to-slate-200 cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 border-slate-300">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-2">
-                  <FileText className="w-8 h-8 text-wellness" />
-                  <Badge className="bg-wellness text-white text-xs">Essential</Badge>
+                  <FileText className="w-8 h-8 text-slate-600" />
+                  <Badge className="bg-slate-600 text-white text-xs">Essential</Badge>
                 </div>
-                <h3 className="font-semibold text-wellness-foreground mb-2 text-sm sm:text-base font-heading">
+                <h3 className="font-semibold text-slate-800 mb-2 text-sm sm:text-base font-heading">
                   Exam Preparation Toolkit
                 </h3>
-                <p className="text-xs sm:text-sm text-wellness-foreground/80 mb-3 font-body">
+                <p className="text-xs sm:text-sm text-slate-700 mb-3 font-body">
                   Complete guide to managing exam stress, study techniques, and maintaining mental health during tests.
                 </p>
-                <div className="flex items-center text-xs sm:text-sm text-wellness-foreground/80 font-medium">
+                <div className="flex items-center text-xs sm:text-sm text-slate-700 font-medium">
                   <FileText className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                   8 Resources
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-support/20 to-support-light cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 border-support/30 sm:col-span-2 lg:col-span-1">
+            <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 border-indigo-200 sm:col-span-2 lg:col-span-1">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-2">
-                  <Headphones className="w-8 h-8 text-support" />
-                  <Badge className="bg-support text-white text-xs">Trending</Badge>
+                  <Headphones className="w-8 h-8 text-indigo-600" />
+                  <Badge className="bg-indigo-600 text-white text-xs">Trending</Badge>
                 </div>
-                <h3 className="font-semibold text-support-foreground mb-2 text-sm sm:text-base font-heading">
+                <h3 className="font-semibold text-indigo-800 mb-2 text-sm sm:text-base font-heading">
                   Sleep & Recovery
                 </h3>
-                <p className="text-xs sm:text-sm text-support-foreground/80 mb-3 font-body">
+                <p className="text-xs sm:text-sm text-indigo-700 mb-3 font-body">
                   Everything you need to establish healthy sleep patterns and recover from academic burnout.
                 </p>
-                <div className="flex items-center text-xs sm:text-sm text-support-foreground/80 font-medium">
+                <div className="flex items-center text-xs sm:text-sm text-indigo-700 font-medium">
                   <Headphones className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                   6 Resources
                 </div>
@@ -734,49 +980,57 @@ const ResourceHub = () => {
         </CardContent>
       </Card>
 
-      {/* Game Modals */}
-      {showGame && currentGame === 'breathing-ball' && (
-        <BreathingBall onClose={() => setShowGame(false)} />
-      )}
-      {showGame && currentGame === 'calm-circle' && (
-        <CalmCircle onClose={() => setShowGame(false)} />
-      )}
-      {showGame && currentGame === 'box-breathing' && (
-        <BoxBreathing onClose={() => setShowGame(false)} />
-      )}
-      {showGame && currentGame === 'zen-water-ripple' && (
-        <ZenWaterRipple onClose={() => setShowGame(false)} />
-      )}
-      {showGame && currentGame === 'mandala-color-picker' && (
-        <MandalaColorPicker onClose={() => setShowGame(false)} />
-      )}
-      {showGame && currentGame === 'falling-leaves' && (
-        <FallingLeavesGrounding onClose={() => setShowGame(false)} />
+      {/* --- MODALS SECTION --- */}
+      
+      {/* 1. GAME MODALS (Wrapped in FullScreenModalWrapper) */}
+      {showGame && (
+        <FullScreenModalWrapper 
+          title={resources.find(r => r.url === currentGame)?.title || "Relaxation Game"} 
+          onClose={() => setShowGame(false)}
+          icon={Gamepad2}
+        >
+          {currentGame === 'breathing-ball' && <BreathingBall onClose={() => setShowGame(false)} />}
+          {currentGame === 'calm-circle' && <CalmCircle onClose={() => setShowGame(false)} />}
+          {currentGame === 'box-breathing' && <BoxBreathing onClose={() => setShowGame(false)} />}
+          {currentGame === 'zen-water-ripple' && <ZenWaterRipple onClose={() => setShowGame(false)} />}
+          {currentGame === 'mandala-color-picker' && <MandalaColorPicker onClose={() => setShowGame(false)} />}
+          {currentGame === 'falling-leaves' && <FallingLeavesGrounding onClose={() => setShowGame(false)} />}
+        </FullScreenModalWrapper>
       )}
 
-      {/* Article/Guide Modal: Removed state handling, but keeping definition in case it is used elsewhere */}
-      {/* The modal rendering block is removed because 'guide' and 'article' no longer open a modal. */}
+      {/* 2. EXERCISE MODALS (Wrapped in FullScreenModalWrapper) */}
+      {showExercise && (
+         <FullScreenModalWrapper 
+         title={resources.find(r => r.url === currentExercise)?.title || "Breathing Exercise"} 
+         onClose={() => setShowExercise(false)}
+         icon={Wind}
+       >
+        <div className="flex items-center justify-center w-full min-h-full">
+          {currentExercise === '4-7-8-breathing' && <FourSevenEightBreathing onClose={() => setShowExercise(false)} />}
+          {currentExercise === 'breath-awareness' && <BreathAwareness onClose={() => setShowExercise(false)} />}
+          {currentExercise === 'morning-energizer' && <MorningEnergizer onClose={() => setShowExercise(false)} />}
+          {currentExercise === 'anxiety-release' && <AnxietyRelease onClose={() => setShowExercise(false)} />}
+        </div>
+        </FullScreenModalWrapper>
+      )}
       
-      {/* Video Modal */}
+      {/* 3. AUDIO MODAL (New) */}
+      {showAudio && currentAudio && (
+        <AudioResourceModal 
+          resource={currentAudio} 
+          onClose={() => {
+            setShowAudio(false);
+            setCurrentAudio(null);
+          }} 
+        />
+      )}
+
+      {/* 4. VIDEO MODAL (Existing) */}
       {isVideoModalOpen && currentVideo && (
         <VideoResourceModal
           resource={currentVideo}
           onClose={() => setIsVideoModalOpen(false)}
         />
-      )}
-
-      {/* --- NEW: Exercise Modals --- */}
-      {showExercise && currentExercise === '4-7-8-breathing' && (
-        <FourSevenEightBreathing onClose={() => setShowExercise(false)} />
-      )}
-      {showExercise && currentExercise === 'breath-awareness' && (
-        <BreathAwareness onClose={() => setShowExercise(false)} />
-      )}
-      {showExercise && currentExercise === 'morning-energizer' && (
-        <MorningEnergizer onClose={() => setShowExercise(false)} />
-      )}
-      {showExercise && currentExercise === 'anxiety-release' && (
-        <AnxietyRelease onClose={() => setShowExercise(false)} />
       )}
     </div>
   );
