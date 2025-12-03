@@ -1,13 +1,7 @@
 "use client";
 
-<<<<<<< HEAD
 import { useState, useEffect } from "react";
-=======
-import { useState } from "react";
-// Assuming you have a standard Modal or Dialog component
-// I will simulate one for this example with a simple div
-// import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
->>>>>>> f319e4c (Set up the Resources Page)
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,65 +61,6 @@ interface ResourceModalProps {
   onClose: () => void;
 }
 
-const ResourceModal = ({ resource, onClose }: ResourceModalProps) => {
-  // Dummy content based on resource type
-  const content = resource.content || `
-    <h2 className="text-xl font-bold mb-4">Introduction to ${resource.title}</h2>
-    <p className="mb-4">
-      This is a placeholder for the full content of the ${resource.type}. 
-      The core message focuses on helping students manage ${resource.category} 
-      through effective strategies. For example, in this ${resource.type}, 
-      we discuss the importance of **setting clear boundaries** between study 
-      time and rest time, a crucial step for maintaining mental wellness.
-    </p>
-    <h3 className="text-lg font-semibold mb-3">Key Takeaways:</h3>
-    <ul className="list-disc list-inside space-y-2 mb-4 ml-4">
-      <li>Practice the 4-7-8 breathing technique before bed.</li>
-      <li>Limit screen time an hour before attempting to sleep.</li>
-      <li>Break large tasks into smaller, manageable chunks to reduce overwhelm.</li>
-      <li>Seek support from a counselor or peer group if symptoms persist.</li>
-    </ul>
-    <p>
-      The goal of this resource is to equip you with actionable steps. Remember, 
-      your well-being is just as important as your academic performance.
-    </p>
-    <div className="mt-6 p-3 bg-blue-50/50 border-l-4 border-blue-500 text-blue-800 rounded-md text-sm">
-        <p className="font-semibold">Disclaimer:</p>
-        <p>This resource is for informational purposes only and is not a substitute for professional medical advice.</p>
-    </div>
-  `;
-
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <Card className="w-full max-w-6xl max-h-[80vh] overflow-y-auto">
-        <CardHeader className="sticky top-0 bg-white z-10 border-b">
-          <div className="flex justify-between items-start">
-            <div>
-              <CardTitle className="text-xl sm:text-2xl font-heading">
-                <FileText className="w-5 h-5 sm:w-6 sm:h-6 mr-2 inline text-blue-600" />
-                {resource.title}
-              </CardTitle>
-              <CardDescription className="text-sm">
-                Category: <Badge variant="outline" className="text-xs mt-2">{resource.category}</Badge> | Type: <Badge variant="outline" className="text-xs">{resource.type}</Badge>
-              </CardDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="ml-4 flex-shrink-0"
-            >
-              <X className="w-5 h-5" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div dangerouslySetInnerHTML={{ __html: content }} className="space-y-4 prose max-w-none text-sm sm:text-base font-body" />
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
 
 // --- NEW COMPONENT: VideoResourceModal (For YouTube Videos) ---
 interface VideoModalProps {
@@ -196,35 +131,50 @@ const VideoResourceModal = ({ resource, onClose }: VideoModalProps) => {
 
 const ResourceHub = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [showGame, setShowGame] = useState(false);
   const [showExercise, setShowExercise] = useState(false);
   const [currentGame, setCurrentGame] = useState<string | null>(null);
   const [currentExercise, setCurrentExercise] = useState<string | null>(null);
 
-  // New state for article/guide modal
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentArticle, setCurrentArticle] = useState<Resource | null>(null);
-
-  // New state for video modal
+  // New state for video modal (kept as video logic is unchanged)
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [currentVideo, setCurrentVideo] = useState<Resource | null>(null);
 
-  // Listen for exercise launch events from chatbot
-  useEffect(() => {
-    const handleLaunchExercise = (event: CustomEvent) => {
-      const { exerciseId } = event.detail;
-      if (exerciseId) {
-        setCurrentGame(exerciseId);
-        setShowGame(true);
-      }
-    };
+  // Audio playback state
+  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
+  const [audioTimer, setAudioTimer] = useState(0);
+  const [timerIntervalId, setTimerIntervalId] = useState<NodeJS.Timeout | null>(null);
 
-    window.addEventListener('resource:launch-exercise' as any, handleLaunchExercise);
+  // Helper function for audio timer
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Start fake audio playback
+  const startFakePlayback = (resource: Resource) => {
+    // Stop any currently playing audio
+    if (timerIntervalId) clearInterval(timerIntervalId);
+    
+    setPlayingAudioId(resource.id);
+    setAudioTimer(0);
+    
+    const interval = setInterval(() => {
+      setAudioTimer(prev => prev + 1);
+    }, 1000);
+    
+    setTimerIntervalId(interval);
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
-      window.removeEventListener('resource:launch-exercise' as any, handleLaunchExercise);
+      if (timerIntervalId) clearInterval(timerIntervalId);
     };
-  }, []);
+  }, [timerIntervalId]);
 
   const resources: Resource[] = [
     {
@@ -236,90 +186,7 @@ const ResourceHub = () => {
       duration: '15 min read',
       rating: 4.8,
       downloads: 1250,
-      content: `<h1>Managing Exam Anxiety: A Complete Guide</h1>
-        <p>Think about your class of twenty or even your close group of friends. Chances are, at least a few of them are struggling with some form of exam anxiety. With rising academic pressure, competitive exams, and constant expectations from family and society, it’s not surprising. Millions of students experience exam-related stress every single year — and I’d wager those numbers have only gone up lately.</p>
-
-        <p>Why is something so common still so difficult to understand and manage? A lot of it comes down to stigma — we tend to pretend everything is fine, or believe that stress means weakness. And beyond that, many people don’t even know what exam anxiety actually looks like.</p>
-
-        <p>Movies and shows often dramatize studying but don’t portray the real symptoms or the subtler ways anxiety affects the mind and body. In reality, exam anxiety doesn’t look the same for everyone — it’s rarely just “being nervous.” So what are the other signs and symptoms?</p>
-
-        <p>Think about your class or group. Chances are, at least one person is silently battling exam anxiety.</p>
-
-        <img src="https://images.pexels.com/photos/8278873/pexels-photo-8278873.jpeg" alt="Girl in a jacket">
-
-        <h2>Symptom #1: Racing Thoughts & Mental Overload</h2>
-
-        <p>Ever sat down to study and suddenly felt like 50 thoughts were shouting inside your head? Or maybe you try reading a paragraph, only to realize your mind drifted into panic about the next chapter, the next subject, or the future in general.</p>
-
-        <p>This is mental overload — your brain trying to juggle too many worries at once.</p>
-
-        <p>Studies suggest that academic anxiety can significantly reduce cognitive performance, especially working memory, which is essential for learning and problem-solving. When your head feels too full to think straight, studying becomes twice as exhausting.</p>
-
-        <p>You might force yourself to work harder, study longer, or sleep less in an attempt to “catch up,” but that only worsens the overload. The key is recognizing when your mind is overwhelmed and learning to pause.</p>
-
-        <h2>Symptom #2: Emotional Numbness</h2>
-
-        <p>Exam anxiety doesn’t always appear as fear or panic. Sometimes, it shows up as numbness — when you simply stop feeling anything at all.</p>
-
-        <p>Achievements feel dull. Motivation disappears. Even things you love — games, music, friends — don’t spark joy. This emotional flatness makes it harder to begin studying because everything seems pointless.</p>
-
-        <p>This kind of academic burnout is especially sneaky. It may develop slowly, with mild stress snowballing into complete disinterest. Many students don’t notice they’re slipping until they’re already struggling to cope.</p>
-
-        <h2>Symptom #3: Trouble Remembering What You Studied</h2>
-
-        <p>Believe it or not, exam anxiety can impact short-term memory. Imagine your brain like a computer — it has limited RAM to store active tasks. When anxiety eats up a big chunk of that memory, the brain has fewer resources left for learning.</p>
-
-        <p>So you may:</p>
-
-        <ul>
-            <li>forget things you just studied</li>
-            <li>struggle to recall formulas</li>
-            <li>blank out during tests</li>
-            <li>reread the same line multiple times</li>
-        </ul>
-
-        <p>And it’s not because you’re lazy or “bad at studying.” Anxiety literally interferes with memory formation.</p>
-
-        <h2>Symptom #4: Physical Symptoms — Headaches, Stomach Issues, Fatigue</h2>
-
-        <p>Around 30–40% of students experience physical symptoms from exam anxiety. These can include:</p>
-
-        <ul>
-            <li>headaches or migraines</li>
-            <li>stomach pain or nausea</li>
-            <li>rapid heartbeat</li>
-            <li>sweating</li>
-            <li>fatigue</li>
-            <li>shakiness</li>
-        </ul>
-
-        <p>These symptoms can make study sessions feel unbearable. Worse, when you finally want to rest or hang out with friends, physical discomfort makes it even harder.</p>
-
-        <h2>Symptom #5: Irritability & Sudden Mood Swings</h2>
-
-        <p>During exam season, even small things can set you off — a noise, a comment, a missed question, or a simple mistake. This irritability often stems from frustration, fear of failure, or the pressure to perform well.</p>
-
-        <p>Some teachers and counselors even look for irritability as a sign of academic stress. If you or someone you know has been unusually short-tempered or emotional, the underlying cause might be anxiety.</p>
-
-        <h2>Takeaways</h2>
-
-        <p>Exam anxiety sucks — and dealing with it can feel like a battle you fight alone. Not everyone has support, and even when they do, explaining your stress can feel embarrassing or pointless. Many coping strategies (like study plans or meditation) take time to work, and some students don’t even realize they’re suffering from anxiety until it becomes overwhelming.</p>
-
-        <p>But recognizing the signs is the first step. Once you understand what’s happening, you can slowly start to take back control.</p>
-
-        <p>Here’s a quick guide to the common — and less talked about — symptoms of exam anxiety:</p>
-
-        <ul>
-            <li>Racing thoughts and mental overload</li>
-            <li>Emotional numbness</li>
-            <li>Short-term memory issues</li>
-            <li>Physical symptoms like headaches or fatigue</li>
-            <li>Irritability or mood swings</li>
-        </ul>
-
-        <p>Reaching out for help — whether to a friend, teacher, or counselor — is not a weakness. It’s a step toward managing your stress. And when you open up, you might realize you’re far from alone.</p>
-
-        <p>There is help, and you don’t have to go through exam season by yourself.</p>`,
+      content: ''
     },
     {
       id: '2',
@@ -373,37 +240,7 @@ const ResourceHub = () => {
       duration: '8 min read',
       rating: 4.6,
       downloads: 1560,
-      content: `<h1>5 Mindful Study Techniques: Can They Really Boost Your Grades?</h1>
-
-        <p>In an academic world full of pressure, distractions, and never-ending deadlines, studying can easily become overwhelming. Many students try harder but still feel like nothing is sticking. That's where mindful study techniques come in — not just as a trend, but as powerful learning strategies backed by cognitive science.</p>
-
-        <p>Mindfulness isn’t about sitting like a monk for hours. It’s about being fully present, reducing stress, and improving how your brain absorbs information. But the big question is: <strong>do mindful study techniques actually work?</strong> Let’s explore five effective methods that can truly improve your learning and grades.</p>
-
-        <img src="https://images.pexels.com/photos/5554266/pexels-photo-5554266.jpeg" alt="Mindful Study Image" style="width:100%; margin:20px 0;">
-
-        <h2>1. Deep Breathing Before Studying</h2>
-        <p>Before opening your books, spend just 1–2 minutes taking slow, deep breaths. This reduces stress hormones and increases oxygen flow to the brain, helping you start your study session with clarity.</p>
-        <p>Studies show that even short breathing exercises can improve focus, memory, and emotional regulation — all crucial for effective studying.</p>
-
-        <h2>2. The “Single-Task Focus” Method</h2>
-        <p>Multitasking is one of the biggest enemies of productivity. Mindful studying encourages doing just <strong>one task at a time</strong> — no switching tabs, no checking notifications, and no background distractions.</p>
-        <p>When your mind stays fully engaged with a task, your brain strengthens its neural connections, which helps with long-term retention.</p>
-
-        <h2>3. The 5-Minute Awareness Reset</h2>
-        <p>If you feel stuck or mentally drained while studying, take a short “awareness reset.” Close your eyes and pay attention to your breathing, sounds, or sensations for five minutes. This helps clear mental clutter and improves your learning efficiency when you return.</p>
-
-        <h2>4. Mindful Note-Taking</h2>
-        <p>Instead of copying everything in front of you, mindful note-taking encourages processing the information intentionally. You summarize concepts in your own words, create smaller chunks, or draw quick diagrams.</p>
-        <p>This approach makes your brain engage deeply with the material — which is what leads to better grades.</p>
-
-        <h2>5. Gratitude Check After Studying</h2>
-        <p>Before ending your study session, acknowledge one thing you learned or understood better. This simple practice reduces anxiety, boosts motivation, and helps reinforce positive study habits.</p>
-
-        <h2>Final Thoughts</h2>
-        <p>So, can mindful study techniques really boost your grades? <strong>Yes — if you use them consistently.</strong> These techniques calm your mind, sharpen your focus, and improve information retention. Over time, mindfulness transforms the entire study experience from stressful to productive.</p>
-
-        <p>Try incorporating even one technique today. You might be surprised how much clearer and more confident your studying becomes.</p>
-`,
+      content: ''
     },
     {
       id: '5',
@@ -424,51 +261,7 @@ const ResourceHub = () => {
       duration: '12 min read',
       rating: 4.8,
       downloads: 945,
-      content: `<h1>Recognizing Depression Warning Signs</h1>
-
-        <p><strong>Description:</strong> Understanding the symptoms and when to seek professional help.</p>
-
-        <p>Depression is one of the most common mental health conditions globally, yet many people struggle to recognize its early warning signs. It doesn’t always look like extreme sadness or withdrawal. Sometimes, the symptoms are subtle, gradual, and easily mistaken for everyday stress or fatigue.</p>
-
-        <p>Recognizing these signs early can make a huge difference. Whether it’s for yourself or someone you care about, understanding what depression might look like is the first step toward getting the right support.</p>
-
-        <img src="https://images.pexels.com/photos/236151/pexels-photo-236151.jpeg" alt="Mindful Study Image" style="width:100%; margin:20px 0;">
-
-        <h2>1. Persistent Sadness or Emptiness</h2>
-        <p>While not everyone with depression feels constantly sad, many experience a lingering sense of emptiness or hopelessness that doesn't seem to go away. This emotional heaviness may last for weeks or even months.</p>
-
-        <h2>2. Loss of Interest in Activities</h2>
-        <p>One of the major red flags is losing interest in things you normally enjoy — hobbies, friends, music, or even food. This condition, known as <strong>anhedonia</strong>, often signals deeper emotional distress.</p>
-
-        <h2>3. Sleep Disturbances</h2>
-        <p>Depression can disrupt sleep patterns in two ways: insomnia (difficulty sleeping) or hypersomnia (sleeping too much). Both can worsen fatigue and make daily tasks feel overwhelming.</p>
-
-        <h2>4. Changes in Appetite or Weight</h2>
-        <p>Some people may lose their appetite, while others may overeat as a coping mechanism. Noticeable weight loss or gain over a short period can be a sign of emotional imbalance.</p>
-
-        <h2>5. Difficulty Concentrating</h2>
-        <p>Depression affects cognitive functions, making it hard to focus, make decisions, or remember things. This is sometimes described as “brain fog.”</p>
-
-        <h2>6. Physical Symptoms</h2>
-        <p>Depression doesn’t only affect the mind. Many people experience headaches, stomach pain, fatigue, or general aches with no clear physical cause.</p>
-
-        <h2>7. Irritability or Mood Swings</h2>
-        <p>While depression is often portrayed as sadness, irritability is also common — especially among teens and young adults. Small inconveniences may suddenly feel overwhelming or infuriating.</p>
-
-        <h2>When Should You Seek Professional Help?</h2>
-        <p>It’s important to reach out for help if:</p>
-        <ul>
-            <li>Symptoms persist for more than two weeks</li>
-            <li>Your daily functioning is affected (work, school, relationships)</li>
-            <li>You feel overwhelmed, trapped, or hopeless</li>
-            <li>You experience thoughts of self-harm or suicide</li>
-        </ul>
-
-        <p>Talking to a therapist, counselor, or trusted healthcare provider can provide clarity and support. Depression is treatable, and early intervention often leads to better outcomes.</p>
-
-        <h2>Final Thoughts</h2>
-        <p>If you’re noticing these symptoms in yourself or someone else, remember: reaching out for help is a strength, not a weakness. Understanding the warning signs is the first step toward healing and recovery.</p>
-        `,
+      content: '',
     },
     {
       id: '7',
@@ -635,24 +428,53 @@ const ResourceHub = () => {
         // External URL for game
         window.open(resource.url, '_blank');
       }
-    } else if (resource.type === 'guide' || resource.type === 'article') {
-      // Open Article/Guide Modal
-      setCurrentArticle(resource);
-      setIsModalOpen(true);
-    } else if (resource.type === 'video') {
+      return;
+    } 
+    
+    if (resource.type === 'guide' || resource.type === 'article') {
+      // If "artical" folder is in the SAME route segment as this page:
+      const newPath = `/artical/${resource.id}`;   // or just `artical/${resource.id}`
+
+      console.log(`Navigating to the clean resource path: ${newPath}`);
+      router.push(newPath);
+      return;
+    }
+
+    
+    // *** NEW LOGIC: Audio now starts or stops a fake timer ***
+    if (resource.type === 'audio') {
+      if (playingAudioId === resource.id) {
+        // Stop playback if already playing
+        if (timerIntervalId) clearInterval(timerIntervalId);
+        setPlayingAudioId(null);
+        setTimerIntervalId(null);
+        setAudioTimer(0);
+      } else {
+        startFakePlayback(resource);
+      }
+      return;
+    }
+    
+    // Video logic remains the same
+    if (resource.type === 'video') {
       // Open Video Modal
       setCurrentVideo(resource);
       setIsVideoModalOpen(true);
-    } else if (resource.type === 'exercise' && resource.url) {
-        // --- NEW: Handle Exercise Modal ---
+      return;
+    } 
+    
+    // Exercise logic remains the same
+    if (resource.type === 'exercise' && resource.url) {
+        // --- Handle Exercise Modal ---
         setCurrentExercise(resource.url);
         setShowExercise(true);
-    } else {
-      // Handle other resource types (Audio, or Exercises without URL)
-      console.log(`Opening external resource: ${resource.title}`);
-      if (resource.url) {
-        window.open(resource.url, '_blank');
-      }
+        return;
+    } 
+    
+    // Fallback for other resource types (Audio, or Exercises without URL, which are handled above now)
+    console.log(`Opening external resource: ${resource.title}`);
+    if (resource.url) {
+      window.open(resource.url, '_blank');
     }
   };
 
@@ -702,6 +524,8 @@ const ResourceHub = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {filteredResources.map((resource) => {
               const ResourceIcon = getResourceIcon(resource.type);
+              const isPlaying = resource.type === 'audio' && playingAudioId === resource.id;
+              
               return (
                 <Card
                   key={resource.id}
@@ -746,7 +570,13 @@ const ResourceHub = () => {
                           handleResourceClick(resource);
                         }}
                       >
-                        {resource.type === 'video' ? (
+                        {/* *** MODIFIED AUDIO/PLAY BUTTON LOGIC *** */}
+                        {isPlaying ? (
+                          <>
+                            <Volume2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 text-green-300 animate-pulse" />
+                            Playing: {formatTime(audioTimer)}
+                          </>
+                        ) : resource.type === 'video' ? (
                           <>
                             <Play className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                             Watch
@@ -754,7 +584,7 @@ const ResourceHub = () => {
                         ) : resource.type === 'audio' ? (
                           <>
                             <Volume2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                            Listen
+                            Play
                           </>
                         ) : resource.type === 'exercise' ? (
                           <>
@@ -924,13 +754,8 @@ const ResourceHub = () => {
         <FallingLeavesGrounding onClose={() => setShowGame(false)} />
       )}
 
-      {/* Article/Guide Modal */}
-      {isModalOpen && currentArticle && (
-        <ResourceModal
-          resource={currentArticle}
-          onClose={() => setIsModalOpen(false)}
-        />
-      )}
+      {/* Article/Guide Modal: Removed state handling, but keeping definition in case it is used elsewhere */}
+      {/* The modal rendering block is removed because 'guide' and 'article' no longer open a modal. */}
       
       {/* Video Modal */}
       {isVideoModalOpen && currentVideo && (
