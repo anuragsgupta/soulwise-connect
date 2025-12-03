@@ -274,8 +274,12 @@ export default function BookSession() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+        <div className="relative">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-t-blue-600 border-r-purple-600 absolute inset-0"></div>
+        </div>
+        <p className="text-gray-600 font-semibold animate-pulse">Loading appointments...</p>
       </div>
     );
   }
@@ -283,57 +287,76 @@ export default function BookSession() {
   console.log('Rendering BookSession with faculties:', faculties.length, faculties);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 relative">
+      {/* Subtle background pattern */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(120,119,198,0.05),rgba(255,255,255,0))] pointer-events-none" />
       {/* Available Faculty */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
+      <Card className="relative border-0 shadow-xl rounded-3xl overflow-hidden bg-white/95 backdrop-blur-sm">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl" />
+        <CardHeader className="relative pb-6">
+          <CardTitle className="flex items-center gap-3 text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-blue-100 to-purple-100">
+              <User className="h-6 w-6 text-blue-600" />
+            </div>
             Available Faculty & Mentors
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-base text-gray-600 mt-2 font-medium">
             Book a session with faculty members, mentors, or HODs from your institute
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <CardContent className="relative">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {faculties.map((faculty) => (
-              <Card key={faculty.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{faculty.name}</CardTitle>
-                      <CardDescription className="text-sm">
-                        {faculty.jobTitle || 'Faculty Member'}
-                      </CardDescription>
+              <Card key={faculty.id} className="group hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 border border-gray-200/60 rounded-2xl overflow-hidden bg-white hover:border-transparent">
+                <CardHeader className="pb-4 bg-gradient-to-br from-gray-50/50 to-transparent">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                          {faculty.name.charAt(0)}
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg font-bold text-gray-800 group-hover:text-blue-600 transition-colors">{faculty.name}</CardTitle>
+                          <CardDescription className="text-sm font-medium text-gray-500">
+                            {faculty.jobTitle || 'Faculty Member'}
+                          </CardDescription>
+                        </div>
+                      </div>
                     </div>
                     {getFacultyTypeBadge(faculty.facultyType)}
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="text-sm text-muted-foreground">
-                    <p className="flex items-center gap-2">
-                      <BookOpen className="h-4 w-4" />
-                      {faculty.department.name}
-                    </p>
+                <CardContent className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 p-2 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100">
+                      <div className="p-1.5 rounded-lg bg-blue-100">
+                        <BookOpen className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <span className="text-sm font-semibold text-gray-700">{faculty.department.name}</span>
+                    </div>
                     {faculty.yearsOfExperience && (
-                      <p className="mt-1">
-                        Experience: {faculty.yearsOfExperience} years
-                      </p>
+                      <div className="flex items-center gap-2 text-sm text-gray-600 font-medium">
+                        <span className="text-purple-600">📚</span>
+                        <span>Experience: {faculty.yearsOfExperience} years</span>
+                      </div>
                     )}
                   </div>
                   <Badge 
                     variant={faculty.availabilityStatus === 'AVAILABLE' ? 'default' : 'secondary'}
-                    className="w-full justify-center"
+                    className={`w-full justify-center py-2 text-sm font-semibold ${
+                      faculty.availabilityStatus === 'AVAILABLE' 
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600' 
+                        : 'bg-gray-200 text-gray-600'
+                    }`}
                   >
-                    {faculty.availabilityStatus}
+                    {faculty.availabilityStatus === 'AVAILABLE' ? '✓ Available' : faculty.availabilityStatus}
                   </Badge>
                   <Button 
                     onClick={() => openBookingDialog(faculty)}
-                    className="w-full"
+                    className="w-full h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-300 group-hover:scale-105"
                     size="sm"
                   >
-                    <Calendar className="h-4 w-4 mr-2" />
+                    <Calendar className="h-5 w-5 mr-2" />
                     Book Session
                   </Button>
                 </CardContent>
@@ -342,67 +365,96 @@ export default function BookSession() {
           </div>
 
           {faculties.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No faculty members available at the moment</p>
+            <div className="text-center py-16">
+              <div className="inline-flex p-4 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 mb-4">
+                <User className="h-12 w-12 text-gray-400" />
+              </div>
+              <p className="text-gray-600 font-semibold text-lg">No faculty members available</p>
+              <p className="text-gray-500 text-sm mt-2">Please check back later</p>
             </div>
           )}
         </CardContent>
       </Card>
 
       {/* My Sessions */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarClock className="h-5 w-5" />
+      <Card className="relative border-0 shadow-xl rounded-3xl overflow-hidden bg-white/95 backdrop-blur-sm">
+        <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-green-400/10 to-blue-400/10 rounded-full blur-3xl" />
+        <CardHeader className="relative pb-6">
+          <CardTitle className="flex items-center gap-3 text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-green-100 to-blue-100">
+              <CalendarClock className="h-6 w-6 text-green-600" />
+            </div>
             My Sessions
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-base text-gray-600 mt-2 font-medium">
             View and manage your booked sessions
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="relative">
           <div className="space-y-4">
             {sessions.map((session) => (
-              <Card key={session.id}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{session.title}</CardTitle>
-                      <CardDescription>
-                        with {session.faculty.name}
-                      </CardDescription>
+              <Card key={session.id} className="border border-gray-200/60 rounded-2xl hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-white">
+                <CardHeader className="bg-gradient-to-br from-gray-50/50 to-transparent pb-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <CardTitle className="text-xl font-bold text-gray-800 mb-2">{session.title}</CardTitle>
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                          {session.faculty.name.charAt(0)}
+                        </div>
+                        <CardDescription className="font-semibold text-gray-600">
+                          with {session.faculty.name}
+                        </CardDescription>
+                      </div>
                     </div>
                     {getStatusBadge(session.status)}
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>{new Date(session.scheduledDate).toLocaleDateString()}</span>
+                <CardContent className="space-y-4 pt-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-100">
+                      <div className="p-2 rounded-lg bg-blue-100">
+                        <Calendar className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 font-medium">Date</p>
+                        <p className="text-sm font-bold text-gray-800">{new Date(session.scheduledDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span>{session.scheduledTime} ({session.duration} mins)</span>
+                    <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
+                      <div className="p-2 rounded-lg bg-purple-100">
+                        <Clock className="h-4 w-4 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 font-medium">Time & Duration</p>
+                        <p className="text-sm font-bold text-gray-800">{session.scheduledTime} • {session.duration}min</p>
+                      </div>
                     </div>
                   </div>
 
                   {session.description && (
-                    <p className="text-sm text-muted-foreground">{session.description}</p>
+                    <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                      <p className="text-sm text-gray-700 leading-relaxed">{session.description}</p>
+                    </div>
                   )}
 
                   {session.facultyNotes && (
-                    <div className="bg-muted p-3 rounded-md">
-                      <p className="text-sm font-medium mb-1">Faculty Notes:</p>
-                      <p className="text-sm text-muted-foreground">{session.facultyNotes}</p>
+                    <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-xl border border-blue-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <MessageSquare className="h-4 w-4 text-blue-600" />
+                        <p className="text-sm font-bold text-blue-800">Faculty Notes:</p>
+                      </div>
+                      <p className="text-sm text-gray-700 leading-relaxed">{session.facultyNotes}</p>
                     </div>
                   )}
 
                   {session.rejectionReason && (
-                    <div className="bg-destructive/10 p-3 rounded-md">
-                      <p className="text-sm font-medium mb-1 text-destructive">Rejection Reason:</p>
-                      <p className="text-sm text-destructive">{session.rejectionReason}</p>
+                    <div className="bg-gradient-to-r from-red-50 to-orange-50 p-4 rounded-xl border border-red-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <XCircle className="h-4 w-4 text-red-600" />
+                        <p className="text-sm font-bold text-red-800">Rejection Reason:</p>
+                      </div>
+                      <p className="text-sm text-red-700 leading-relaxed">{session.rejectionReason}</p>
                     </div>
                   )}
                 </CardContent>
@@ -410,10 +462,12 @@ export default function BookSession() {
             ))}
 
             {sessions.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground">
-                <CalendarClock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No sessions booked yet</p>
-                <p className="text-sm mt-2">Book a session with your faculty or mentor to get started</p>
+              <div className="text-center py-16">
+                <div className="inline-flex p-4 rounded-2xl bg-gradient-to-br from-green-100 to-blue-100 mb-4">
+                  <CalendarClock className="h-12 w-12 text-green-600" />
+                </div>
+                <p className="text-gray-800 font-bold text-lg">No sessions booked yet</p>
+                <p className="text-gray-500 text-sm mt-2 max-w-md mx-auto">Book a session with your faculty or mentor to get started on your journey</p>
               </div>
             )}
           </div>
@@ -422,17 +476,17 @@ export default function BookSession() {
 
       {/* Booking Dialog */}
       <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Book Session with {selectedFaculty?.name}</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border-0 shadow-2xl bg-white/98 backdrop-blur-xl">
+          <DialogHeader className="pb-4">
+            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Book Session with {selectedFaculty?.name}</DialogTitle>
+            <DialogDescription className="text-base text-gray-600 font-medium mt-2">
               {selectedFaculty?.jobTitle} • {selectedFaculty?.department.name}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-5 py-4">
             <div className="space-y-2">
-              <Label htmlFor="sessionType">Session Type *</Label>
+              <Label htmlFor="sessionType" className="text-sm font-semibold text-gray-700">Session Type *</Label>
               <Select
                 value={formData.sessionType}
                 onValueChange={(value) => setFormData({ ...formData, sessionType: value })}
@@ -452,51 +506,55 @@ export default function BookSession() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="title">Session Title *</Label>
+              <Label htmlFor="title" className="text-sm font-semibold text-gray-700">Session Title *</Label>
               <Input
                 id="title"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="e.g., Career guidance for internships"
+                className="h-11 rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description" className="text-sm font-semibold text-gray-700">Description</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Brief description of what you'd like to discuss"
                 rows={3}
+                className="rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500 resize-none"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="scheduledDate">Preferred Date *</Label>
+                <Label htmlFor="scheduledDate" className="text-sm font-semibold text-gray-700">Preferred Date *</Label>
                 <Input
                   id="scheduledDate"
                   type="date"
                   value={formData.scheduledDate}
                   onChange={(e) => setFormData({ ...formData, scheduledDate: e.target.value })}
                   min={new Date().toISOString().split('T')[0]}
+                  className="h-11 rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="scheduledTime">Preferred Time *</Label>
+                <Label htmlFor="scheduledTime" className="text-sm font-semibold text-gray-700">Preferred Time *</Label>
                 <Input
                   id="scheduledTime"
                   type="time"
                   value={formData.scheduledTime}
                   onChange={(e) => setFormData({ ...formData, scheduledTime: e.target.value })}
+                  className="h-11 rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="duration">Duration (minutes)</Label>
+              <Label htmlFor="duration" className="text-sm font-semibold text-gray-700">Duration (minutes)</Label>
               <Select
                 value={formData.duration.toString()}
                 onValueChange={(value) => setFormData({ ...formData, duration: parseInt(value) })}
@@ -514,26 +572,42 @@ export default function BookSession() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="studentNotes">Additional Notes</Label>
+              <Label htmlFor="studentNotes" className="text-sm font-semibold text-gray-700">Additional Notes</Label>
               <Textarea
                 id="studentNotes"
                 value={formData.studentNotes}
                 onChange={(e) => setFormData({ ...formData, studentNotes: e.target.value })}
                 placeholder="Any additional information you'd like to share"
                 rows={3}
+                className="rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500 resize-none"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowBookingDialog(false)}>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowBookingDialog(false)}
+              className="h-11 px-6 rounded-xl border-gray-300 hover:bg-gray-100 font-semibold"
+            >
               Cancel
             </Button>
             <Button 
               onClick={handleBookSession}
               disabled={submitting || !formData.sessionType || !formData.title || !formData.scheduledDate || !formData.scheduledTime}
+              className="h-11 px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? "Booking..." : "Book Session"}
+              {submitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Booking...
+                </>
+              ) : (
+                <>
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Book Session
+                </>
+              )}
             </Button>
           </div>
         </DialogContent>

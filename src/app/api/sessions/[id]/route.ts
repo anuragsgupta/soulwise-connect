@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { authenticateUser } from '@/middleware/auth';
 import { createResponse } from '@/lib/auth';
+import { generateSessionMeetLink, generateSimpleMeetLink } from '@/lib/googleMeetService';
+import { sendSessionApprovalEmails } from '@/lib/emailService';
 
 // GET /api/sessions/[id] - Get a specific session by ID
 export async function GET(
@@ -137,12 +139,14 @@ export async function PATCH(
           select: {
             id: true,
             name: true,
+            email: true,
           },
         },
         faculty: {
           select: {
             id: true,
             name: true,
+            email: true,
           },
         },
       },
@@ -195,9 +199,49 @@ export async function PATCH(
 
     switch (action) {
       case 'approve':
+        // Generate Google Meet link
+        let meetLink = '';
+        let googleEventId = '';
+        
+        try {
+          // Combine scheduled date and time to create full datetime
+          const scheduledDateTime = new Date(existingSession.scheduledDate);
+          const [hours, minutes] = existingSession.scheduledTime.split(':');
+          scheduledDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+          const meetResponse = await generateSessionMeetLink(
+            existingSession.title,
+            existingSession.description || 'Counseling Session',
+            scheduledDateTime,
+            existingSession.duration,
+            existingSession.student.email,
+            existingSession.faculty.email,
+            facultyNotes
+          );
+
+          if (meetResponse.success && meetResponse.meetLink) {
+            meetLink = meetResponse.meetLink;
+            googleEventId = meetResponse.eventId || '';
+            console.log('Google Meet link generated:', meetLink);
+          } else {
+            // Fallback to simple meet link if Google Calendar API fails
+            console.warn('Google Meet generation failed, using fallback:', meetResponse.error);
+            meetLink = generateSimpleMeetLink();
+          }
+        } catch (error) {
+          console.error('Error generating meet link:', error);
+          // Fallback to simple meet link
+          meetLink = generateSimpleMeetLink();
+        }
+
         updateData.status = 'APPROVED';
         updateData.approvedAt = new Date();
+        updateData.meetingLink = meetLink;
+        if (googleEventId) {
+          updateData.googleEventId = googleEventId;
+        }
         if (facultyNotes) updateData.facultyNotes = facultyNotes;
+        
         notificationTitle = 'Session Approved';
         notificationMessage = `Your session request with ${existingSession.faculty.name} has been approved for ${new Date(existingSession.scheduledDate).toLocaleDateString()} at ${existingSession.scheduledTime}`;
         notificationType = 'SESSION_APPROVED';
@@ -310,6 +354,41 @@ export async function PATCH(
     await prisma.notification.create({
       data: notificationData,
     });
+
+    // Send email notifications for approved sessions
+    if (action === 'approve' && updatedSession.meetingLink) {
+      try {
+        const scheduledDateTime = new Date(updatedSession.scheduledDate);
+        const emailResult = await sendSessionApprovalEmails({
+          studentName: updatedSession.student.name,
+          studentEmail: updatedSession.student.email,
+          facultyName: updatedSession.faculty.name,
+          facultyEmail: updatedSession.faculty.email,
+          sessionTitle: updatedSession.title,
+          sessionDate: scheduledDateTime.toLocaleDateString('en-IN', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          }),
+          sessionTime: updatedSession.scheduledTime,
+          duration: updatedSession.duration,
+          meetLink: updatedSession.meetingLink,
+          sessionType: updatedSession.sessionType,
+          location: updatedSession.location,
+          notes: updatedSession.facultyNotes,
+        });
+
+        console.log('Email sending result:', emailResult);
+        
+        if (!emailResult.studentEmailSent || !emailResult.facultyEmailSent) {
+          console.warn('Some emails failed to send:', emailResult);
+        }
+      } catch (emailError) {
+        // Log error but don't fail the request
+        console.error('Error sending approval emails:', emailError);
+      }
+    }
 
     return NextResponse.json(
       createResponse(true, `Session ${action}d successfully`, { session: updatedSession }),

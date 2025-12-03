@@ -6,25 +6,21 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export default function FacultySessionsPage() {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && (!user || user.userType !== 'FACULTY')) {
+    if (!user || user.userType !== 'FACULTY') {
       router.push('/login');
     }
-  }, [user, loading, router]);
+  }, [user, router]);
 
-  if (loading) {
+  if (!user || user.userType !== 'FACULTY') {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
-  }
-
-  if (!user || user.userType !== 'FACULTY') {
-    return null;
   }
 
   return (

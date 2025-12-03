@@ -14,19 +14,43 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Users,
-  Reply as ReplyIcon, // icon ko alias kiya (Reply interface se clash na ho)
+  Reply as ReplyIcon,
   Plus,
   Search,
   Clock,
   ThumbsUp,
   Tag,
   Shield,
+  Edit2,
+  Trash2,
+  MoreVertical,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-
-const CURRENT_USER_ID = "user_456_student"; // yahi se pata chalega kaun login hai
-const CURRENT_USERNAME = "Jane Doe";
+import { useAuth } from "@/contexts/AuthContext";
 
 // ─────────────────────────────────────────
 // Types
@@ -89,9 +113,15 @@ interface CommunityDataResponse {
 }
 
 const PeerForum = () => {
-  // Ab dummy data nahi, backend se load hoga
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [replies, setReplies] = useState<Reply[]>([]);
+  const [editingPost, setEditingPost] = useState<string | null>(null);
+  const [editingReply, setEditingReply] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState({ title: "", content: "", category: "" });
+  const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'post' | 'reply' | null, id: string | null, postId?: string }>({ type: null, id: null });
 
   const [newPost, setNewPost] = useState({
     title: "",
@@ -100,16 +130,12 @@ const PeerForum = () => {
     isAnonymous: true,
   });
 
-  // 🔹 Reply form ke liye state
-  const [activeReplyPostId, setActiveReplyPostId] = useState<string | null>(
-    null
-  );
+  const [activeReplyPostId, setActiveReplyPostId] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
   const [replyIsAnonymous, setReplyIsAnonymous] = useState(true);
 
   const [showNewPostForm, setShowNewPostForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const { toast } = useToast();
 
   const categories = [
     "General",
@@ -136,10 +162,47 @@ const PeerForum = () => {
       return;
     }
 
-    const postAuthorId = CURRENT_USER_ID;
+    if (!user?.instituteId) {
+      toast({
+        title: "Error",
+        description: "Unable to determine your institute. Please log in again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const postAuthorId = user.id;
     const postAuthorName = newPost.isAnonymous
       ? "Anonymous Student"
-      : CURRENT_USERNAME;
+      : user.name;
+
+    // Debug: Check each field
+    console.log("User data:", {
+      userId: user.id,
+      name: user.name,
+      instituteId: user.instituteId,
+    });
+    console.log("New post data:", newPost);
+
+    const postData = {
+      type: "post" as const,
+      title: newPost.title,
+      content: newPost.content,
+      category: newPost.category || "General",
+      isAnonymous: newPost.isAnonymous || false,
+      authorId: postAuthorId,
+      author: postAuthorName,
+      instituteId: user.instituteId,
+    };
+
+    console.log("Creating post with data:", postData);
+    console.log("Validation check:", {
+      hasTitle: !!postData.title?.trim(),
+      hasContent: !!postData.content?.trim(),
+      hasAuthorId: !!postData.authorId,
+      hasAuthor: !!postData.author,
+      hasInstituteId: !!postData.instituteId,
+    });
 
     try {
       const res = await fetch("/api/community-memory", {
@@ -147,19 +210,13 @@ const PeerForum = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          type: "post",
-          title: newPost.title,
-          content: newPost.content,
-          category: newPost.category,
-          isAnonymous: newPost.isAnonymous,
-          authorId: postAuthorId,
-          author: postAuthorName,
-        }),
+        body: JSON.stringify(postData),
       });
 
       if (!res.ok) {
-        throw new Error("Failed to save post");
+        const errorData = await res.json().catch(() => ({ error: "Unknown error" }));
+        console.error("API Error:", errorData);
+        throw new Error(errorData.error || "Failed to save post");
       }
 
       const data = await res.json();
@@ -206,7 +263,7 @@ const PeerForum = () => {
   // ─────────────────────────────────────────
 
   const handleOpenReply = (postId: string) => {
-    if (!CURRENT_USER_ID) {
+    if (!user?.id) {
       toast({
         title: "Please login to reply",
         variant: "destructive",
@@ -225,16 +282,25 @@ const PeerForum = () => {
   const handleCreateReply = async (postId: string) => {
     if (!replyContent.trim()) {
       toast({
-        title: "Reply can’t be empty",
+        title: "Reply can't be empty",
         variant: "destructive",
       });
       return;
     }
 
-    const replyAuthorId = CURRENT_USER_ID;
+    if (!user?.instituteId) {
+      toast({
+        title: "Error",
+        description: "Unable to determine your institute. Please log in again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const replyAuthorId = user.id;
     const replyAuthorName = replyIsAnonymous
       ? "Anonymous Student"
-      : CURRENT_USERNAME;
+      : user.name;
 
     try {
       const res = await fetch("/api/community-memory", {
@@ -249,6 +315,7 @@ const PeerForum = () => {
           isAnonymous: replyIsAnonymous,
           authorId: replyAuthorId,
           author: replyAuthorName,
+          instituteId: user.instituteId,
         }),
       });
 
@@ -289,6 +356,195 @@ const PeerForum = () => {
       toast({
         title: "Something went wrong",
         description: "We couldn't save your reply. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // ─────────────────────────────────────────
+  // Edit Post Handler
+  // ─────────────────────────────────────────
+
+  const handleEditPost = async (postId: string) => {
+    if (!editContent.title.trim() || !editContent.content.trim()) {
+      toast({
+        title: "Please fill in all fields",
+        description: "Both title and content are required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/community-memory", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "post",
+          id: postId,
+          authorId: user?.id,
+          title: editContent.title,
+          content: editContent.content,
+          category: editContent.category,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update post");
+      }
+
+      const data = await res.json();
+      const updated = data.post;
+
+      setPosts((prev) =>
+        prev.map((post) =>
+          post.id === postId
+            ? { ...post, title: updated.title, content: updated.content, category: updated.category }
+            : post
+        )
+      );
+
+      setEditingPost(null);
+      setEditContent({ title: "", content: "", category: "" });
+
+      toast({
+        title: "Post updated ✅",
+        description: "Your post has been updated successfully.",
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Update failed",
+        description: "We couldn't update your post. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // ─────────────────────────────────────────
+  // Edit Reply Handler
+  // ─────────────────────────────────────────
+
+  const handleEditReply = async (replyId: string) => {
+    if (!editContent.content.trim()) {
+      toast({
+        title: "Reply can't be empty",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/community-memory", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "reply",
+          id: replyId,
+          authorId: user?.id,
+          content: editContent.content,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update reply");
+      }
+
+      const data = await res.json();
+      const updated = data.reply;
+
+      setReplies((prev) =>
+        prev.map((reply) =>
+          reply.id === replyId ? { ...reply, content: updated.content } : reply
+        )
+      );
+
+      setEditingReply(null);
+      setEditContent({ title: "", content: "", category: "" });
+
+      toast({
+        title: "Reply updated ✅",
+        description: "Your reply has been updated successfully.",
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Update failed",
+        description: "We couldn't update your reply. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // ─────────────────────────────────────────
+  // Delete Post Handler
+  // ─────────────────────────────────────────
+
+  const handleDeletePost = async (postId: string) => {
+    try {
+      const res = await fetch(
+        `/api/community-memory?type=post&id=${postId}&authorId=${user?.id}`,
+        { method: "DELETE" }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to delete post");
+      }
+
+      setPosts((prev) => prev.filter((post) => post.id !== postId));
+      setReplies((prev) => prev.filter((reply) => reply.postId !== postId));
+      setDeleteConfirm({ type: null, id: null });
+
+      toast({
+        title: "Post deleted ✅",
+        description: "Your post has been removed from the community.",
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Delete failed",
+        description: "We couldn't delete your post. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // ─────────────────────────────────────────
+  // Delete Reply Handler
+  // ─────────────────────────────────────────
+
+  const handleDeleteReply = async (replyId: string, postId: string) => {
+    try {
+      const res = await fetch(
+        `/api/community-memory?type=reply&id=${replyId}&authorId=${user?.id}`,
+        { method: "DELETE" }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to delete reply");
+      }
+
+      setReplies((prev) => prev.filter((reply) => reply.id !== replyId));
+      setPosts((prev) =>
+        prev.map((post) =>
+          post.id === postId ? { ...post, replies: Math.max(0, post.replies - 1) } : post
+        )
+      );
+      setDeleteConfirm({ type: null, id: null });
+
+      toast({
+        title: "Reply deleted ✅",
+        description: "Your reply has been removed from the discussion.",
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Delete failed",
+        description: "We couldn't delete your reply. Please try again.",
         variant: "destructive",
       });
     }
@@ -367,8 +623,10 @@ const PeerForum = () => {
 
   useEffect(() => {
     const loadCommunityData = async () => {
+      if (!user?.instituteId) return; // Wait for user data
+      
       try {
-        const res = await fetch("/api/community-memory?limit=50");
+        const res = await fetch(`/api/community-memory?instituteId=${user.instituteId}&limit=50`);
 
         if (!res.ok) {
           // Optional: inspect status
@@ -420,138 +678,178 @@ const PeerForum = () => {
     };
 
     loadCommunityData();
-  }, []);
+  }, [user?.instituteId]);
 
   // ─────────────────────────────────────────
   // UI
   // ─────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center text-2xl">
-            <Users className="w-6 h-6 mr-3 text-primary animate-pulse-soft" />
-            Peer Support Community
-          </CardTitle>
-          <CardDescription>
-            Connect with fellow students in a safe, anonymous space. Share
-            experiences, offer support, and learn from each other.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {/* Community Guidelines */}
-          <Card className="bg-wellness-light/20 border-wellness/20 mb-6">
-            <CardContent className="pt-4">
-              <div className="flex items-start space-x-3">
-                <Shield className="w-5 h-5 text-wellness mt-0.5" />
-                <div>
-                  <h3 className="font-semibold text-wellness mb-2">
-                    Community Guidelines
-                  </h3>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• Be kind, respectful, and supportive</li>
-                    <li>• Maintain confidentiality and respect privacy</li>
-                    <li>• No personal attacks or discrimination</li>
-                    <li>• Share resources and encouragement</li>
-                  </ul>
-                </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-pink-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      {/* Header Section */}
+      <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-gradient-to-br from-primary/10 to-wellness/10 rounded-xl">
+                <Users className="w-6 h-6 text-primary" />
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Search and Create Post */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Search discussions..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary via-wellness to-purple-600 bg-clip-text text-transparent">
+                  Community
+                </h1>
+                <p className="text-sm text-muted-foreground">Connect, share, and support</p>
+              </div>
             </div>
             <Button
               onClick={() => setShowNewPostForm(!showNewPostForm)}
-              className="bg-gradient-to-r from-primary to-wellness hover:from-primary/90 hover:to-wellness/90"
+              size="lg"
+              className="bg-gradient-to-r from-primary to-wellness hover:from-primary/90 hover:to-wellness/90 shadow-lg hover:shadow-xl transition-all duration-300"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              New Discussion
+              <Plus className="w-5 h-5 mr-2" />
+              <span className="hidden sm:inline">New Post</span>
+              <span className="sm:hidden">Post</span>
             </Button>
           </div>
 
-          {/* New Post Form */}
-          {showNewPostForm && (
-            <Card className="mb-6 border-primary/20">
-              <CardHeader>
-                <CardTitle className="text-lg">
-                  Start a New Discussion
-                </CardTitle>
-                <CardDescription>
-                  Share your thoughts or ask for support from the community
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Input
-                  placeholder="Discussion title..."
-                  value={newPost.title}
-                  onChange={(e) =>
-                    setNewPost({ ...newPost, title: e.target.value })
-                  }
-                />
-                <Textarea
-                  placeholder="Share your thoughts, experiences, or questions..."
-                  value={newPost.content}
-                  onChange={(e) =>
-                    setNewPost({ ...newPost, content: e.target.value })
-                  }
-                  className="min-h-[120px] resize-none"
-                />
-                <div className="flex flex-col md:flex-row gap-4">
-                  <select
-                    value={newPost.category}
-                    onChange={(e) =>
-                      setNewPost({ ...newPost, category: e.target.value })
-                    }
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  >
-                    {categories.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
+          {/* Search Bar */}
+          <div className="mt-4 relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+            <Input
+              placeholder="Search discussions by title, content, or category..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 h-12 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+        {/* Community Guidelines Banner */}
+        <Card className="bg-gradient-to-br from-wellness/5 via-blue-50/30 to-purple-50/20 dark:from-wellness/10 dark:via-blue-900/20 dark:to-purple-900/10 border-wellness/20 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <CardContent className="pt-6">
+            <div className="flex items-start space-x-4">
+              <div className="p-3 bg-wellness/10 rounded-xl">
+                <Shield className="w-6 h-6 text-wellness" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg text-wellness mb-3 flex items-center">
+                  Community Guidelines
+                  <span className="ml-2 text-xs bg-wellness/10 text-wellness px-2 py-1 rounded-full">Safe Space</span>
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-muted-foreground">
                   <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="anonymous"
-                      checked={newPost.isAnonymous}
-                      onChange={(e) =>
-                        setNewPost({
-                          ...newPost,
-                          isAnonymous: e.target.checked,
-                        })
-                      }
-                      className="w-4 h-4"
-                    />
-                    <label
-                      htmlFor="anonymous"
-                      className="text-sm text-muted-foreground"
-                    >
-                      Post anonymously
-                    </label>
+                    <div className="w-1.5 h-1.5 rounded-full bg-wellness"></div>
+                    <span>Be kind, respectful, and supportive</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-wellness"></div>
+                    <span>Maintain confidentiality and privacy</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-wellness"></div>
+                    <span>No personal attacks or discrimination</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-wellness"></div>
+                    <span>Share resources and encouragement</span>
                   </div>
                 </div>
-                <div className="flex gap-2">
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* New Post Form */}
+        {showNewPostForm && (
+          <Card className="border-2 border-primary/20 shadow-xl animate-in slide-in-from-top duration-300">
+            <CardHeader className="bg-gradient-to-br from-primary/5 to-wellness/5">
+              <CardTitle className="text-xl flex items-center">
+                <div className="p-2 bg-primary/10 rounded-lg mr-3">
+                  <Plus className="w-5 h-5 text-primary" />
+                </div>
+                Start a New Discussion
+              </CardTitle>
+              <CardDescription className="text-base">
+                Share your thoughts or ask for support from the community
+              </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Title</label>
+                    <Input
+                      placeholder="What's on your mind?"
+                      value={newPost.title}
+                      onChange={(e) =>
+                        setNewPost({ ...newPost, title: e.target.value })
+                      }
+                      className="h-12 rounded-xl"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Description</label>
+                    <Textarea
+                      placeholder="Share your thoughts, experiences, or questions..."
+                      value={newPost.content}
+                      onChange={(e) =>
+                        setNewPost({ ...newPost, content: e.target.value })
+                      }
+                      className="min-h-[140px] resize-none rounded-xl"
+                    />
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex-1">
+                      <label className="text-sm font-medium mb-2 block">Category</label>
+                      <select
+                        value={newPost.category}
+                        onChange={(e) =>
+                          setNewPost({ ...newPost, category: e.target.value })
+                        }
+                        className="flex h-12 w-full rounded-xl border border-input bg-background px-4 py-2 text-sm"
+                      >
+                        {categories.map((category) => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex items-end">
+                      <label className="flex items-center space-x-3 cursor-pointer bg-gray-50 dark:bg-gray-800 px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <input
+                          type="checkbox"
+                          id="anonymous"
+                          checked={newPost.isAnonymous}
+                          onChange={(e) =>
+                            setNewPost({
+                              ...newPost,
+                              isAnonymous: e.target.checked,
+                            })
+                          }
+                          className="w-4 h-4 rounded accent-primary"
+                        />
+                        <span className="text-sm font-medium">Post anonymously</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-2">
                   <Button
                     onClick={handleCreatePost}
-                    className="bg-primary hover:bg-primary/90"
+                    size="lg"
+                    className="flex-1 bg-gradient-to-r from-primary to-wellness hover:from-primary/90 hover:to-wellness/90 h-12 rounded-xl shadow-md hover:shadow-lg transition-all duration-300"
                   >
+                    <Plus className="w-5 h-5 mr-2" />
                     Create Post
                   </Button>
                   <Button
                     variant="outline"
+                    size="lg"
                     onClick={() => setShowNewPostForm(false)}
+                    className="h-12 rounded-xl"
                   >
                     Cancel
                   </Button>
@@ -561,17 +859,30 @@ const PeerForum = () => {
           )}
 
           {/* Posts List */}
-          <div className="space-y-4">
+          <div className="space-y-5">
             {filteredPosts.length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-muted-foreground mb-2">
-                  No discussions found
-                </h3>
-                <p className="text-muted-foreground">
-                  Be the first to start a conversation!
-                </p>
-              </div>
+              <Card className="border-dashed border-2">
+                <CardContent className="py-16">
+                  <div className="text-center">
+                    <div className="inline-flex p-4 bg-gradient-to-br from-primary/10 to-wellness/10 rounded-2xl mb-4">
+                      <Users className="w-12 h-12 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2">
+                      No discussions yet
+                    </h3>
+                    <p className="text-muted-foreground mb-6">
+                      Be the first to start a meaningful conversation!
+                    </p>
+                    <Button 
+                      onClick={() => setShowNewPostForm(true)}
+                      className="bg-gradient-to-r from-primary to-wellness"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create First Post
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             ) : (
               filteredPosts.map((post) => {
                 const postReplies = replies.filter(
@@ -581,78 +892,206 @@ const PeerForum = () => {
                 return (
                   <Card
                     key={post.id}
-                    className="hover:shadow-md transition-all duration-300 cursor-pointer"
+                    className="group hover:shadow-lg hover:border-primary/30 transition-all duration-300 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/50 dark:border-gray-700/50"
                   >
                     <CardContent className="p-6">
                       <div className="flex items-start space-x-4">
-                        <Avatar className="w-10 h-10">
-                          <AvatarFallback className="bg-primary/10 text-primary">
+                        <Avatar className="w-12 h-12 ring-2 ring-primary/10 group-hover:ring-primary/30 transition-all">
+                          <AvatarFallback className="bg-gradient-to-br from-primary/20 to-wellness/20 text-primary font-semibold text-lg">
                             {post.isAnonymous
                               ? "?"
                               : getAuthorInitials(post.author)}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <Badge
-                              className={`${getCategoryColor(
-                                post.category
-                              )} text-xs`}
-                            >
-                              <Tag className="w-3 h-3 mr-1" />
-                              {post.category}
-                            </Badge>
-                            <span className="text-sm text-muted-foreground">
-                              by {post.author}
-                            </span>
-                            <span className="text-sm text-muted-foreground">
-                              •
-                            </span>
-                            <span className="text-sm text-muted-foreground flex items-center">
-                              <Clock className="w-3 h-3 mr-1" />
-                              {getTimeAgo(post.timestamp)}
-                            </span>
-                          </div>
-                          <h3 className="font-semibold text-foreground mb-2 hover:text-primary transition-colors">
+                          {editingPost === post.id ? (
+                            /* EDIT MODE: Show edit form */
+                            <div className="space-y-3 bg-gray-50 dark:bg-gray-900 p-4 rounded-xl">
+                              <Input
+                                placeholder="Post title..."
+                                value={editContent.title}
+                                onChange={(e) =>
+                                  setEditContent((prev) => ({
+                                    ...prev,
+                                    title: e.target.value,
+                                  }))
+                                }
+                                className="font-semibold"
+                              />
+                              <Textarea
+                                placeholder="What's on your mind?"
+                                value={editContent.content}
+                                onChange={(e) =>
+                                  setEditContent((prev) => ({
+                                    ...prev,
+                                    content: e.target.value,
+                                  }))
+                                }
+                                className="min-h-[120px] resize-none"
+                              />
+                              <Select
+                                value={editContent.category}
+                                onValueChange={(value) =>
+                                  setEditContent((prev) => ({
+                                    ...prev,
+                                    category: value,
+                                  }))
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="General">
+                                    General Discussion
+                                  </SelectItem>
+                                  <SelectItem value="Mental Health">
+                                    Mental Health
+                                  </SelectItem>
+                                  <SelectItem value="Relationships">
+                                    Relationships
+                                  </SelectItem>
+                                  <SelectItem value="Academics">
+                                    Academics
+                                  </SelectItem>
+                                  <SelectItem value="Career">
+                                    Career
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleEditPost(post.id)}
+                                >
+                                  Save Changes
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setEditingPost(null);
+                                    setEditContent({
+                                      title: "",
+                                      content: "",
+                                      category: "",
+                                    });
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            /* VIEW MODE: Show post content */
+                            <>
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center flex-wrap gap-2">
+                                  <Badge
+                                    className={`${getCategoryColor(
+                                      post.category
+                                    )} text-xs font-medium px-3 py-1 rounded-full`}
+                                  >
+                                    <Tag className="w-3 h-3 mr-1" />
+                                    {post.category}
+                                  </Badge>
+                                  <span className="text-sm font-medium text-foreground">
+                                    {post.author}
+                                  </span>
+                                  <span className="text-gray-300 dark:text-gray-600">•</span>
+                                  <span className="text-sm text-muted-foreground flex items-center">
+                                    <Clock className="w-3.5 h-3.5 mr-1.5" />
+                                    {getTimeAgo(post.timestamp)}
+                                  </span>
+                                </div>
+
+                                {/* Dropdown menu for post author */}
+                                {post.authorId === user?.id && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                      >
+                                        <MoreVertical className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-40">
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          setEditingPost(post.id);
+                                          setEditContent({
+                                            title: post.title,
+                                            content: post.content,
+                                            category: post.category,
+                                          });
+                                        }}
+                                        className="cursor-pointer"
+                                      >
+                                        <Edit2 className="mr-2 h-4 w-4" />
+                                        Edit
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        className="text-destructive cursor-pointer focus:text-destructive"
+                                        onClick={() =>
+                                          setDeleteConfirm({
+                                            type: "post",
+                                            id: post.id,
+                                          })
+                                        }
+                                      >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                )}
+                              </div>
+                          <h3 className="font-semibold text-lg text-foreground mb-2 group-hover:text-primary transition-colors leading-snug">
                             {post.title}
                           </h3>
-                          <p className="text-muted-foreground mb-4 line-clamp-3">
+                          <p className="text-muted-foreground mb-4 line-clamp-3 leading-relaxed">
                             {post.content}
                           </p>
-                          <div className="flex items-center space-x-4">
+                          <div className="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleLikePost(post.id)}
-                              className="text-muted-foreground hover:text-wellness"
+                              className="text-muted-foreground hover:text-wellness hover:bg-wellness/10 rounded-xl transition-all"
                             >
-                              <ThumbsUp className="w-4 h-4 mr-1" />
-                              {post.likes}
+                              <ThumbsUp className="w-4 h-4 mr-2" />
+                              <span className="font-medium">{post.likes}</span>
+                              <span className="hidden sm:inline ml-1">likes</span>
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleOpenReply(post.id)}
-                              className="text-muted-foreground hover:text-primary"
+                              className="text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
                             >
-                              <ReplyIcon className="w-4 h-4 mr-1" />
-                              {postReplies.length} replies
+                              <ReplyIcon className="w-4 h-4 mr-2" />
+                              <span className="font-medium">{postReplies.length}</span>
+                              <span className="hidden sm:inline ml-1">replies</span>
                             </Button>
                           </div>
+                          </>
+                          )}
 
                           {/* Reply form (sirf active post ke niche) */}
                           {activeReplyPostId === post.id && (
-                            <div className="mt-4 space-y-2">
+                            <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-xl space-y-3">
                               <Textarea
-                                placeholder="Write your reply..."
+                                placeholder="Share your thoughts..."
                                 value={replyContent}
                                 onChange={(e) =>
                                   setReplyContent(e.target.value)
                                 }
-                                className="min-h-[80px] resize-none"
+                                className="min-h-[100px] resize-none rounded-xl border-gray-200 dark:border-gray-700"
                               />
-                              <div className="flex items-center gap-3">
-                                <div className="flex items-center space-x-2">
+                              <div className="flex items-center justify-between gap-3 pt-2">
+                                <label className="flex items-center space-x-2 cursor-pointer">
                                   <input
                                     type="checkbox"
                                     id={`reply-anon-${post.id}`}
@@ -660,61 +1099,148 @@ const PeerForum = () => {
                                     onChange={(e) =>
                                       setReplyIsAnonymous(e.target.checked)
                                     }
-                                    className="w-4 h-4"
+                                    className="w-4 h-4 rounded accent-primary"
                                   />
-                                  <label
-                                    htmlFor={`reply-anon-${post.id}`}
-                                    className="text-xs text-muted-foreground"
-                                  >
+                                  <span className="text-sm text-muted-foreground">
                                     Reply anonymously
-                                  </label>
+                                  </span>
+                                </label>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleCreateReply(post.id)}
+                                    className="bg-gradient-to-r from-primary to-wellness hover:from-primary/90 hover:to-wellness/90 rounded-lg"
+                                  >
+                                    Post Reply
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setActiveReplyPostId(null)}
+                                    className="rounded-lg"
+                                  >
+                                    Cancel
+                                  </Button>
                                 </div>
-                              </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleCreateReply(post.id)}
-                                  className="bg-primary hover:bg-primary/90"
-                                >
-                                  Post reply
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setActiveReplyPostId(null)}
-                                >
-                                  Cancel
-                                </Button>
                               </div>
                             </div>
                           )}
 
                           {/* Replies List */}
                           {postReplies.length > 0 && (
-                            <div className="mt-4 space-y-3 border-t pt-3">
+                            <div className="mt-6 space-y-4 border-t border-gray-100 dark:border-gray-700 pt-4">
                               {postReplies.map((reply) => (
                                 <div
                                   key={reply.id}
-                                  className="flex items-start space-x-3 text-sm"
+                                  className="flex items-start space-x-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
                                 >
-                                  <Avatar className="w-8 h-8">
-                                    <AvatarFallback className="bg-primary/5 text-primary text-xs">
+                                  <Avatar className="w-9 h-9 ring-2 ring-wellness/10">
+                                    <AvatarFallback className="bg-gradient-to-br from-wellness/20 to-primary/20 text-primary text-xs font-semibold">
                                       {reply.isAnonymous
                                         ? "?"
                                         : getAuthorInitials(reply.author)}
                                     </AvatarFallback>
                                   </Avatar>
                                   <div className="flex-1">
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                                      <span>
-                                        {reply.isAnonymous
-                                          ? "Anonymous Student"
-                                          : reply.author}
-                                      </span>
-                                      <span>•</span>
-                                      <span>{getTimeAgo(reply.timestamp)}</span>
-                                    </div>
-                                    <p className="mb-1 text-foreground">
+                                    {editingReply === reply.id ? (
+                                      /* EDIT MODE for reply */
+                                      <div className="space-y-2">
+                                        <Textarea
+                                          placeholder="Edit your reply..."
+                                          value={editContent.content}
+                                          onChange={(e) =>
+                                            setEditContent((prev) => ({
+                                              ...prev,
+                                              content: e.target.value,
+                                            }))
+                                          }
+                                          className="min-h-[80px] resize-none text-sm"
+                                        />
+                                        <div className="flex gap-2">
+                                          <Button
+                                            size="sm"
+                                            onClick={() =>
+                                              handleEditReply(reply.id)
+                                            }
+                                          >
+                                            Save
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => {
+                                              setEditingReply(null);
+                                              setEditContent({
+                                                title: "",
+                                                content: "",
+                                                category: "",
+                                              });
+                                            }}
+                                          >
+                                            Cancel
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      /* VIEW MODE for reply */
+                                      <>
+                                        <div className="flex items-center justify-between gap-2 mb-1">
+                                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                            <span>
+                                              {reply.isAnonymous
+                                                ? "Anonymous Student"
+                                                : reply.author}
+                                            </span>
+                                            <span>•</span>
+                                            <span>
+                                              {getTimeAgo(reply.timestamp)}
+                                            </span>
+                                          </div>
+
+                                          {/* Dropdown for reply author */}
+                                          {reply.authorId === user?.id && (
+                                            <DropdownMenu>
+                                              <DropdownMenuTrigger asChild>
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="h-6 w-6 p-0"
+                                                >
+                                                  <MoreVertical className="h-3 w-3" />
+                                                </Button>
+                                              </DropdownMenuTrigger>
+                                              <DropdownMenuContent align="end">
+                                                <DropdownMenuItem
+                                                  onClick={() => {
+                                                    setEditingReply(reply.id);
+                                                    setEditContent({
+                                                      title: "",
+                                                      content: reply.content,
+                                                      category: "",
+                                                    });
+                                                  }}
+                                                >
+                                                  <Edit2 className="mr-2 h-4 w-4" />
+                                                  Edit
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                  className="text-destructive"
+                                                  onClick={() =>
+                                                    setDeleteConfirm({
+                                                      type: "reply",
+                                                      id: reply.id,
+                                                      postId: post.id,
+                                                    })
+                                                  }
+                                                >
+                                                  <Trash2 className="mr-2 h-4 w-4" />
+                                                  Delete
+                                                </DropdownMenuItem>
+                                              </DropdownMenuContent>
+                                            </DropdownMenu>
+                                          )}
+                                        </div>
+                                    <p className="mb-2 text-foreground text-sm leading-relaxed">
                                       {reply.content}
                                     </p>
                                     <Button
@@ -723,11 +1249,13 @@ const PeerForum = () => {
                                       onClick={() =>
                                         handleLikeReply(reply.id)
                                       }
-                                      className="text-muted-foreground hover:text-wellness"
+                                      className="text-muted-foreground hover:text-wellness hover:bg-wellness/10 rounded-lg h-7 px-2"
                                     >
-                                      <ThumbsUp className="w-3 h-3 mr-1" />
-                                      {reply.likes}
+                                      <ThumbsUp className="w-3 h-3 mr-1.5" />
+                                      <span className="text-xs font-medium">{reply.likes}</span>
                                     </Button>
+                                    </>
+                                    )}
                                   </div>
                                 </div>
                               ))}
@@ -741,8 +1269,44 @@ const PeerForum = () => {
               })
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={deleteConfirm.type !== null}
+        onOpenChange={(open) =>
+          !open && setDeleteConfirm({ type: null, id: null })
+        }
+      >
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl">Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription className="text-base">
+              This will permanently delete this{" "}
+              {deleteConfirm.type === "post" ? "post" : "reply"}. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90 rounded-xl"
+              onClick={() => {
+                if (deleteConfirm.type === "post" && deleteConfirm.id) {
+                  handleDeletePost(deleteConfirm.id);
+                } else if (
+                  deleteConfirm.type === "reply" &&
+                  deleteConfirm.id &&
+                  deleteConfirm.postId
+                ) {
+                  handleDeleteReply(deleteConfirm.id, deleteConfirm.postId);
+                }
+              }}
+            >
+              Delete Permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

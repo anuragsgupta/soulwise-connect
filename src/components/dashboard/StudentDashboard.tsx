@@ -434,15 +434,15 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       case 'profile':
         return (
           <div className="space-y-6">
-            <Card className="bg-gradient-to-r from-primary/10 via-wellness/10 to-support/10 border-0 shadow-lg">
-              <CardHeader>
+            <Card className="bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 border-0 shadow-xl rounded-2xl">
+              <CardHeader className="pb-6">
                 <div className="flex items-center space-x-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-primary to-wellness rounded-full flex items-center justify-center">
-                    <User className="w-8 h-8 text-white" />
+                  <div className="w-20 h-20 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg">
+                    <User className="w-10 h-10 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-2xl">{user?.name || 'Student'}</CardTitle>
-                    <CardDescription>{user?.email}</CardDescription>
+                    <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{user?.name || 'Student'}</CardTitle>
+                    <CardDescription className="text-gray-600 mt-1">{user?.email}</CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -464,29 +464,29 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             
             {/* Settings and Help Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Card className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer rounded-2xl border-gray-100">
                 <CardHeader>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                      <Settings className="w-6 h-6 text-gray-600" />
+                  <div className="flex items-center space-x-4">
+                    <div className="w-14 h-14 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center">
+                      <Settings className="w-7 h-7 text-gray-700" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">Settings</CardTitle>
-                      <CardDescription>Preferences & notifications</CardDescription>
+                      <CardTitle className="text-lg font-semibold">Settings</CardTitle>
+                      <CardDescription className="text-gray-500">Preferences & notifications</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
               </Card>
               
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Card className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer rounded-2xl border-gray-100">
                 <CardHeader>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                      <HelpCircle className="w-6 h-6 text-yellow-600" />
+                  <div className="flex items-center space-x-4">
+                    <div className="w-14 h-14 bg-gradient-to-br from-yellow-100 to-orange-100 rounded-xl flex items-center justify-center">
+                      <HelpCircle className="w-7 h-7 text-orange-600" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">Help & Support</CardTitle>
-                      <CardDescription>FAQs and contact support</CardDescription>
+                      <CardTitle className="text-lg font-semibold">Help & Support</CardTitle>
+                      <CardDescription className="text-gray-500">FAQs and contact support</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
@@ -494,14 +494,14 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             </div>
             
             {/* Logout Button */}
-            <Card>
+            <Card className="rounded-2xl border-gray-100">
               <CardContent className="pt-6">
                 <Button
                   variant="destructive"
-                  className="w-full"
+                  className="w-full h-12 text-base rounded-xl shadow-md hover:shadow-lg transition-all"
                   onClick={handleLogout}
                 >
-                  <LogOut className="w-4 h-4 mr-2" />
+                  <LogOut className="w-5 h-5 mr-2" />
                   Logout
                 </Button>
               </CardContent>
@@ -512,14 +512,16 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
         return (
           <div className="space-y-6">
             {/* Welcome Header */}
-            <Card className="bg-gradient-to-r from-primary/10 via-wellness/10 to-support/10 border-0 shadow-lg">
-              <CardHeader>
+            <Card className="relative bg-white/80 border border-gray-200/50 shadow-2xl rounded-3xl overflow-hidden backdrop-blur-sm">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/8 via-purple-500/8 to-pink-500/8" />
+              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-3xl" />
+              <CardHeader className="pb-6 relative">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-2xl font-bold text-foreground">
+                    <CardTitle className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-in fade-in slide-in-from-bottom-3 duration-700">
                       Welcome back, {user?.name || 'Student'}! 👋
                     </CardTitle>
-                    <CardDescription className="text-lg mt-2">
+                    <CardDescription className="text-base md:text-lg mt-3 text-gray-600 font-medium animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: '100ms' }}>
                       How are you feeling today? Let&apos;s check in on your wellness journey.
                     </CardDescription>
                     {user?.rollNumber && (
@@ -559,41 +561,56 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                       </div>
                     )}
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm text-muted-foreground">Wellness Score</div>
-                    <div className="text-3xl font-bold text-primary">{wellnessScore}%</div>
+                  <div className="flex flex-col items-center">
+                    <div className="relative">
+                      {/* Circular wellness indicator */}
+                      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-green-100 to-emerald-100 flex items-center justify-center shadow-lg relative animate-pulse" style={{ animationDuration: '3s' }}>
+                        <div className="w-20 h-20 rounded-full bg-white flex flex-col items-center justify-center">
+                          <span className="text-2xl font-bold bg-gradient-to-br from-green-600 to-emerald-600 bg-clip-text text-transparent">{wellnessScore}%</span>
+                        </div>
+                        {/* Pulse ring */}
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-green-400 to-emerald-400 opacity-20 animate-ping" style={{ animationDuration: '2s' }} />
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 font-semibold mt-2 uppercase tracking-wider">Wellness Score</div>
+                    <div className="text-xs text-gray-400 mt-0.5">Keep it up! 🌟</div>
                   </div>
                 </div>
-                <div className="mt-4">
-                  <Progress value={wellnessScore} className="h-3" />
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {wellnessScore >= 80 ? "Great job maintaining your mental health!" :
-                     wellnessScore >= 60 ? "You&apos;re doing well, keep it up!" :
-                     "Let&apos;s work together to improve your wellness."}
+                <div className="mt-6 relative">
+                  <Progress value={wellnessScore} className="h-3 bg-gray-100 shadow-inner" />
+                  <p className="text-sm text-gray-600 mt-3 font-medium">
+                    {wellnessScore >= 80 ? "🎉 Great job maintaining your mental health!" :
+                     wellnessScore >= 60 ? "💪 You&apos;re doing well, keep it up!" :
+                     "🌱 Let&apos;s work together to improve your wellness."}
                   </p>
                 </div>
               </CardHeader>
             </Card>
 
             {/* Quick Actions Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {quickActions.map((action, index) => (
                 <Card 
                   key={index}
-                  className="group cursor-pointer hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-r overflow-hidden"
+                  className="group cursor-pointer hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 border border-gray-200/60 rounded-3xl overflow-hidden bg-white/90 backdrop-blur-sm hover:border-transparent"
                   onClick={action.action}
                 >
-                <div className={`absolute inset-0 bg-gradient-to-r ${action.color} opacity-5 group-hover:opacity-5 transition-opacity z-[-5]`} />
-                  <CardHeader className="relative p-4 sm:p-6">
-                    <div className="flex items-center space-x-3 sm:space-x-4">
-                      <div className={`p-2 sm:p-3 rounded-xl bg-gradient-to-r ${action.color} shadow-lg group-hover:scale-110 transition-transform`}>
-                        <action.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                  {/* Hover gradient overlay */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-0 group-hover:opacity-8 transition-opacity duration-500`} />
+                  {/* Shine effect */}
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                  </div>
+                  <CardHeader className="relative p-6">
+                    <div className="flex items-start space-x-4">
+                      <div className={`p-4 rounded-2xl bg-gradient-to-br ${action.color} shadow-lg group-hover:scale-110 group-hover:rotate-6 group-hover:shadow-xl transition-all duration-500`}>
+                        <action.icon className="w-7 h-7 text-white" />
                       </div>
-                      <div>
-                        <CardTitle className="group-hover:text-primary transition-colors text-sm sm:text-base">
+                      <div className="flex-1">
+                        <CardTitle className="text-base md:text-lg font-bold text-gray-800 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 group-hover:bg-clip-text transition-all duration-300">
                           {action.title}
                         </CardTitle>
-                        <CardDescription className="text-xs sm:text-sm">{action.description}</CardDescription>
+                        <CardDescription className="text-sm text-gray-500 mt-2 group-hover:text-gray-600 transition-colors">{action.description}</CardDescription>
                       </div>
                     </div>
                   </CardHeader>
@@ -603,66 +620,78 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
 
             {/* Recent Activity & Insights */}
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <TrendingUp className="w-5 h-5 mr-2 text-wellness" />
+              <Card className="rounded-3xl border border-gray-200/60 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-white/90 backdrop-blur-sm">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center text-lg font-bold">
+                    <div className="p-2 rounded-xl bg-gradient-to-br from-green-100 to-emerald-100 mr-3">
+                      <TrendingUp className="w-5 h-5 text-green-600" />
+                    </div>
                     Weekly Insights
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-wellness-light rounded-lg">
+                <CardContent className="space-y-3">
+                  <div className="group flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200/60 hover:shadow-md hover:scale-105 transition-all duration-300 cursor-pointer">
                     <div className="flex items-center">
-                      <Smile className="w-5 h-5 text-wellness mr-2" />
-                      <span className="text-sm">Good days this week</span>
+                      <div className="p-2 rounded-xl bg-green-100 mr-3 group-hover:scale-110 transition-transform">
+                        <Smile className="w-5 h-5 text-green-600" />
+                      </div>
+                      <span className="text-sm font-semibold text-gray-700">Good days this week</span>
                     </div>
-                    <span className="font-semibold text-wellness">5/7</span>
+                    <span className="font-extrabold text-green-600 text-xl group-hover:scale-110 transition-transform">5/7</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-support-light rounded-lg">
+                  <div className="group flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-violet-50 rounded-2xl border border-purple-200/60 hover:shadow-md hover:scale-105 transition-all duration-300 cursor-pointer">
                     <div className="flex items-center">
-                      <Brain className="w-5 h-5 text-support mr-2" />
-                      <span className="text-sm">Meditation sessions</span>
+                      <div className="p-2 rounded-xl bg-purple-100 mr-3 group-hover:scale-110 transition-transform">
+                        <Brain className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <span className="text-sm font-semibold text-gray-700">Meditation sessions</span>
                     </div>
-                    <span className="font-semibold text-support">12 min</span>
+                    <span className="font-extrabold text-purple-600 text-xl group-hover:scale-110 transition-transform">12 min</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
+                  <div className="group flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl border border-blue-200/60 hover:shadow-md hover:scale-105 transition-all duration-300 cursor-pointer">
                     <div className="flex items-center">
-                      <MessageCircle className="w-5 h-5 text-primary mr-2" />
-                      <span className="text-sm">AI chat sessions</span>
+                      <div className="p-2 rounded-xl bg-blue-100 mr-3 group-hover:scale-110 transition-transform">
+                        <MessageCircle className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <span className="text-sm font-semibold text-gray-700">AI chat sessions</span>
                     </div>
-                    <span className="font-semibold text-primary">3</span>
+                    <span className="font-extrabold text-blue-600 text-xl group-hover:scale-110 transition-transform">3</span>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Bell className="w-5 h-5 mr-2 text-support" />
+              <Card className="rounded-3xl border border-gray-200/60 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-white/90 backdrop-blur-sm">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center text-lg font-bold">
+                    <div className="p-2 rounded-xl bg-gradient-to-br from-orange-100 to-amber-100 mr-3">
+                      <Bell className="w-5 h-5 text-orange-600" />
+                    </div>
                     Upcoming & Reminders
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="p-3 border-l-4 border-primary bg-primary/5 rounded-r-lg">
-                    <p className="font-medium text-primary">Counselling Session</p>
-                    <p className="text-sm text-muted-foreground">Tomorrow at 2:00 PM</p>
+                  <div className="group p-4 border-l-4 border-blue-500 bg-gradient-to-r from-blue-50 to-transparent rounded-r-2xl hover:from-blue-100 hover:shadow-md transition-all duration-300 cursor-pointer">
+                    <p className="font-bold text-blue-700 flex items-center">📅 Counselling Session</p>
+                    <p className="text-sm text-gray-600 mt-1.5 font-medium">Tomorrow at 2:00 PM</p>
                   </div>
-                  <div className="p-3 border-l-4 border-wellness bg-wellness/5 rounded-r-lg">
-                    <p className="font-medium text-wellness">Daily Mood Check</p>
-                    <p className="text-sm text-muted-foreground">Complete your evening reflection</p>
+                  <div className="group p-4 border-l-4 border-green-500 bg-gradient-to-r from-green-50 to-transparent rounded-r-2xl hover:from-green-100 hover:shadow-md transition-all duration-300 cursor-pointer">
+                    <p className="font-bold text-green-700 flex items-center">💚 Daily Mood Check</p>
+                    <p className="text-sm text-gray-600 mt-1.5 font-medium">Complete your evening reflection</p>
                   </div>
-                  <div className="p-3 border-l-4 border-support bg-support/5 rounded-r-lg">
-                    <p className="font-medium text-support">Peer Group Chat</p>
-                    <p className="text-sm text-muted-foreground">Join the study stress discussion</p>
+                  <div className="group p-4 border-l-4 border-purple-500 bg-gradient-to-r from-purple-50 to-transparent rounded-r-2xl hover:from-purple-100 hover:shadow-md transition-all duration-300 cursor-pointer">
+                    <p className="font-bold text-purple-700 flex items-center">👥 Peer Group Chat</p>
+                    <p className="text-sm text-gray-600 mt-1.5 font-medium">Join the study stress discussion</p>
                   </div>
                 </CardContent>
               </Card>
               
               {/* Safety & Location Status Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <MapPin className="w-5 h-5 mr-2 text-green-600" />
+              <Card className="rounded-3xl border border-gray-200/60 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-white/90 backdrop-blur-sm">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center text-lg font-bold">
+                    <div className="p-2 rounded-xl bg-gradient-to-br from-green-100 to-emerald-100 mr-3">
+                      <MapPin className="w-5 h-5 text-green-600" />
+                    </div>
                     Safety Status
                   </CardTitle>
                 </CardHeader>
@@ -734,23 +763,28 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-wellness-light/20 to-support-light/20">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50/40 via-purple-50/30 to-pink-50/40 relative overflow-hidden">
+      {/* Animated Background Pattern */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.03),rgba(255,255,255,0))] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-purple-300/10 to-pink-300/10 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-blue-300/10 to-cyan-300/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      
       {/* Navigation */}
-      <nav className="bg-white/95 backdrop-blur-sm border-b shadow-sm sticky top-0 z-50">
+      <nav className="bg-white/90 backdrop-blur-2xl border-b border-gray-200/60 shadow-xl sticky top-0 z-50 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo and Brand */}
             <div className="flex items-center">
-              <div className="flex items-center">
-                <div className="relative w-8 h-8 mr-3">
+              <div className="flex items-center group">
+                <div className="relative w-10 h-10 mr-3 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
                   <Image 
                     src={mannMitraLogo} 
                     alt="MANN MITRA"
                     fill
-                    className="object-contain"
+                    className="object-contain drop-shadow-lg"
                   />
                 </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-primary to-wellness bg-clip-text text-transparent">
+                <span className="text-xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent tracking-tight">
                   MANN MITRA
                 </span>
               </div>
@@ -763,7 +797,6 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                 { id: 'mood', label: 'Mood', icon: Smile },
                 { id: 'chat', label: 'Chat', icon: MessageCircle },
                 { id: 'appointments', label: 'Appointments', icon: Calendar },
-                { id: 'notifications', label: 'Notifications', icon: Bell },
                 { id: 'resources', label: 'Resources', icon: BookOpen },
                 { id: 'forum', label: 'Community', icon: Users }
               ].map((item) => (
@@ -772,14 +805,14 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                   variant={activeTab === item.id ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => handleTabChange(item.id as DashboardTab)}
-                  className={`flex items-center space-x-2 ${
+                  className={`flex items-center space-x-2 rounded-xl transition-all duration-300 font-semibold ${
                     activeTab === item.id 
-                      ? 'bg-primary text-white' 
-                      : 'hover:bg-primary/10 hover:text-primary'
+                      ? 'bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white shadow-lg scale-105' 
+                      : 'hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-600 hover:scale-105'
                   }`}
                 >
                   <item.icon className="w-4 h-4" />
-                  <span>{item.label}</span>
+                  <span className="hidden lg:inline">{item.label}</span>
                 </Button>
               ))}
             </div>
@@ -813,7 +846,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                 variant="outline" 
                 size="sm" 
                 onClick={handleLogout}
-                className="flex items-center space-x-2 border-destructive text-destructive hover:bg-destructive hover:text-white"
+                className="flex items-center space-x-2 border-red-200 text-red-600 hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-500 hover:text-white hover:border-transparent transition-all duration-300 rounded-xl font-semibold shadow-sm hover:shadow-lg"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Logout</span>
@@ -856,33 +889,37 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       </main>
 
       {/* WhatsApp-Style Bottom Navigation Bar (Mobile Only) */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50 md:hidden safe-area-inset-bottom">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-200 shadow-2xl z-50 md:hidden safe-area-inset-bottom">
         <div className="flex items-center justify-around px-2 py-2">
           {[
             { id: 'dashboard', label: 'Home', icon: Heart },
             { id: 'mood', label: 'Mood', icon: Smile },
             { id: 'chat', label: 'Chat', icon: MessageCircle },
-            { id: 'notifications', label: 'Alerts', icon: Bell },
+            { id: 'forum', label: 'Community', icon: Users },
             { id: 'profile', label: 'Profile', icon: User }
           ].map((item) => (
             <button
               key={item.id}
               onClick={() => handleTabChange(item.id as DashboardTab)}
-              className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-all duration-200 ${
+              className={`flex flex-col items-center justify-center py-2 px-3 rounded-2xl transition-all duration-300 relative ${
                 activeTab === item.id 
-                  ? 'text-primary' 
-                  : 'text-gray-500 hover:text-primary'
+                  ? 'text-blue-600' 
+                  : 'text-gray-500 hover:text-blue-600'
               }`}
             >
+              {/* Active indicator */}
+              {activeTab === item.id && (
+                <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-8 h-1 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-full" />
+              )}
               <item.icon 
-                className={`w-6 h-6 mb-1 transition-all duration-200 ${
+                className={`w-6 h-6 mb-1 transition-all duration-300 ${
                   activeTab === item.id 
-                    ? 'fill-primary stroke-primary scale-110' 
+                    ? 'fill-blue-600 stroke-blue-600 scale-110' 
                     : 'stroke-current'
                 }`} 
               />
-              <span className={`text-xs font-medium ${
-                activeTab === item.id ? 'text-primary' : 'text-gray-600'
+              <span className={`text-xs font-semibold transition-all duration-300 ${
+                activeTab === item.id ? 'text-blue-600' : 'text-gray-600'
               }`}>
                 {item.label}
               </span>
@@ -893,50 +930,69 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
 
       {/* Location Permission Prompt Modal */}
       {showLocationPrompt && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle className="flex items-center text-xl">
-                <MapPin className="w-6 h-6 mr-3 text-primary" />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <Card className="w-full max-w-md rounded-3xl border-0 shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-4 duration-500 bg-white/95 backdrop-blur-xl">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center text-2xl font-bold">
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-100 to-purple-100 mr-3 animate-pulse" style={{ animationDuration: '2s' }}>
+                  <MapPin className="w-7 h-7 text-blue-600" />
+                </div>
                 Enable Location Access
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-base text-gray-600 mt-2 font-medium">
                 Help us provide better safety and emergency support by sharing your location.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-800 mb-2">Why we need your location:</h4>
-                <ul className="text-sm text-blue-700 space-y-1">
-                  <li>• <strong>Emergency Response:</strong> Quick help in crisis situations</li>
-                  <li>• <strong>Nearby Resources:</strong> Find mental health services near you</li>
-                  <li>• <strong>Safety Features:</strong> Enhanced support when needed</li>
-                  <li>• <strong>Campus Security:</strong> Better student safety monitoring</li>
+              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-2xl p-5 hover:shadow-md transition-shadow">
+                <h4 className="font-bold text-blue-800 mb-3 flex items-center">
+                  <span className="w-2 h-2 bg-blue-600 rounded-full mr-2 animate-pulse"></span>
+                  Why we need your location:
+                </h4>
+                <ul className="text-sm text-blue-700 space-y-2 font-medium">
+                  <li className="flex items-start">
+                    <span className="text-blue-600 mr-2">🚨</span>
+                    <span><strong>Emergency Response:</strong> Quick help in crisis situations</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-600 mr-2">📍</span>
+                    <span><strong>Nearby Resources:</strong> Find mental health services near you</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-600 mr-2">🛡️</span>
+                    <span><strong>Safety Features:</strong> Enhanced support when needed</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-600 mr-2">🏫</span>
+                    <span><strong>Campus Security:</strong> Better student safety monitoring</span>
+                  </li>
                 </ul>
               </div>
               
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                <div className="flex items-center text-green-800">
-                  <Heart className="w-4 h-4 mr-2" />
-                  <span className="text-sm font-medium">Your privacy is protected</span>
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-center text-green-800 mb-2">
+                  <div className="p-1.5 rounded-lg bg-green-100 mr-2">
+                    <Heart className="w-4 h-4 text-green-600" />
+                  </div>
+                  <span className="text-sm font-bold">Your privacy is protected</span>
                 </div>
-                <p className="text-xs text-green-700 mt-1">
-                  Location data is only used for safety and support purposes. You can disable this anytime.
+                <p className="text-xs text-green-700 font-medium leading-relaxed">
+                  Location data is only used for safety and support purposes. You can disable this anytime in settings.
                 </p>
               </div>
 
               <div className="flex space-x-3 mt-6">
                 <Button 
                   onClick={requestLocationAccess}
-                  className="flex-1 bg-primary hover:bg-primary/90"
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white h-12 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
                 >
-                  <Navigation className="w-4 h-4 mr-2" />
+                  <Navigation className="w-5 h-5 mr-2" />
                   Allow Location
                 </Button>
                 <Button 
                   variant="outline" 
                   onClick={dismissLocationPrompt}
-                  className="flex-1"
+                  className="flex-1 h-12 rounded-xl font-semibold border-gray-300 hover:bg-gray-100 transition-all duration-300"
                 >
                   Maybe Later
                 </Button>
@@ -973,7 +1029,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                   className="flex items-center justify-end space-x-3 animate-in slide-in-from-bottom-2 fade-in"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <span className="bg-white px-3 py-1.5 rounded-lg shadow-lg text-sm font-medium text-gray-700">
+                  <span className="bg-white/95 backdrop-blur-sm px-4 py-2 rounded-xl shadow-xl text-sm font-semibold text-gray-700 border border-gray-200/60">
                     {item.label}
                   </span>
                   <button
@@ -981,9 +1037,9 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                       handleTabChange(item.id as DashboardTab);
                       setIsFabOpen(false);
                     }}
-                    className={`${item.color} w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-white transition-all duration-200 hover:scale-110`}
+                    className={`${item.color} w-14 h-14 rounded-2xl shadow-xl flex items-center justify-center text-white transition-all duration-300 hover:scale-110 hover:rotate-12 hover:shadow-2xl`}
                   >
-                    <item.icon className="w-5 h-5" />
+                    <item.icon className="w-6 h-6" />
                   </button>
                 </div>
               ))}
@@ -994,16 +1050,20 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
         {/* Main FAB Button */}
         <button
           onClick={() => setIsFabOpen(!isFabOpen)}
-          className={`w-14 h-14 rounded-full shadow-xl flex items-center justify-center text-white transition-all duration-300 hover:scale-110 ${
+          className={`w-16 h-16 rounded-2xl shadow-2xl flex items-center justify-center text-white transition-all duration-500 hover:scale-110 relative overflow-hidden ${
             isFabOpen 
-              ? 'bg-red-500 hover:bg-red-600 rotate-45' 
-              : 'bg-gradient-to-r from-primary to-wellness hover:shadow-2xl'
+              ? 'bg-gradient-to-r from-red-500 to-pink-500 hover:shadow-3xl rotate-45' 
+              : 'bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 hover:shadow-3xl'
           }`}
         >
+          {/* Animated ring */}
+          <div className={`absolute inset-0 rounded-2xl bg-white/30 ${
+            isFabOpen ? 'animate-ping' : ''
+          }`} style={{ animationDuration: '1.5s' }} />
           {isFabOpen ? (
-            <X className="w-6 h-6" />
+            <X className="w-7 h-7 relative z-10" />
           ) : (
-            <Plus className="w-6 h-6" />
+            <Plus className="w-7 h-7 relative z-10" />
           )}
         </button>
         </div>

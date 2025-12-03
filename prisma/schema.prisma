@@ -1,7 +1,3 @@
-// This is your Prisma schema file
-// Updated to match the new admin-centric architecture
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,31 +8,25 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ==================== ADMIN SYSTEM ====================
-
 model Admin {
-  id           String      @id @default(uuid())
-  name         String
-  email        String      @unique
-  passwordHash String      @map("password_hash")
-  phone        String?
-  address      String?
-  adminType    AdminType   @map("admin_type")
-  status       AdminStatus @default(ACTIVE)
-  isSuperAdmin Boolean     @default(false) @map("is_super_admin") // Flag for default super admin
-  lastLogin    DateTime?   @map("last_login")
-  createdAt    DateTime    @default(now()) @map("created_at")
-  updatedAt    DateTime    @updatedAt @map("updated_at")
-
-  // Relations
-  university   University? @relation(fields: [universityId], references: [id])
-  universityId String?     @map("university_id")
-  institute    Institute?  @relation(fields: [instituteId], references: [id])
-  instituteId  String?     @map("institute_id")
-
-  // Inverse relations
-  createdInvites Invite[]       @relation("InviteCreator")
+  id             String         @id @default(uuid())
+  name           String
+  email          String         @unique
+  passwordHash   String         @map("password_hash")
+  phone          String?
+  address        String?
+  adminType      AdminType      @map("admin_type")
+  status         AdminStatus    @default(ACTIVE)
+  isSuperAdmin   Boolean        @default(false) @map("is_super_admin")
+  lastLogin      DateTime?      @map("last_login")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  universityId   String?        @map("university_id")
+  instituteId    String?        @map("institute_id")
+  institute      Institute?     @relation(fields: [instituteId], references: [id])
+  university     University?    @relation(fields: [universityId], references: [id])
   auditLogs      AuditLog[]     @relation("AdminAuditLogs")
+  createdInvites Invite[]       @relation("InviteCreator")
   notifications  Notification[]
   sessions       Session[]
 
@@ -49,28 +39,26 @@ model Admin {
 
 model University {
   id               String           @id @default(uuid())
-  aisheCode        String?          @unique @map("aishe_code") // AISHE ID for auto-fetching data (e.g., "C-36022")
   name             String
   email            String           @unique
-  domain           String           @unique // For email validation (e.g., "du.ac.in")
+  domain           String           @unique
   phone            String
   address          String
   city             String
   state            String
-  district         String? // Additional field from AISHE data
-  contactFirstName String?          @map("contact_first_name") // From AISHE data
-  contactLastName  String?          @map("contact_last_name") // From AISHE data
   status           UniversityStatus @default(ACTIVE)
   createdAt        DateTime         @default(now()) @map("created_at")
   updatedAt        DateTime         @updatedAt @map("updated_at")
-
-  // Relations
-  admins     Admin[]
-  institutes Institute[]
-  students   Student[]
-  faculties  Faculty[]
-  invites    Invite[]
-  auditLogs  AuditLog[]  @relation("UniversityAuditLogs")
+  aisheCode        String?          @unique @map("aishe_code")
+  contactFirstName String?          @map("contact_first_name")
+  contactLastName  String?          @map("contact_last_name")
+  district         String?
+  admins           Admin[]
+  auditLogs        AuditLog[]       @relation("UniversityAuditLogs")
+  faculties        Faculty[]
+  institutes       Institute[]
+  invites          Invite[]
+  students         Student[]
 
   @@index([domain])
   @@index([status])
@@ -78,45 +66,39 @@ model University {
 }
 
 model Field {
-  id          String   @id @default(uuid())
-  name        String // Engineering, Medical, Arts, Commerce
+  id          String      @id @default(uuid())
+  name        String
   description String?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  institutes Institute[]
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  institutes  Institute[]
 
   @@map("fields")
 }
 
 model Institute {
-  id        String          @id @default(uuid())
-  code      String          @unique
-  aisheCode String?         @unique @map("aishe_code")
-  name      String
-  email     String          @unique
-  phone     String
-  address   String
-  status    InstituteStatus @default(ACTIVE)
-  createdAt DateTime        @default(now()) @map("created_at")
-  updatedAt DateTime        @updatedAt @map("updated_at")
-
-  // Relations
-  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
-  universityId String     @map("university_id")
-  field        Field?     @relation(fields: [fieldId], references: [id])
-  fieldId      String?    @map("field_id")
-  hod          Faculty?   @relation("InstituteHOD", fields: [hodId], references: [id])
-  hodId        String?    @map("hod_id")
-
-  // Inverse relations
-  admins      Admin[]
-  departments Department[]
-  students    Student[]
-  faculties   Faculty[]    @relation("InstituteFaculty")
-  invites     Invite[]
-  auditLogs   AuditLog[]   @relation("InstituteAuditLogs")
+  id           String          @id @default(uuid())
+  code         String          @unique
+  name         String
+  email        String          @unique
+  phone        String
+  address      String
+  status       InstituteStatus @default(ACTIVE)
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  universityId String          @map("university_id")
+  fieldId      String?         @map("field_id")
+  hodId        String?         @map("hod_id")
+  aisheCode    String?         @unique @map("aishe_code")
+  admins       Admin[]
+  auditLogs    AuditLog[]      @relation("InstituteAuditLogs")
+  departments  Department[]
+  faculties    Faculty[]       @relation("InstituteFaculty")
+  field        Field?          @relation(fields: [fieldId], references: [id])
+  hod          Faculty?        @relation("InstituteHOD", fields: [hodId], references: [id])
+  university   University      @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  invites      Invite[]
+  students     Student[]
 
   @@index([code])
   @@index([universityId])
@@ -125,24 +107,20 @@ model Institute {
 }
 
 model Department {
-  id        String   @id @default(uuid())
-  name      String
-  code      String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  institute   Institute @relation(fields: [instituteId], references: [id], onDelete: Cascade)
-  instituteId String    @map("institute_id")
-  hod         Faculty?  @relation("DepartmentHOD", fields: [hodId], references: [id])
-  hodId       String?   @map("hod_id")
-
-  // Inverse relations
-  batches   Batch[]
-  students  Student[]
-  faculties Faculty[]  @relation("DepartmentFaculty")
-  invites   Invite[]
-  auditLogs AuditLog[] @relation("DepartmentAuditLogs")
+  id          String     @id @default(uuid())
+  name        String
+  code        String
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  instituteId String     @map("institute_id")
+  hodId       String?    @map("hod_id")
+  auditLogs   AuditLog[] @relation("DepartmentAuditLogs")
+  batches     Batch[]
+  hod         Faculty?   @relation("DepartmentHOD", fields: [hodId], references: [id])
+  institute   Institute  @relation(fields: [instituteId], references: [id], onDelete: Cascade)
+  faculties   Faculty[]  @relation("DepartmentFaculty")
+  invites     Invite[]
+  students    Student[]
 
   @@unique([code, instituteId])
   @@index([code])
@@ -151,25 +129,19 @@ model Department {
 }
 
 model Batch {
-  id              String   @id @default(uuid())
-  name            String // e.g., "2024-2028"
-  startYear       Int      @map("start_year")
-  endYear         Int      @map("end_year")
-  currentSemester Int      @map("current_semester")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  departmentId String     @map("department_id")
-
-  // Inverse relations
-  students Student[]
+  id              String     @id @default(uuid())
+  name            String
+  startYear       Int        @map("start_year")
+  endYear         Int        @map("end_year")
+  currentSemester Int        @map("current_semester")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  departmentId    String     @map("department_id")
+  department      Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  students        Student[]
 
   @@map("batches")
 }
-
-// ==================== FACULTY SYSTEM ====================
 
 model Faculty {
   id                 String             @id @default(uuid())
@@ -178,7 +150,7 @@ model Faculty {
   passwordHash       String             @map("password_hash")
   phone              String?
   address            String?
-  jobTitle           String?            @map("job_title") // Professor, Assistant Professor, etc.
+  jobTitle           String?            @map("job_title")
   facultyType        FacultyType        @map("faculty_type")
   status             FacultyStatus      @default(ACTIVE)
   availabilityStatus AvailabilityStatus @default(AVAILABLE) @map("availability_status")
@@ -188,28 +160,24 @@ model Faculty {
   lastLogin          DateTime?          @map("last_login")
   createdAt          DateTime           @default(now()) @map("created_at")
   updatedAt          DateTime           @updatedAt @map("updated_at")
-
-  // Relations
-  department         Department @relation("DepartmentFaculty", fields: [departmentId], references: [id])
-  departmentId       String     @map("department_id")
-  institute          Institute  @relation("InstituteFaculty", fields: [instituteId], references: [id])
-  instituteId        String     @map("institute_id")
-  university         University @relation(fields: [universityId], references: [id])
-  universityId       String     @map("university_id")
-  mentorSupervisor   Faculty?   @relation("MentorSupervisor", fields: [mentorSupervisorId], references: [id])
-  mentorSupervisorId String?    @map("mentor_supervisor_id")
-
-  // Inverse relations
-  mentoredFaculty  Faculty[]        @relation("MentorSupervisor")
-  mentoredStudents Student[]
-  hodOfInstitutes  Institute[]      @relation("InstituteHOD")
-  hodOfDepartments Department[]     @relation("DepartmentHOD")
-  createdInvites   Invite[]         @relation("FacultyInviteCreator")
-  crisisAlerts     CrisisAlert[]
-  sessionBookings  SessionBooking[]
-  notifications    Notification[]
-  auditLogs        AuditLog[]       @relation("FacultyAuditLogs")
-  sessions         Session[]
+  departmentId       String             @map("department_id")
+  instituteId        String             @map("institute_id")
+  universityId       String             @map("university_id")
+  mentorSupervisorId String?            @map("mentor_supervisor_id")
+  auditLogs          AuditLog[]         @relation("FacultyAuditLogs")
+  crisisAlerts       CrisisAlert[]
+  hodOfDepartments   Department[]       @relation("DepartmentHOD")
+  department         Department         @relation("DepartmentFaculty", fields: [departmentId], references: [id])
+  institute          Institute          @relation("InstituteFaculty", fields: [instituteId], references: [id])
+  mentorSupervisor   Faculty?           @relation("MentorSupervisor", fields: [mentorSupervisorId], references: [id])
+  mentoredFaculty    Faculty[]          @relation("MentorSupervisor")
+  university         University         @relation(fields: [universityId], references: [id])
+  hodOfInstitutes    Institute[]        @relation("InstituteHOD")
+  createdInvites     Invite[]           @relation("FacultyInviteCreator")
+  notifications      Notification[]
+  sessionBookings    SessionBooking[]
+  sessions           Session[]
+  mentoredStudents   Student[]
 
   @@index([email])
   @@index([instituteId])
@@ -219,50 +187,44 @@ model Faculty {
   @@map("faculty")
 }
 
-// ==================== STUDENT SYSTEM ====================
-
 model Student {
-  id                    String        @id @default(uuid())
+  id                    String           @id @default(uuid())
   name                  String
-  email                 String        @unique
-  passwordHash          String        @map("password_hash")
-  enrollmentId          String        @unique @map("enrollment_id") // Primary login identifier
-  rollNumber            String?       @map("roll_number")
+  email                 String           @unique
+  passwordHash          String           @map("password_hash")
+  enrollmentId          String           @unique @map("enrollment_id")
+  rollNumber            String?          @map("roll_number")
   phone                 String?
-  parentPhone           String?       @map("parent_phone")
-  emergencyContactName  String?       @map("emergency_contact_name")
-  emergencyContactPhone String?       @map("emergency_contact_phone")
-  currentSemester       Int           @map("current_semester")
-  cgpa                  Decimal?      @db.Decimal(3, 2)
-  admissionYear         Int           @map("admission_year")
-  status                StudentStatus @default(ACTIVE)
-  lastLogin             DateTime?     @map("last_login")
-  createdAt             DateTime      @default(now()) @map("created_at")
-  updatedAt             DateTime      @updatedAt @map("updated_at")
-
-  // Relations
-  university   University @relation(fields: [universityId], references: [id])
-  universityId String     @map("university_id")
-  institute    Institute  @relation(fields: [instituteId], references: [id])
-  instituteId  String     @map("institute_id")
-  department   Department @relation(fields: [departmentId], references: [id])
-  departmentId String     @map("department_id")
-  batch        Batch      @relation(fields: [batchId], references: [id])
-  batchId      String     @map("batch_id")
-  mentor       Faculty?   @relation(fields: [mentorId], references: [id])
-  mentorId     String?    @map("mentor_id")
-
-  // Inverse relations
-  locations       Location[]
-  moodCheckIns    MoodCheckIn[]
-  crisisAlerts    CrisisAlert[]
-  chatSessions    ChatSession[]
-  diaryEntries    DiaryEntry[]
-  tasks           Task[]
-  sessionBookings SessionBooking[]
-  notifications   Notification[]
-  auditLogs       AuditLog[]       @relation("StudentAuditLogs")
-  sessions        Session[]
+  parentPhone           String?          @map("parent_phone")
+  emergencyContactName  String?          @map("emergency_contact_name")
+  emergencyContactPhone String?          @map("emergency_contact_phone")
+  currentSemester       Int              @map("current_semester")
+  cgpa                  Decimal?         @db.Decimal(3, 2)
+  admissionYear         Int              @map("admission_year")
+  status                StudentStatus    @default(ACTIVE)
+  lastLogin             DateTime?        @map("last_login")
+  createdAt             DateTime         @default(now()) @map("created_at")
+  updatedAt             DateTime         @updatedAt @map("updated_at")
+  universityId          String           @map("university_id")
+  instituteId           String           @map("institute_id")
+  departmentId          String           @map("department_id")
+  batchId               String           @map("batch_id")
+  mentorId              String?          @map("mentor_id")
+  auditLogs             AuditLog[]       @relation("StudentAuditLogs")
+  chatSessions          ChatSession[]
+  crisisAlerts          CrisisAlert[]
+  diaryEntries          DiaryEntry[]
+  locations             Location[]
+  moodCheckIns          MoodCheckIn[]
+  notifications         Notification[]
+  sessionBookings       SessionBooking[]
+  sessions              Session[]
+  batch                 Batch            @relation(fields: [batchId], references: [id])
+  department            Department       @relation(fields: [departmentId], references: [id])
+  institute             Institute        @relation(fields: [instituteId], references: [id])
+  mentor                Faculty?         @relation(fields: [mentorId], references: [id])
+  university            University       @relation(fields: [universityId], references: [id])
+  tasks                 Task[]
 
   @@index([email])
   @@index([enrollmentId])
@@ -276,7 +238,7 @@ model Student {
 
 model Location {
   id              String       @id @default(uuid())
-  address         String? // Static/permanent address
+  address         String?
   city            String?
   state           String?
   pincode         String?
@@ -289,28 +251,22 @@ model Location {
   lastUpdated     DateTime     @map("last_updated")
   createdAt       DateTime     @default(now()) @map("created_at")
   updatedAt       DateTime     @updatedAt @map("updated_at")
-
-  // Relations
-  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId String  @map("student_id")
+  studentId       String       @map("student_id")
+  student         Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@map("locations")
 }
 
-// ==================== MENTAL HEALTH SYSTEM ====================
-
 model MoodCheckIn {
   id          String   @id @default(uuid())
-  moodScore   Int      @map("mood_score") // 1-7
-  moodLabel   String   @map("mood_label") // Terrible, Bad, Okay, Good, Great, Amazing, Awesome
-  factors     Json? // Object with mood factors: { sleep: 4, energy: 5, stress: 2, social: 4, exercise: 3 }
-  notes       String?  @db.Text
+  moodScore   Int      @map("mood_score")
+  moodLabel   String   @map("mood_label")
+  factors     Json?
+  notes       String?
   checkInDate DateTime @map("check_in_date") @db.Date
   createdAt   DateTime @default(now()) @map("created_at")
-
-  // Relations
-  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId String  @map("student_id")
+  studentId   String   @map("student_id")
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([studentId, checkInDate])
   @@index([checkInDate])
@@ -323,19 +279,17 @@ model CrisisAlert {
   triggerSource   TriggerSource  @map("trigger_source")
   triggerMessage  String?        @map("trigger_message")
   aiAnalysis      String?        @map("ai_analysis")
-  keywords        Json? // Array of keywords
+  keywords        Json?
   status          CrisisStatus   @default(OPEN)
   acknowledgedAt  DateTime?      @map("acknowledged_at")
   resolvedAt      DateTime?      @map("resolved_at")
   resolutionNotes String?        @map("resolution_notes")
   createdAt       DateTime       @default(now()) @map("created_at")
   updatedAt       DateTime       @updatedAt @map("updated_at")
-
-  // Relations
-  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId    String   @map("student_id")
-  assignedTo   Faculty? @relation(fields: [assignedToId], references: [id])
-  assignedToId String?  @map("assigned_to_id")
+  studentId       String         @map("student_id")
+  assignedToId    String?        @map("assigned_to_id")
+  assignedTo      Faculty?       @relation(fields: [assignedToId], references: [id])
+  student         Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([studentId, status])
   @@index([severity, status])
@@ -344,20 +298,16 @@ model CrisisAlert {
 }
 
 model ChatSession {
-  id             String    @id @default(uuid())
-  sessionStart   DateTime  @map("session_start")
-  sessionEnd     DateTime? @map("session_end")
-  messageCount   Int       @default(0) @map("message_count")
-  crisisDetected Boolean   @default(false) @map("crisis_detected")
-  sentimentScore Decimal?  @map("sentiment_score") @db.Decimal(3, 2) // -1 to 1
-  createdAt      DateTime  @default(now()) @map("created_at")
-
-  // Relations
-  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId String  @map("student_id")
-
-  // Inverse relations
-  messages ChatMessage[]
+  id             String        @id @default(uuid())
+  sessionStart   DateTime      @map("session_start")
+  sessionEnd     DateTime?     @map("session_end")
+  messageCount   Int           @default(0) @map("message_count")
+  crisisDetected Boolean       @default(false) @map("crisis_detected")
+  sentimentScore Decimal?      @map("sentiment_score") @db.Decimal(3, 2)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  studentId      String        @map("student_id")
+  messages       ChatMessage[]
+  student        Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@map("chat_sessions")
 }
@@ -366,43 +316,35 @@ model ChatMessage {
   id             String     @id @default(uuid())
   senderType     SenderType @map("sender_type")
   content        String
-  sentimentScore Decimal?   @map("sentiment_score") @db.Decimal(3, 2)
-  crisisKeywords Json?      @map("crisis_keywords") // Array
-  timestamp      DateTime   @default(now())
-
-  // Relations
-  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  sessionId String      @map("session_id")
+  sentimentScore Decimal?    @map("sentiment_score") @db.Decimal(3, 2)
+  crisisKeywords Json?       @map("crisis_keywords")
+  timestamp      DateTime    @default(now())
+  sessionId      String      @map("session_id")
+  session        ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@map("chat_messages")
 }
 
-// ==================== SYSTEM TABLES ====================
-
 model Invite {
-  id         String       @id @default(uuid())
-  email      String
-  token      String       @unique
-  userType   UserType     @map("user_type")
-  roleType   String       @map("role_type") // UNIVERSITY_ADMIN, INSTITUTE_ADMIN, FACULTY, etc.
-  expiresAt  DateTime     @map("expires_at")
-  acceptedAt DateTime?    @map("accepted_at")
-  status     InviteStatus @default(PENDING)
-  createdAt  DateTime     @default(now()) @map("created_at")
-
-  // Relations - who created this invite
-  createdByAdmin     Admin?   @relation("InviteCreator", fields: [createdByAdminId], references: [id])
-  createdByAdminId   String?  @map("created_by_admin_id")
-  createdByFaculty   Faculty? @relation("FacultyInviteCreator", fields: [createdByFacultyId], references: [id])
-  createdByFacultyId String?  @map("created_by_faculty_id")
-
-  // Context relations
-  university   University? @relation(fields: [universityId], references: [id])
-  universityId String?     @map("university_id")
-  institute    Institute?  @relation(fields: [instituteId], references: [id])
-  instituteId  String?     @map("institute_id")
-  department   Department? @relation(fields: [departmentId], references: [id])
-  departmentId String?     @map("department_id")
+  id                 String       @id @default(uuid())
+  email              String
+  token              String       @unique
+  userType           UserType     @map("user_type")
+  roleType           String       @map("role_type")
+  expiresAt          DateTime     @map("expires_at")
+  acceptedAt         DateTime?    @map("accepted_at")
+  status             InviteStatus @default(PENDING)
+  createdAt          DateTime     @default(now()) @map("created_at")
+  createdByAdminId   String?      @map("created_by_admin_id")
+  createdByFacultyId String?      @map("created_by_faculty_id")
+  universityId       String?      @map("university_id")
+  instituteId        String?      @map("institute_id")
+  departmentId       String?      @map("department_id")
+  createdByAdmin     Admin?       @relation("InviteCreator", fields: [createdByAdminId], references: [id])
+  createdByFaculty   Faculty?     @relation("FacultyInviteCreator", fields: [createdByFacultyId], references: [id])
+  department         Department?  @relation(fields: [departmentId], references: [id])
+  institute          Institute?   @relation(fields: [instituteId], references: [id])
+  university         University?  @relation(fields: [universityId], references: [id])
 
   @@map("invites")
 }
@@ -417,14 +359,12 @@ model Session {
   expiresAt DateTime @map("expires_at")
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
-
-  // Polymorphic relations
-  admin     Admin?   @relation(fields: [adminId], references: [id])
   adminId   String?  @map("admin_id")
-  faculty   Faculty? @relation(fields: [facultyId], references: [id])
   facultyId String?  @map("faculty_id")
-  student   Student? @relation(fields: [studentId], references: [id])
   studentId String?  @map("student_id")
+  admin     Admin?   @relation(fields: [adminId], references: [id])
+  faculty   Faculty? @relation(fields: [facultyId], references: [id])
+  student   Student? @relation(fields: [studentId], references: [id])
 
   @@index([token])
   @@index([userId, userType])
@@ -443,22 +383,18 @@ model AuditLog {
   newValues       Json?       @map("new_values")
   ipAddress       String?     @map("ip_address")
   timestamp       DateTime    @default(now())
-
-  // Polymorphic relations for performer
-  admin     Admin?   @relation("AdminAuditLogs", fields: [adminId], references: [id])
-  adminId   String?  @map("admin_id")
-  faculty   Faculty? @relation("FacultyAuditLogs", fields: [facultyId], references: [id])
-  facultyId String?  @map("faculty_id")
-  student   Student? @relation("StudentAuditLogs", fields: [studentId], references: [id])
-  studentId String?  @map("student_id")
-
-  // Context relations
-  university   University? @relation("UniversityAuditLogs", fields: [universityId], references: [id])
-  universityId String?     @map("university_id")
-  institute    Institute?  @relation("InstituteAuditLogs", fields: [instituteId], references: [id])
-  instituteId  String?     @map("institute_id")
-  department   Department? @relation("DepartmentAuditLogs", fields: [departmentId], references: [id])
-  departmentId String?     @map("department_id")
+  adminId         String?     @map("admin_id")
+  facultyId       String?     @map("faculty_id")
+  studentId       String?     @map("student_id")
+  universityId    String?     @map("university_id")
+  instituteId     String?     @map("institute_id")
+  departmentId    String?     @map("department_id")
+  admin           Admin?      @relation("AdminAuditLogs", fields: [adminId], references: [id])
+  department      Department? @relation("DepartmentAuditLogs", fields: [departmentId], references: [id])
+  faculty         Faculty?    @relation("FacultyAuditLogs", fields: [facultyId], references: [id])
+  institute       Institute?  @relation("InstituteAuditLogs", fields: [instituteId], references: [id])
+  student         Student?    @relation("StudentAuditLogs", fields: [studentId], references: [id])
+  university      University? @relation("UniversityAuditLogs", fields: [universityId], references: [id])
 
   @@index([performedById, performedByType])
   @@index([timestamp])
@@ -467,19 +403,17 @@ model AuditLog {
 
 model DiaryEntry {
   id        String   @id @default(uuid())
-  title     String // Auto-generated from date (e.g., "December 2, 2025")
-  content   String   @db.Text
-  mood      String // Mood label from check-in
-  tags      Json? // Array of additional tags
+  title     String
+  content   String
+  mood      String
+  tags      Json?
   wordCount Int      @default(0) @map("word_count")
   charCount Int      @default(0) @map("char_count")
   entryDate DateTime @default(now()) @map("entry_date")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId String  @map("student_id")
+  studentId String   @map("student_id")
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([studentId, entryDate])
   @@index([entryDate])
@@ -489,19 +423,17 @@ model DiaryEntry {
 model Task {
   id          String    @id @default(uuid())
   title       String
-  description String?   @db.Text
-  priority    String // low, medium, high, urgent
-  category    String // personal, academic, health, work, other
-  status      String // pending, in-progress, completed
+  description String?
+  priority    String
+  category    String
+  status      String
   dueDate     DateTime? @map("due_date")
   completed   Boolean   @default(false)
   completedAt DateTime? @map("completed_at")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
-
-  // Relations
-  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId String  @map("student_id")
+  studentId   String    @map("student_id")
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([studentId, completed])
   @@index([studentId, dueDate])
@@ -509,36 +441,31 @@ model Task {
   @@map("tasks")
 }
 
-// ==================== SESSION BOOKING SYSTEM ====================
-
 model SessionBooking {
-  id              String        @id @default(uuid())
-  sessionType     SessionType   @map("session_type")
+  id              String         @id @default(uuid())
+  sessionType     SessionType    @map("session_type")
   title           String
-  description     String?       @db.Text
-  scheduledDate   DateTime      @map("scheduled_date")
-  scheduledTime   String        @map("scheduled_time") // Time in HH:MM format
-  duration        Int           @default(30) // Duration in minutes
-  status          SessionStatus @default(PENDING)
-  meetingLink     String?       @map("meeting_link")
+  description     String?
+  scheduledDate   DateTime       @map("scheduled_date")
+  scheduledTime   String         @map("scheduled_time")
+  duration        Int            @default(30)
+  status          SessionStatus  @default(PENDING)
+  meetingLink     String?        @map("meeting_link")
+  googleEventId   String?        @map("google_event_id")
   location        String?
-  studentNotes    String?       @map("student_notes") @db.Text
-  facultyNotes    String?       @map("faculty_notes") @db.Text
-  rejectionReason String?       @map("rejection_reason") @db.Text
-  approvedAt      DateTime?     @map("approved_at")
-  rejectedAt      DateTime?     @map("rejected_at")
-  completedAt     DateTime?     @map("completed_at")
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
-
-  // Relations
-  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId String  @map("student_id")
-  faculty   Faculty @relation(fields: [facultyId], references: [id], onDelete: Cascade)
-  facultyId String  @map("faculty_id")
-
-  // Inverse relations
-  notifications Notification[]
+  studentNotes    String?        @map("student_notes")
+  facultyNotes    String?        @map("faculty_notes")
+  rejectionReason String?        @map("rejection_reason")
+  approvedAt      DateTime?      @map("approved_at")
+  rejectedAt      DateTime?      @map("rejected_at")
+  completedAt     DateTime?      @map("completed_at")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  studentId       String         @map("student_id")
+  facultyId       String         @map("faculty_id")
+  notifications   Notification[]
+  faculty         Faculty        @relation(fields: [facultyId], references: [id], onDelete: Cascade)
+  student         Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([studentId, status])
   @@index([facultyId, status])
@@ -548,29 +475,25 @@ model SessionBooking {
 }
 
 model Notification {
-  id            String           @id @default(uuid())
-  title         String
-  message       String           @db.Text
-  type          NotificationType
-  isRead        Boolean          @default(false) @map("is_read")
-  relatedId     String?          @map("related_id") // ID of related entity (e.g., session booking)
-  relatedType   String?          @map("related_type") // Type of related entity (e.g., "SESSION_BOOKING")
-  actionUrl     String?          @map("action_url")
-  recipientType UserType         @map("recipient_type")
-  createdAt     DateTime         @default(now()) @map("created_at")
-  readAt        DateTime?        @map("read_at")
-
-  // Polymorphic relations for recipient
-  studentRecipient   Student? @relation(fields: [studentRecipientId], references: [id], onDelete: Cascade)
-  studentRecipientId String?  @map("student_recipient_id")
-  facultyRecipient   Faculty? @relation(fields: [facultyRecipientId], references: [id], onDelete: Cascade)
-  facultyRecipientId String?  @map("faculty_recipient_id")
-  adminRecipient     Admin?   @relation(fields: [adminRecipientId], references: [id], onDelete: Cascade)
-  adminRecipientId   String?  @map("admin_recipient_id")
-
-  // Optional relation to session booking
-  sessionBooking   SessionBooking? @relation(fields: [sessionBookingId], references: [id], onDelete: Cascade)
-  sessionBookingId String?         @map("session_booking_id")
+  id                 String           @id @default(uuid())
+  title              String
+  message            String
+  type               NotificationType
+  isRead             Boolean          @default(false) @map("is_read")
+  relatedId          String?          @map("related_id")
+  relatedType        String?          @map("related_type")
+  actionUrl          String?          @map("action_url")
+  recipientType      UserType         @map("recipient_type")
+  createdAt          DateTime         @default(now()) @map("created_at")
+  readAt             DateTime?        @map("read_at")
+  studentRecipientId String?          @map("student_recipient_id")
+  facultyRecipientId String?          @map("faculty_recipient_id")
+  adminRecipientId   String?          @map("admin_recipient_id")
+  sessionBookingId   String?          @map("session_booking_id")
+  adminRecipient     Admin?           @relation(fields: [adminRecipientId], references: [id], onDelete: Cascade)
+  facultyRecipient   Faculty?         @relation(fields: [facultyRecipientId], references: [id], onDelete: Cascade)
+  sessionBooking     SessionBooking?  @relation(fields: [sessionBookingId], references: [id], onDelete: Cascade)
+  studentRecipient   Student?         @relation(fields: [studentRecipientId], references: [id], onDelete: Cascade)
 
   @@index([studentRecipientId, isRead])
   @@index([facultyRecipientId, isRead])
@@ -579,8 +502,6 @@ model Notification {
   @@index([createdAt])
   @@map("notifications")
 }
-
-// ==================== ENUMS ====================
 
 enum AdminType {
   SUPER_ADMIN
@@ -716,3 +637,4 @@ enum NotificationType {
   CRISIS_ALERT
   GENERAL
 }
+
