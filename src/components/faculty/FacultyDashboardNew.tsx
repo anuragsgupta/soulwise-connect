@@ -291,11 +291,10 @@ export default function FacultyDashboardNew() {
 
       {/* Tabbed Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="students">Students</TabsTrigger>
           <TabsTrigger value="sessions">Sessions</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -433,10 +432,6 @@ export default function FacultyDashboardNew() {
 
         <TabsContent value="sessions">
           <ManageSessions onSessionUpdate={loadAnalytics} />
-        </TabsContent>
-
-        <TabsContent value="notifications">
-          <NotificationsPage />
         </TabsContent>
       </Tabs>
 

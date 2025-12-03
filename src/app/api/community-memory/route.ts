@@ -4,8 +4,13 @@ import {
   createCommunityPost,
   createCommunityReply,
   getCommunityItems,
+  getCommunityItemsByInstitute,
   flagCommunityItem,
   hideCommunityItem,
+  updateCommunityPost,
+  updateCommunityReply,
+  deleteCommunityPost,
+  deleteCommunityReply,
 } from "@/lib/dynamodb/communityMemory";
 import {
   CommunityPostInput,
@@ -27,6 +32,7 @@ function mapPostToDTO(post: CommunityPostDB, includeAuthorId = false) {
     title: post.title,
     content: post.content,
     author: post.isAnonymous ? "Anonymous User" : post.author, // ✅ Mask author if anonymous
+    authorId: post.authorId, // ✅ Always include for frontend ownership checks
     category: post.category,
     likes: post.likes,
     repliesCount: post.repliesCount,
@@ -35,9 +41,8 @@ function mapPostToDTO(post: CommunityPostDB, includeAuthorId = false) {
     createdAt: post.createdAt,
   };
 
-  // ⚠️ ONLY include authorId for admin requests
+  // ⚠️ ONLY include sensitive admin data for admin requests
   if (includeAuthorId) {
-    dto.authorId = post.authorId;
     dto.ipAddress = post.ipAddress;
     dto.userAgent = post.userAgent;
     dto.isFlagged = post.isFlagged;
@@ -54,15 +59,15 @@ function mapReplyToDTO(reply: CommunityReplyDB, includeAuthorId = false) {
     postId: reply.postId,
     content: reply.content,
     author: reply.isAnonymous ? "Anonymous User" : reply.author, // ✅ Mask author if anonymous
+    authorId: reply.authorId, // ✅ Always include for frontend ownership checks
     likes: reply.likes,
     isAnonymous: reply.isAnonymous,
     timestamp: reply.createdAt,
     createdAt: reply.createdAt,
   };
 
-  // ⚠️ ONLY include authorId for admin requests
+  // ⚠️ ONLY include sensitive admin data for admin requests
   if (includeAuthorId) {
-    dto.authorId = reply.authorId;
     dto.ipAddress = reply.ipAddress;
     dto.userAgent = reply.userAgent;
     dto.isFlagged = reply.isFlagged;
@@ -80,8 +85,16 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get("limit") || "50", 10);
+    const instituteId = searchParams.get("instituteId");
 
-    const items = await getCommunityItems(limit);
+    let items;
+    
+    // Filter by institute if provided
+    if (instituteId) {
+      items = await getCommunityItemsByInstitute(instituteId, limit);
+    } else {
+      items = await getCommunityItems(limit);
+    }
 
     const posts: CommunityPostDB[] = [];
     const replies: CommunityReplyDB[] = [];
@@ -130,12 +143,13 @@ export async function POST(request: NextRequest) {
         !payload.title?.trim() ||
         !payload.content?.trim() ||
         !payload.authorId ||
-        !payload.author
+        !payload.author ||
+        !payload.instituteId
       ) {
         return NextResponse.json(
           {
             error:
-              "title, content, authorId and author are required to create a post",
+              "title, content, authorId, author and instituteId are required to create a post",
           },
           { status: 400 }
         );
@@ -221,12 +235,13 @@ export async function POST(request: NextRequest) {
         !payload.postId ||
         !payload.content?.trim() ||
         !payload.authorId ||
-        !payload.author
+        !payload.author ||
+        !payload.instituteId
       ) {
         return NextResponse.json(
           {
             error:
-              "postId, content, authorId and author are required to create a reply",
+              "postId, content, authorId, author and instituteId are required to create a reply",
           },
           { status: 400 }
         );
@@ -305,6 +320,160 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error: "Failed to save community data",
+        details: error?.message,
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// ────────────────────────────
+// PATCH: update post or reply
+// ────────────────────────────
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { type, id, authorId } = body as { 
+      type?: "post" | "reply"; 
+      id: string; 
+      authorId: string; 
+    };
+
+    if (!id || !authorId) {
+      return NextResponse.json(
+        { error: "id and authorId are required" },
+        { status: 400 }
+      );
+    }
+
+    if (type === "post") {
+      const { title, content, category } = body as {
+        title?: string;
+        content?: string;
+        category?: string;
+      };
+
+      if (!title && !content && !category) {
+        return NextResponse.json(
+          { error: "At least one field (title, content, category) must be provided for update" },
+          { status: 400 }
+        );
+      }
+
+      const updated = await updateCommunityPost(id, authorId, { title, content, category });
+
+      if (!updated) {
+        return NextResponse.json(
+          { error: "Failed to update post. Either post not found or unauthorized." },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        post: mapPostToDTO(updated, false),
+      });
+    }
+
+    if (type === "reply") {
+      const { content } = body as { content: string };
+
+      if (!content?.trim()) {
+        return NextResponse.json(
+          { error: "content is required to update a reply" },
+          { status: 400 }
+        );
+      }
+
+      const updated = await updateCommunityReply(id, authorId, content);
+
+      if (!updated) {
+        return NextResponse.json(
+          { error: "Failed to update reply. Either reply not found or unauthorized." },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        reply: mapReplyToDTO(updated, false),
+      });
+    }
+
+    return NextResponse.json(
+      { error: "Invalid type. Use 'post' or 'reply'." },
+      { status: 400 }
+    );
+  } catch (error: any) {
+    console.error("PATCH /api/community-memory error:", error);
+    return NextResponse.json(
+      {
+        error: "Failed to update community data",
+        details: error?.message,
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// ────────────────────────────
+// DELETE: delete post or reply
+// ────────────────────────────
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const type = searchParams.get("type") as "post" | "reply" | null;
+    const id = searchParams.get("id");
+    const authorId = searchParams.get("authorId");
+
+    if (!id || !authorId || !type) {
+      return NextResponse.json(
+        { error: "type, id, and authorId are required" },
+        { status: 400 }
+      );
+    }
+
+    if (type === "post") {
+      const success = await deleteCommunityPost(id, authorId);
+
+      if (!success) {
+        return NextResponse.json(
+          { error: "Failed to delete post. Either post not found or unauthorized." },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "Post deleted successfully",
+      });
+    }
+
+    if (type === "reply") {
+      const success = await deleteCommunityReply(id, authorId);
+
+      if (!success) {
+        return NextResponse.json(
+          { error: "Failed to delete reply. Either reply not found or unauthorized." },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "Reply deleted successfully",
+      });
+    }
+
+    return NextResponse.json(
+      { error: "Invalid type. Use 'post' or 'reply'." },
+      { status: 400 }
+    );
+  } catch (error: any) {
+    console.error("DELETE /api/community-memory error:", error);
+    return NextResponse.json(
+      {
+        error: "Failed to delete community data",
         details: error?.message,
       },
       { status: 500 }

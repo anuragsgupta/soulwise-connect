@@ -240,7 +240,14 @@ export default function NotificationBell() {
             <DropdownMenuSeparator />
             <DropdownMenuItem 
               className="text-center justify-center cursor-pointer"
-              onClick={() => router.push('/notifications')}
+              onClick={() => {
+                // Trigger navigation to notifications tab in dashboard
+                window.dispatchEvent(
+                  new CustomEvent('dashboard:navigate', {
+                    detail: { tab: 'notifications' }
+                  })
+                );
+              }}
             >
               View all notifications
             </DropdownMenuItem>
