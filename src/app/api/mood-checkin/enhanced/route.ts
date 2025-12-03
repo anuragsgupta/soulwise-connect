@@ -21,13 +21,30 @@ function createResponse<T>(success: boolean, message: string, data?: T): ApiResp
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { studentId, moodLevel, emotions, moodFactors, activities, company, journal } = body;
+    console.log('Received mood check-in request:', JSON.stringify(body, null, 2));
+    
+    const { studentId, moodLevel, moodFactors, journal } = body;
+    
+    console.log('Parsed data:', { studentId, moodLevel, moodFactors, journal });
 
     // Validation
     if (!studentId) {
       return NextResponse.json(
         createResponse(false, 'Student ID is required'),
         { status: 400 }
+      );
+    }
+
+    // Verify student exists
+    const student = await prisma.student.findUnique({
+      where: { id: studentId }
+    });
+
+    if (!student) {
+      console.error('Student not found:', studentId);
+      return NextResponse.json(
+        createResponse(false, 'Student not found'),
+        { status: 404 }
       );
     }
 
@@ -46,69 +63,45 @@ export async function POST(request: NextRequest) {
     const today = new Date();
     const checkInDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-    // Perform sentiment analysis if journal text exists
-    let sentimentScore = null;
-    if (journal && journal.trim().length > 0) {
-      try {
-        const sentimentResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/analyze-sentiment`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            text: journal,
-            emotions: emotions || [],
-            moodLevel
-          })
-        });
-        
-        if (sentimentResponse.ok) {
-          const sentimentResult = await sentimentResponse.json();
-          if (sentimentResult.success && sentimentResult.data) {
-            sentimentScore = sentimentResult.data.score;
-          }
-        }
-      } catch (error) {
-        console.error('Sentiment analysis failed:', error);
-        // Continue without sentiment score
-      }
-    }
-
     // Check if student already has a mood check-in for today
+    console.log('Checking for existing check-in with:', { studentId, checkInDate });
     const existingCheckIn = await prisma.moodCheckIn.findFirst({
       where: {
         studentId,
         checkInDate
       }
     });
+    console.log('Existing check-in:', existingCheckIn);
 
     let moodCheckIn;
 
     if (existingCheckIn) {
       // Update existing check-in
+      console.log('Updating existing check-in with ID:', existingCheckIn.id);
       moodCheckIn = await prisma.moodCheckIn.update({
         where: { id: existingCheckIn.id },
         data: {
           moodScore: moodLevel,
           moodLabel,
-          factors: moodFactors || [],
-          emotions: emotions || [],
-          activities: activities || [],
-          company: company || [],
-          sentiment: sentimentScore,
+          factors: moodFactors || {},
           notes: journal || null
         }
       });
     } else {
       // Create new check-in
+      console.log('Creating new check-in with data:', {
+        studentId,
+        moodScore: moodLevel,
+        moodLabel,
+        factors: moodFactors || {},
+        checkInDate
+      });
       moodCheckIn = await prisma.moodCheckIn.create({
         data: {
           studentId,
           moodScore: moodLevel,
           moodLabel,
-          factors: moodFactors || [],
-          emotions: emotions || [],
-          activities: activities || [],
-          company: company || [],
-          sentiment: sentimentScore,
+          factors: moodFactors || {},
           notes: journal || null,
           checkInDate
         }
@@ -148,8 +141,6 @@ export async function POST(request: NextRequest) {
           data: {
             content: journal,
             mood: moodLabel,
-            sentiment: sentimentScore,
-            emotions: emotions || [],
             wordCount,
             charCount
           }
@@ -162,8 +153,6 @@ export async function POST(request: NextRequest) {
             title: diaryTitle,
             content: journal,
             mood: moodLabel,
-            sentiment: sentimentScore,
-            emotions: emotions || [],
             wordCount,
             charCount,
             entryDate: today
@@ -183,8 +172,13 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Enhanced mood check-in error:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     return NextResponse.json(
-      createResponse(false, 'Internal server error'),
+      createResponse(false, `Internal server error: ${error instanceof Error ? error.message : 'Unknown error'}`),
       { status: 500 }
     );
   } finally {

@@ -77,11 +77,11 @@ export default function JournalScreen({ onDone, onBack, initialJournal = "" }: J
 
       {/* Progress Indicator */}
       <div className="flex justify-center gap-2 mt-4 flex-shrink-0">
-        {[1, 2, 3, 4, 5].map((step) => (
+        {[1, 2, 3].map((step) => (
           <div
             key={step}
             className={`h-2 rounded-full transition-all ${
-              step === 5 ? 'w-8 bg-gray-800' : 'w-2 bg-gray-300'
+              step === 3 ? 'w-8 bg-teal-500' : 'w-8 bg-gray-300'
             }`}
           />
         ))}
