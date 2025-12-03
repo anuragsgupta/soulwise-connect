@@ -59,6 +59,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   const [activeTab, setActiveTab] = useState<DashboardTab>('dashboard');
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [wellnessScore, setWellnessScore] = useState(15);
+  const [hasTodayMoodCheckIn, setHasTodayMoodCheckIn] = useState<boolean | null>(null);
   const currentSemester = (user as { currentSemester?: string } | null)?.currentSemester;
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
@@ -68,6 +69,35 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   } | null>(null);
   const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt' | 'unknown'>('unknown');
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+
+  // Check if today's mood check-in is completed
+  useEffect(() => {
+    const checkTodayMoodCheckIn = async () => {
+      if (!user?.id || user.userType !== 'STUDENT') return;
+
+      try {
+        const response = await fetch(`/api/mood-checkin/enhanced?studentId=${user.id}&days=1`);
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          const hasCheckedIn = !!data.data.todayCheckIn;
+          setHasTodayMoodCheckIn(hasCheckedIn);
+          
+          // Directly redirect to mood check-in if not completed
+          if (!hasCheckedIn) {
+            setTimeout(() => {
+              setActiveTab('mood');
+            }, 500);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking mood check-in:', error);
+        setHasTodayMoodCheckIn(true); // Don't block access on error
+      }
+    };
+
+    checkTodayMoodCheckIn();
+  }, [user]);
 
   // Location access on component mount (student login)
   useEffect(() => {

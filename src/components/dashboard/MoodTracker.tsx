@@ -69,6 +69,13 @@ const MoodTracker = ({ onScoreUpdate }: MoodTrackerProps) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Automatically show enhanced flow if no check-in today
+  useEffect(() => {
+    if (!isLoading && !todayCheckIn && user && user.userType === 'STUDENT') {
+      setShowEnhancedFlow(true);
+    }
+  }, [isLoading, todayCheckIn, user]);
+
   const loadMoodData = async () => {
     if (!user?.id || user.userType !== 'STUDENT') {
       console.warn('Student authentication required for mood tracking');
