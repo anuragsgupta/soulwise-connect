@@ -1,4 +1,4 @@
-import { User, Bot, Compass } from "lucide-react";
+import { User, Bot, Compass, CheckCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import FormattedMessage from "@/components/ui/formatted-message";
@@ -50,14 +50,12 @@ const ChatMessages = ({ messages, isTyping, messagesEndRef, onQuickReply, onReso
         key={message.id}
         className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}
       >
-        <div className={`flex items-end space-x-2 max-w-[75%] ${
-          message.sender === 'user' ? 'flex-row-reverse space-x-reverse' : ''
-        }`}>
-          <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
-            message.sender === 'user'
+        <div className={`flex items-end space-x-2 max-w-[75%] ${message.sender === 'user' ? 'flex-row-reverse space-x-reverse' : ''
+          }`}>
+          <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${message.sender === 'user'
               ? 'bg-gradient-to-br from-teal-500 to-teal-600'
               : 'bg-gradient-to-br from-orange-400 to-orange-500'
-          }`}>
+            }`}>
             {message.sender === 'user' ? (
               <User className="w-3.5 h-3.5 text-white" />
             ) : (
@@ -66,17 +64,15 @@ const ChatMessages = ({ messages, isTyping, messagesEndRef, onQuickReply, onReso
           </div>
 
           <div className="flex flex-col">
-            <div className={`relative rounded-lg px-3 py-2 shadow-sm ${
-              message.sender === 'user'
+            <div className={`relative rounded-lg px-3 py-2 shadow-sm ${message.sender === 'user'
                 ? 'bg-teal-600 text-white rounded-br-none'
                 : 'bg-white text-gray-800 rounded-bl-none border border-gray-200'
-            }`}>
+              }`}>
               <div
-                className={`absolute bottom-0 w-3 h-3 ${
-                  message.sender === 'user'
+                className={`absolute bottom-0 w-3 h-3 ${message.sender === 'user'
                     ? 'right-0 -mr-1.5 bg-teal-600'
                     : 'left-0 -ml-1.5 bg-white border-l border-b border-gray-200'
-                }`}
+                  }`}
                 style={{
                   clipPath:
                     message.sender === 'user'
@@ -97,26 +93,24 @@ const ChatMessages = ({ messages, isTyping, messagesEndRef, onQuickReply, onReso
               {message.type && (
                 <Badge
                   variant="secondary"
-                  className={`mt-1.5 text-xs ${
-                    message.type === 'warning'
+                  className={`mt-1.5 text-xs ${message.type === 'warning'
                       ? 'bg-red-100 text-red-800'
                       : message.type === 'suggestion'
-                      ? 'bg-blue-100 text-blue-800'
-                      : 'bg-green-100 text-green-800'
-                  }`}
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-green-100 text-green-800'
+                    }`}
                 >
                   {message.type === 'warning'
                     ? '⚠️ Important'
                     : message.type === 'suggestion'
-                    ? '💡 Suggestion'
-                    : '📚 Resource'}
+                      ? '💡 Suggestion'
+                      : '📚 Resource'}
                 </Badge>
               )}
 
               <div
-                className={`mt-1 flex items-center justify-end space-x-1 ${
-                  message.sender === 'user' ? 'text-teal-100' : 'text-gray-500'
-                }`}
+                className={`mt-1 flex items-center justify-end space-x-1 ${message.sender === 'user' ? 'text-teal-100' : 'text-gray-500'
+                  }`}
               >
                 <span className="text-[10px] leading-none">
                   {message.timestamp.toLocaleTimeString([], {
@@ -125,15 +119,7 @@ const ChatMessages = ({ messages, isTyping, messagesEndRef, onQuickReply, onReso
                   })}
                 </span>
                 {message.sender === 'user' && (
-                  <svg className="h-3 w-3 text-teal-100" viewBox="0 0 16 15" fill="none">
-                    <path
-                      d="M15 1L5.5 10.5L1 6"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  <CheckCheck />
                 )}
               </div>
             </div>
@@ -181,15 +167,15 @@ const ChatMessages = ({ messages, isTyping, messagesEndRef, onQuickReply, onReso
                             action.variant === 'secondary'
                               ? 'outline'
                               : action.variant === 'ghost'
-                              ? 'ghost'
-                              : 'default'
+                                ? 'ghost'
+                                : 'default'
                           }
                           className={
                             action.variant === 'ghost'
                               ? 'text-slate-600'
                               : action.variant === 'secondary'
-                              ? 'border-teal-200 text-teal-700 hover:bg-teal-50'
-                              : 'bg-teal-600 text-white hover:bg-teal-700'
+                                ? 'border-teal-200 text-teal-700 hover:bg-teal-50'
+                                : 'bg-teal-600 text-white hover:bg-teal-700'
                           }
                           onClick={() => onResourceAction(message.id, action)}
                         >

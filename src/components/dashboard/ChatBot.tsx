@@ -19,7 +19,9 @@ import {
   RefreshCw,
   MapPin,
   Navigation,
-  UserCircle
+  UserCircle,
+  Square, // Added for Stop button
+  CheckCheck // Added for context
 } from "lucide-react";
 
 // Lazy load Spline component
@@ -332,7 +334,6 @@ interface ProcessMessageOptions {
   origin?: ProcessMessageOrigin;
 }
 
-
 const ChatBot = () => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -354,6 +355,10 @@ const ChatBot = () => {
   const [reducedMotion, setReducedMotion] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // REFS FOR STOP FUNCTIONALITY
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize chat storage and load existing messages
   useEffect(() => {
@@ -380,6 +385,7 @@ const ChatBot = () => {
               sender: msg.role === 'user' ? 'user' : 'bot',
               timestamp: new Date(msg.created_at),
               type: msg.risk_level === 'severe' || msg.risk_level === 'mild' ? 'warning' : undefined,
+              status: msg.role === 'user' ? 'read' : undefined // Historical messages are read
             }));
             setMessages(loadedMessages);
             // Scroll to bottom after messages load
@@ -591,7 +597,7 @@ const ChatBot = () => {
           content: `📍 **My Current Location**\n\n${userLocation.address || `Coordinates: ${userLocation.latitude.toFixed(4)}, ${userLocation.longitude.toFixed(4)}`}\n\n*Shared at ${new Date().toLocaleTimeString()}*`,
           sender: 'user',
           timestamp: new Date(),
-          type: 'resource'
+          type: 'resource',
         };
 
         setMessages(prev => [...prev, locationMessage]);
@@ -610,6 +616,9 @@ const ChatBot = () => {
             locationOptions.quickReplies,
             locationOptions.resourceCard
           );
+          
+          // Mark as read before replying
+          setMessages(prev => prev.map(m => m.id === locationMessage.id ? { ...m, status: 'read' } : m));
 
           setMessages(prev => [...prev, ...locationResponses]);
           
@@ -662,8 +671,6 @@ const ChatBot = () => {
 
     mediaQuery.addEventListener('change', handleChange);
     
-    
-
     return () => {
       mediaQuery.removeEventListener('change', handleChange);
     };
@@ -701,7 +708,20 @@ const ChatBot = () => {
     return () => clearTimeout(timer);
   }, [messages, isTyping]);
 
-  const generateBotResponse = async (userMessage: string): Promise<Message[]> => {
+  // FUNCTION TO HANDLE STOPPING GENERATION
+  const handleStopGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
+    setIsTyping(false);
+  };
+
+  const generateBotResponse = async (userMessage: string, signal?: AbortSignal): Promise<Message[]> => {
     try {
       // Call our enhanced chatbot API route with crisis detection
       const response = await fetch('/api/chatbot', {
@@ -714,6 +734,7 @@ const ChatBot = () => {
           sessionId: sessionId,
           userId: sessionId // Pass userId for DynamoDB tracking
         }),
+        signal: signal, // Pass abort signal
       });
 
       if (response.ok) {
@@ -752,8 +773,12 @@ const ChatBot = () => {
           );
         }
       }
-    } catch (error) {
-      console.error('Chatbot API error:', error);
+    } catch (error: any) {
+        if (error.name === 'AbortError') {
+            console.log('Fetch aborted by user');
+            return []; // Return empty if aborted
+        }
+        console.error('Chatbot API error:', error);
     }
 
     // Enhanced fallback responses if API fails
@@ -908,6 +933,13 @@ const ChatBot = () => {
     const trimmedMessage = messageContent.trim();
     if (!trimmedMessage) return;
 
+    // Reset abort controller for new request
+    if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     const userMessage: Message = {
       id: Date.now().toString(),
       content: trimmedMessage,
@@ -920,20 +952,29 @@ const ChatBot = () => {
 
     setTimeout(() => scrollToBottom(), 50);
 
-    const shouldShowSendToast = options.showSendToast ?? true;
-    if (shouldShowSendToast) {
-      toast({
-        title: options.origin === 'quick-reply' ? 'Quick reply sent' : 'Message sent',
-        description:
-          options.origin === 'quick-reply'
-            ? 'Sending your response to Mann Mitra...'
-            : 'Your message has been received. Our AI is thinking...',
-        duration: 2000,
-      });
-    }
+    // Using ref for timeout so we can clear it on stop
+    typingTimeoutRef.current = setTimeout(async () => {
+      
+      // First, mark message as 'sent' (single tick) after a brief delay
+      setTimeout(() => {
+        setMessages(prev => prev.map(msg => 
+          msg.id === userMessage.id ? { ...msg, status: 'sent' } : msg
+        ));
+      }, 300);
 
-    setTimeout(async () => {
-      const botResponses = await generateBotResponse(trimmedMessage);
+      const botResponses = await generateBotResponse(trimmedMessage, controller.signal);
+      
+      // If no responses (aborted), do nothing
+      if (!botResponses || botResponses.length === 0) {
+        setIsTyping(false);
+        return;
+      }
+
+      // Mark user message as 'read' (double tick) when bot response is received
+      setMessages(prev => prev.map(msg => 
+        msg.id === userMessage.id ? { ...msg, status: 'read' } : msg
+      ));
+
       const responsesToUse = botResponses.length
         ? botResponses
         : buildFriendlyMessages({
@@ -945,6 +986,7 @@ const ChatBot = () => {
 
       setMessages((prev) => [...prev, ...responsesToUse]);
       setIsTyping(false);
+      abortControllerRef.current = null;
 
       try {
         await fetch('/api/chat-memory', {
@@ -972,21 +1014,7 @@ const ChatBot = () => {
       }
 
       setTimeout(() => scrollToBottom(), 100);
-
-      const shouldShowResponseToast = options.showResponseToast ?? true;
-      if (shouldShowResponseToast) {
-        toast({
-          title: 'AI Response Ready',
-          description: 'Your mental health companion has responded.',
-          duration: 3000,
-        });
-      } else if (options.origin === 'quick-reply') {
-        toast({
-          title: 'Response ready',
-          description: 'Mann Mitra replied to your quick response.',
-          duration: 2500,
-        });
-      }
+      
     }, 1200);
   };
 
@@ -1313,7 +1341,22 @@ const ChatBot = () => {
                   )}
 
                   {/* Message Input Area - WhatsApp Style */}
-                  <div className="p-3 bg-gray-50 border-t border-gray-200 flex-shrink-0">
+                  <div className="p-3 bg-gray-50 border-t border-gray-200 flex-shrink-0 relative">
+                     {/* STOP BUTTON - Shows when AI is typing */}
+                     {isTyping && (
+                        <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 z-20">
+                            <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={handleStopGeneration}
+                            className="shadow-lg bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-full h-8 px-4 text-xs font-medium animate-in fade-in slide-in-from-bottom-2"
+                            >
+                            <Square className="w-3 h-3 mr-1.5 fill-current" />
+                            Stop Generating
+                            </Button>
+                        </div>
+                    )}
+                    
                     <ChatInput
                       inputMessage={inputMessage}
                       setInputMessage={setInputMessage}
