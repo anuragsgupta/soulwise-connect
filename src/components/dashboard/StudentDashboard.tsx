@@ -45,6 +45,7 @@ import CalendarView from "./CalendarView";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import NotificationsPage from "@/components/notifications/NotificationsPage";
 import BookSession from "@/components/sessions/BookSession";
+import WellnessScoreWidget from "./WellnessScoreWidget";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface StudentDashboardProps {
@@ -381,10 +382,17 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
     },
     {
       title: "PHQ-9 Assessment",
-      description: "Complete mental health survey",
+      description: "Depression screening survey",
       icon: ClipboardCheck,
       color: "from-purple-500 to-pink-500",
       action: () => window.location.href = `/phq9-survey?studentId=${user?.id || 'unknown'}`
+    },
+    {
+      title: "GAD-7 Assessment",
+      description: "Anxiety screening survey",
+      icon: Brain,
+      color: "from-green-500 to-blue-500",
+      action: () => window.location.href = `/gad7-survey?studentId=${user?.id || 'unknown'}`
     },
     {
       title: "AI Support Chat",
@@ -516,76 +524,16 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/8 via-purple-500/8 to-pink-500/8" />
               <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-3xl" />
               <CardHeader className="pb-6 relative">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-in fade-in slide-in-from-bottom-3 duration-700">
-                      Welcome back, {user?.name || 'Student'}! 👋
-                    </CardTitle>
-                    <CardDescription className="text-base md:text-lg mt-3 text-gray-600 font-medium animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: '100ms' }}>
-                      How are you feeling today? Let&apos;s check in on your wellness journey.
-                    </CardDescription>
-                    {user?.rollNumber && (
-                      <div className="mt-2 flex items-center text-sm text-muted-foreground">
-                        <ClipboardCheck className="w-4 h-4 mr-1 text-blue-600" />
-                        <span>Roll Number: {user.rollNumber}</span>
-                        {user.batch?.name && (
-                          <span className="ml-4">
-                            <Users className="w-4 h-4 mr-1 inline text-green-600" />
-                            Batch: {user.batch.name}
-                          </span>
-                        )}
-                        {currentSemester && (
-                          <span className="ml-4">
-                            <Calendar className="w-4 h-4 mr-1 inline text-orange-600" />
-                            Semester: {currentSemester}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {(user?.department?.name || user?.institute?.name) && (
-                      <div className="mt-1 flex items-center text-sm text-muted-foreground">
-                        <BookOpen className="w-4 h-4 mr-1 text-purple-600" />
-                        {user.department?.name && <span>Department: {user.department.name}</span>}
-                        {user.institute?.name && (
-                          <span className={user.department?.name ? "ml-4" : ""}>
-                            <Heart className="w-4 h-4 mr-1 inline text-red-600" />
-                            Institute: {user.institute.name}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {userLocation && (
-                      <div className="mt-2 flex items-center text-sm text-muted-foreground">
-                        <MapPin className="w-4 h-4 mr-1 text-green-600" />
-                        <span>Current location: {userLocation.address || `${userLocation.latitude.toFixed(4)}, ${userLocation.longitude.toFixed(4)}`}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <div className="relative">
-                      {/* Circular wellness indicator */}
-                      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-green-100 to-emerald-100 flex items-center justify-center shadow-lg relative animate-pulse" style={{ animationDuration: '3s' }}>
-                        <div className="w-20 h-20 rounded-full bg-white flex flex-col items-center justify-center">
-                          <span className="text-2xl font-bold bg-gradient-to-br from-green-600 to-emerald-600 bg-clip-text text-transparent">{wellnessScore}%</span>
-                        </div>
-                        {/* Pulse ring */}
-                        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-green-400 to-emerald-400 opacity-20 animate-ping" style={{ animationDuration: '2s' }} />
-                      </div>
-                    </div>
-                    <div className="text-xs text-gray-500 font-semibold mt-2 uppercase tracking-wider">Wellness Score</div>
-                    <div className="text-xs text-gray-400 mt-0.5">Keep it up! 🌟</div>
-                  </div>
-                </div>
-                <div className="mt-6 relative">
-                  <Progress value={wellnessScore} className="h-3 bg-gray-100 shadow-inner" />
-                  <p className="text-sm text-gray-600 mt-3 font-medium">
-                    {wellnessScore >= 80 ? "🎉 Great job maintaining your mental health!" :
-                     wellnessScore >= 60 ? "💪 You&apos;re doing well, keep it up!" :
-                     "🌱 Let&apos;s work together to improve your wellness."}
-                  </p>
-                </div>
+                <CardTitle className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-in fade-in slide-in-from-bottom-3 duration-700">
+                  Welcome back, {user?.name || 'Student'}! 👋
+                </CardTitle>
               </CardHeader>
             </Card>
+
+            {/* Wellness Score Widget */}
+            {user?.id && (
+              <WellnessScoreWidget studentId={user.id} showBreakdown={true} />
+            )}
 
             {/* Quick Actions Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

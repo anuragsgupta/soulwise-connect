@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 // Helper function to calculate PHQ-9 severity
 function calculateSeverity(totalScore: number): string {
@@ -18,7 +16,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       studentId,
-      surveyNumber,
       q1_interest,
       q2_depressed,
       q3_sleep,
@@ -34,14 +31,6 @@ export async function POST(request: NextRequest) {
     if (!studentId) {
       return NextResponse.json(
         { error: 'Student ID is required' },
-        { status: 400 }
-      );
-    }
-
-    // Validate survey number (1-3)
-    if (!surveyNumber || surveyNumber < 1 || surveyNumber > 3) {
-      return NextResponse.json(
-        { error: 'Survey number must be 1, 2, or 3' },
         { status: 400 }
       );
     }
@@ -82,35 +71,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if survey already exists for this student and survey number
-    const existingSurvey = await prisma.pHQ9Survey.findFirst({
-      where: {
-        studentId,
-        surveyNumber,
-      },
-    });
-
-    if (existingSurvey) {
-      return NextResponse.json(
-        { error: `Survey ${surveyNumber} has already been completed` },
-        { status: 400 }
-      );
-    }
-
     // Create the survey
     const survey = await prisma.pHQ9Survey.create({
       data: {
         studentId,
-        surveyNumber,
-        q1_interest,
-        q2_depressed,
-        q3_sleep,
-        q4_energy,
-        q5_appetite,
-        q6_failure,
-        q7_concentration,
-        q8_movement,
-        q9_harm,
+        q1Interest: q1_interest,
+        q2Depressed: q2_depressed,
+        q3Sleep: q3_sleep,
+        q4Energy: q4_energy,
+        q5Appetite: q5_appetite,
+        q6Failure: q6_failure,
+        q7Concentration: q7_concentration,
+        q8Movement: q8_movement,
+        q9Harm: q9_harm,
         totalScore,
         severity,
       },
@@ -120,7 +93,6 @@ export async function POST(request: NextRequest) {
       success: true,
       survey: {
         id: survey.id,
-        surveyNumber: survey.surveyNumber,
         totalScore: survey.totalScore,
         severity: survey.severity,
         completedAt: survey.completedAt,
@@ -141,7 +113,6 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const studentId = searchParams.get('studentId');
-    const surveyNumber = searchParams.get('surveyNumber');
 
     if (!studentId) {
       return NextResponse.json(
@@ -150,19 +121,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Build query
-    interface WhereClause {
-      studentId: string;
-      surveyNumber?: number;
-    }
-    
-    const where: WhereClause = { studentId };
-    if (surveyNumber) {
-      where.surveyNumber = parseInt(surveyNumber);
-    }
-
     const surveys = await prisma.pHQ9Survey.findMany({
-      where,
+      where: { studentId },
       orderBy: {
         completedAt: 'desc',
       },
@@ -170,8 +130,7 @@ export async function GET(request: NextRequest) {
         student: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            name: true,
             rollNumber: true,
             email: true,
           },
@@ -188,7 +147,7 @@ export async function GET(request: NextRequest) {
       success: true,
       surveys,
       completedSurveys,
-      remainingSurveys: Math.max(0, 3 - completedSurveys),
+      latestSurvey: surveys.length > 0 ? surveys[0] : null,
     });
   } catch (error) {
     console.error('Error fetching PHQ-9 surveys:', error);

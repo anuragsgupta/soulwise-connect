@@ -10,7 +10,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface SurveyResult {
   id: string;
-  surveyNumber: number;
   totalScore: number;
   severity: string;
   completedAt: string;
@@ -18,7 +17,6 @@ interface SurveyResult {
 
 interface PHQ9FormProps {
   studentId: string;
-  surveyNumber: 1 | 2 | 3;
   onComplete?: (result: { success: boolean; survey: SurveyResult }) => void;
 }
 
@@ -77,7 +75,7 @@ const options = [
   { value: "3", label: "Nearly every day" },
 ];
 
-export default function PHQ9SurveyForm({ studentId, surveyNumber, onComplete }: PHQ9FormProps) {
+export default function PHQ9SurveyForm({ studentId, onComplete }: PHQ9FormProps) {
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -115,7 +113,6 @@ export default function PHQ9SurveyForm({ studentId, surveyNumber, onComplete }: 
         },
         body: JSON.stringify({
           studentId,
-          surveyNumber,
           ...answers,
         }),
       });
@@ -183,7 +180,7 @@ export default function PHQ9SurveyForm({ studentId, surveyNumber, onComplete }: 
             <div>
               <CardTitle className="text-2xl font-heading">Survey Completed</CardTitle>
               <CardDescription className="font-body">
-                Thank you for completing Survey #{surveyNumber}
+                Thank you for completing the PHQ-9 assessment
               </CardDescription>
             </div>
           </div>
@@ -260,8 +257,7 @@ export default function PHQ9SurveyForm({ studentId, surveyNumber, onComplete }: 
       <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5">
         <CardTitle className="text-2xl font-heading">PHQ-9 Mental Health Survey</CardTitle>
         <CardDescription className="font-body">
-          Survey #{surveyNumber} of 3 | Over the last 2 weeks, how often have you been bothered by the
-          following?
+          Over the last 2 weeks, how often have you been bothered by the following?
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6">

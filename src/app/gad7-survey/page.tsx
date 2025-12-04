@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import PHQ9SurveyForm from "@/components/dashboard/PHQ9SurveyForm";
+import GAD7SurveyForm from "@/components/dashboard/GAD7SurveyForm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Brain, CheckCircle2, Clock, AlertCircle, TrendingUp } from "lucide-react";
@@ -24,7 +24,7 @@ interface SurveyData {
   latestSurvey: Survey | null;
 }
 
-function PHQ9SurveyContent() {
+function GAD7SurveyContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const [studentId, setStudentId] = useState<string | null>(null);
@@ -47,7 +47,7 @@ function PHQ9SurveyContent() {
 
   const fetchSurveyStatus = async (id: string) => {
     try {
-      const response = await fetch(`/api/phq9-survey?studentId=${id}`);
+      const response = await fetch(`/api/gad7-survey?studentId=${id}`);
       const data = await response.json();
       
       if (response.ok) {
@@ -70,7 +70,7 @@ function PHQ9SurveyContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-sky/10 to-primary/10 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-green/10 to-blue/10 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <div className="flex flex-col items-center gap-4">
@@ -85,12 +85,12 @@ function PHQ9SurveyContent() {
 
   if (!studentId) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-sky/10 to-primary/10 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-green/10 to-blue/10 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="font-heading">Access Required</CardTitle>
             <CardDescription className="font-body">
-              Please log in to access the PHQ-9 survey.
+              Please log in to access the GAD-7 survey.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -108,8 +108,8 @@ function PHQ9SurveyContent() {
 
   if (showForm) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-sky/10 to-primary/10 flex items-center justify-center p-4">
-        <PHQ9SurveyForm
+      <div className="min-h-screen bg-gradient-to-br from-green/10 to-blue/10 flex items-center justify-center p-4">
+        <GAD7SurveyForm
           studentId={studentId}
           onComplete={handleSurveyComplete}
         />
@@ -121,17 +121,17 @@ function PHQ9SurveyContent() {
   const latestSurvey = surveyData?.latestSurvey;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky/10 to-primary/10 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-green/10 to-blue/10 flex items-center justify-center p-4">
       <Card className="w-full max-w-4xl">
-        <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5">
+        <CardHeader className="bg-gradient-to-r from-green/10 to-blue/10">
           <div className="flex items-center gap-3">
             <Brain className="w-10 h-10 text-primary" />
             <div>
               <CardTitle className="text-2xl sm:text-3xl font-heading">
-                PHQ-9 Mental Health Assessment
+                GAD-7 Anxiety Assessment
               </CardTitle>
               <CardDescription className="text-sm sm:text-base font-body mt-1">
-                Patient Health Questionnaire - Depression Screening
+                Generalized Anxiety Disorder 7-item Scale
               </CardDescription>
             </div>
           </div>
@@ -143,12 +143,13 @@ function PHQ9SurveyContent() {
             <AlertTitle className="font-heading">About This Assessment</AlertTitle>
             <AlertDescription className="font-body">
               <p className="mb-3">
-                The PHQ-9 is a validated screening tool designed to assess symptoms of depression over
-                the past two weeks. This survey is specifically adapted for student well-being.
+                The GAD-7 is a validated screening tool designed to assess symptoms of generalized 
+                anxiety disorder over the past two weeks. This survey helps identify anxiety levels 
+                and guide appropriate support.
               </p>
               <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>Takes approximately 5-7 minutes to complete</li>
-                <li>Contains 9 questions about your recent experiences</li>
+                <li>Takes approximately 3-5 minutes to complete</li>
+                <li>Contains 7 questions about anxiety symptoms</li>
                 <li>Your responses are confidential and secure</li>
                 <li>Results help us provide appropriate support</li>
                 <li>You can retake the assessment anytime</li>
@@ -156,99 +157,77 @@ function PHQ9SurveyContent() {
             </AlertDescription>
           </Alert>
 
-          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+          {/* Score Interpretation Guide */}
+          <div className="bg-muted/30 rounded-lg p-6">
+            <h3 className="text-lg font-semibold mb-4 font-heading">Score Interpretation</h3>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-16 text-sm font-semibold text-green-600">0-4</div>
+                <div className="flex-1">
+                  <p className="font-medium text-green-600">Minimal Anxiety</p>
+                  <p className="text-sm text-muted-foreground">Little to no anxiety symptoms</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-16 text-sm font-semibold text-yellow-600">5-9</div>
+                <div className="flex-1">
+                  <p className="font-medium text-yellow-600">Mild Anxiety</p>
+                  <p className="text-sm text-muted-foreground">Mild anxiety symptoms present</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-16 text-sm font-semibold text-orange-600">10-14</div>
+                <div className="flex-1">
+                  <p className="font-medium text-orange-600">Moderate Anxiety</p>
+                  <p className="text-sm text-muted-foreground">Moderate anxiety requiring attention</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-16 text-sm font-semibold text-red-600">15-21</div>
+                <div className="flex-1">
+                  <p className="font-medium text-red-600">Severe Anxiety</p>
+                  <p className="text-sm text-muted-foreground">Severe anxiety needing professional support</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
             <Button
               onClick={() => setShowForm(true)}
-              className="flex-1 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 font-accent"
+              className="flex-1"
               size="lg"
             >
-              {completedSurveys > 0 ? 'Take New Assessment' : 'Start Assessment'}
+              {completedSurveys > 0 ? "Take New Assessment" : "Start Assessment"}
             </Button>
             <Button
               variant="outline"
               onClick={() => (window.location.href = "/dashboard")}
-              className="flex-1 font-accent"
+              className="flex-1"
               size="lg"
             >
               Back to Dashboard
             </Button>
           </div>
 
-          {/* Previous Surveys */}
-          {completedSurveys > 0 && surveyData?.surveys && (
-            <div className="pt-6 border-t">
-              <h3 className="text-lg font-semibold font-heading mb-4">Completed Assessments</h3>
-              <div className="space-y-3">
-                {surveyData.surveys.map((survey: Survey, index: number) => {
-                  const severityColorMap: Record<string, string> = {
-                    NONE: "text-green-600",
-                    MILD: "text-yellow-600",
-                    MODERATE: "text-orange-600",
-                    MODERATELY_SEVERE: "text-red-600",
-                    SEVERE: "text-red-700",
-                  };
-                  const severityColor = severityColorMap[survey.severity] || "text-gray-600";
-
-                  return (
-                    <div
-                      key={survey.id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-muted/50 rounded-lg gap-2"
-                    >
-                      <div>
-                        <p className="font-medium font-heading">
-                          Assessment #{completedSurveys - index}
-                        </p>
-                        <p className="text-sm text-muted-foreground font-body">
-                          Completed: {new Date(survey.completedAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className={`text-lg font-bold ${severityColor}`}>
-                          {survey.totalScore}/27
-                        </p>
-                        <p className={`text-sm ${severityColor}`}>
-                          {survey.severity.replace(/_/g, " ")}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <div className="pt-4 border-t">
-            <Alert variant="destructive">
-              <AlertCircle className="w-4 h-4" />
-              <AlertTitle className="font-heading">Crisis Support</AlertTitle>
-              <AlertDescription className="font-body">
-                <p className="mb-2">
-                  If you&apos;re experiencing a mental health crisis or having thoughts of self-harm:
-                </p>
-                <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>
-                    <strong>KIRAN Mental Health Helpline:</strong> 1800-599-0019 (24/7)
-                  </li>
-                  <li>
-                    <strong>Vandrevala Foundation:</strong> 1860-2662-345
-                  </li>
-                  <li>Contact your campus counseling center immediately</li>
-                  <li>Visit the nearest hospital emergency department</li>
-                </ul>
-              </AlertDescription>
-            </Alert>
-          </div>
+          {/* Privacy Notice */}
+          <p className="text-xs text-muted-foreground text-center">
+            Your responses are confidential and will only be used to provide you with appropriate 
+            mental health support. This assessment is not a diagnostic tool and should not replace 
+            professional medical advice.
+          </p>
         </CardContent>
       </Card>
     </div>
   );
 }
 
-export default function PHQ9SurveyPage() {
+export default function GAD7SurveyPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gradient-to-br from-sky/10 to-primary/10 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-green/10 to-blue/10 flex items-center justify-center p-4">
           <Card className="w-full max-w-md">
             <CardContent className="pt-6">
               <div className="flex flex-col items-center gap-4">
@@ -260,7 +239,7 @@ export default function PHQ9SurveyPage() {
         </div>
       }
     >
-      <PHQ9SurveyContent />
+      <GAD7SurveyContent />
     </Suspense>
   );
 }
