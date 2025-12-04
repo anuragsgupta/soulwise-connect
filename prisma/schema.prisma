@@ -214,11 +214,11 @@ model Student {
   chatSessions          ChatSession[]
   crisisAlerts          CrisisAlert[]
   diaryEntries          DiaryEntry[]
+  gad7Surveys           GAD7Survey[]
   locations             Location[]
   moodCheckIns          MoodCheckIn[]
   notifications         Notification[]
   phq9Surveys           PHQ9Survey[]
-  gad7Surveys           GAD7Survey[]
   sessionBookings       SessionBooking[]
   sessions              Session[]
   batch                 Batch            @relation(fields: [batchId], references: [id])
@@ -315,8 +315,8 @@ model ChatSession {
 }
 
 model ChatMessage {
-  id             String     @id @default(uuid())
-  senderType     SenderType @map("sender_type")
+  id             String      @id @default(uuid())
+  senderType     SenderType  @map("sender_type")
   content        String
   sentimentScore Decimal?    @map("sentiment_score") @db.Decimal(3, 2)
   crisisKeywords Json?       @map("crisis_keywords")
@@ -442,41 +442,42 @@ model Task {
   @@index([status])
   @@map("tasks")
 }
+
 model PHQ9Survey {
-  id               String       @id @default(uuid())
-  completedAt      DateTime     @default(now()) @map("completed_at")
-  q1Interest       Int          @map("q1_interest")
-  q2Depressed      Int          @map("q2_depressed")
-  q3Sleep          Int          @map("q3_sleep")
-  q4Energy         Int          @map("q4_energy")
-  q5Appetite       Int          @map("q5_appetite")
-  q6Failure        Int          @map("q6_failure")
-  q7Concentration  Int          @map("q7_concentration")
-  q8Movement       Int          @map("q8_movement")
-  q9Harm           Int          @map("q9_harm")
-  totalScore       Int          @map("total_score")
-  severity         PHQ9Severity
-  studentId        String       @map("student_id")
-  student          Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  id              String       @id @default(uuid())
+  completedAt     DateTime     @default(now()) @map("completed_at")
+  q1Interest      Int          @map("q1_interest")
+  q2Depressed     Int          @map("q2_depressed")
+  q3Sleep         Int          @map("q3_sleep")
+  q4Energy        Int          @map("q4_energy")
+  q5Appetite      Int          @map("q5_appetite")
+  q6Failure       Int          @map("q6_failure")
+  q7Concentration Int          @map("q7_concentration")
+  q8Movement      Int          @map("q8_movement")
+  q9Harm          Int          @map("q9_harm")
+  totalScore      Int          @map("total_score")
+  severity        PHQ9Severity
+  studentId       String       @map("student_id")
+  student         Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([studentId, completedAt])
   @@map("phq9_surveys")
 }
 
 model GAD7Survey {
-  id              String       @id @default(uuid())
-  completedAt     DateTime     @default(now()) @map("completed_at")
-  q1Nervous       Int          @map("q1_nervous")
-  q2Control       Int          @map("q2_control")
-  q3Worrying      Int          @map("q3_worrying")
-  q4Relaxing      Int          @map("q4_relaxing")
-  q5Restless      Int          @map("q5_restless")
-  q6Irritable     Int          @map("q6_irritable")
-  q7Afraid        Int          @map("q7_afraid")
-  totalScore      Int          @map("total_score")
-  severity        GAD7Severity
-  studentId       String       @map("student_id")
-  student         Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  id          String       @id @default(uuid())
+  completedAt DateTime     @default(now()) @map("completed_at")
+  q1Nervous   Int          @map("q1_nervous")
+  q2Control   Int          @map("q2_control")
+  q3Worrying  Int          @map("q3_worrying")
+  q4Relaxing  Int          @map("q4_relaxing")
+  q5Restless  Int          @map("q5_restless")
+  q6Irritable Int          @map("q6_irritable")
+  q7Afraid    Int          @map("q7_afraid")
+  totalScore  Int          @map("total_score")
+  severity    GAD7Severity
+  studentId   String       @map("student_id")
+  student     Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([studentId, completedAt])
   @@map("gad7_surveys")
@@ -492,7 +493,6 @@ model SessionBooking {
   duration        Int            @default(30)
   status          SessionStatus  @default(PENDING)
   meetingLink     String?        @map("meeting_link")
-  googleEventId   String?        @map("google_event_id")
   location        String?
   studentNotes    String?        @map("student_notes")
   facultyNotes    String?        @map("faculty_notes")
@@ -504,6 +504,7 @@ model SessionBooking {
   updatedAt       DateTime       @updatedAt @map("updated_at")
   studentId       String         @map("student_id")
   facultyId       String         @map("faculty_id")
+  googleEventId   String?        @map("google_event_id")
   notifications   Notification[]
   faculty         Faculty        @relation(fields: [facultyId], references: [id], onDelete: Cascade)
   student         Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import StudentDashboard from '@/components/dashboard/StudentDashboard';
 import AdminDashboard from '@/components/admin/AdminDashboard';
@@ -9,23 +9,29 @@ import { useAuth } from '@/contexts/AuthContext';
 export default function Dashboard() {
   const { user, logout, isLoading } = useAuth();
   const router = useRouter();
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
+    // Only redirect once to prevent loops
+    if (hasRedirected.current) return;
+
     // Redirect to login if not authenticated
     if (!isLoading && !user) {
-      router.push('/login');
+      hasRedirected.current = true;
+      router.replace('/login'); // Use replace instead of push to prevent back button issues
       return;
     }
 
     // Redirect faculty users to their dedicated dashboard
     if (!isLoading && user?.userType === 'FACULTY') {
-      router.push('/faculty');
+      hasRedirected.current = true;
+      router.replace('/faculty'); // Use replace instead of push
     }
   }, [user, isLoading, router]);
 
   const handleLogout = () => {
     logout();
-    router.push('/');
+    router.replace('/'); // Use replace to clear navigation history
   };
 
   if (isLoading) {

@@ -10,9 +10,6 @@
     "preview": "next start",
     "lint": "eslint"
   },
-  "prisma": {
-    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
-  },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.936.0",
     "@aws-sdk/lib-dynamodb": "^3.936.0",

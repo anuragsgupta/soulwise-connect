@@ -47,26 +47,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const verifySession = async () => {
       try {
-        // First check localStorage for quick initial load
-        const savedToken = localStorage.getItem('auth-token');
-        const savedUser = localStorage.getItem('auth-user');
-        
-        if (savedToken && savedUser) {
-          try {
-            const parsedUser = JSON.parse(savedUser);
-            setToken(savedToken);
-            setUser(parsedUser);
-          } catch (parseError) {
-            console.error('Error parsing saved user:', parseError);
-            localStorage.removeItem('auth-token');
-            localStorage.removeItem('auth-user');
-          }
-        }
-        
-        // Then verify session with server (checks HTTP-only cookie)
+        // Always verify session with server (checks HTTP-only cookie)
         const response = await fetch('/api/auth/verify', {
           method: 'GET',
-          credentials: 'include',
+          credentials: 'include', // Important: include HTTP-only cookies
           cache: 'no-store' // Prevent caching of auth verification
         });
         
@@ -75,23 +59,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (result.success && result.data) {
             setUser(result.data.user);
             setToken(result.data.token);
-            // Update localStorage
-            localStorage.setItem('auth-token', result.data.token);
+            // Update localStorage for client-side quick checks (non-sensitive)
             localStorage.setItem('auth-user', JSON.stringify(result.data.user));
-          }
-        } else {
-          // Only clear if we didn't have a saved session
-          // This prevents logout on network errors
-          if (!savedToken || !savedUser) {
+          } else {
+            // Clear stale data
             setUser(null);
             setToken(null);
-            localStorage.removeItem('auth-token');
             localStorage.removeItem('auth-user');
           }
+        } else if (response.status === 401) {
+          // No valid session
+          setUser(null);
+          setToken(null);
+          localStorage.removeItem('auth-user');
         }
       } catch (error) {
         console.error('Error verifying session:', error);
-        // Don't clear session on network error, use cached data
+        // On network error, don't change auth state
+        // This prevents logout during temporary network issues
       } finally {
         setIsLoading(false);
       }
@@ -174,8 +159,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setToken(authToken);
         setUser(userData);
         
-        // Keep localStorage as fallback for client-side checks
-        localStorage.setItem('auth-token', authToken);
+        // Keep localStorage as backup (non-sensitive data only)
+        // The actual auth token is in HTTP-only cookie
         localStorage.setItem('auth-user', JSON.stringify(userData));
         
         setIsLoading(false);
@@ -234,10 +219,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem('auth-token');
     localStorage.removeItem('auth-user');
     
-    // Clear HTTP-only cookies via API
+    // Clear HTTP-only cookie via API call
     fetch('/api/auth/logout', {
       method: 'POST',
       credentials: 'include'

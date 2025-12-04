@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import FacultyDashboardNew from "@/components/faculty/FacultyDashboardNew";
 import { Button } from "@/components/ui/button";
@@ -14,25 +14,29 @@ import {
 const FacultyPage = () => {
   const router = useRouter();
   const { toast } = useToast();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, logout } = useAuth();
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
+    // Only redirect once to prevent loops
+    if (hasRedirected.current) return;
+
     // Redirect to login if not authenticated
     if (!isLoading && !user) {
-      router.push('/login');
+      hasRedirected.current = true;
+      router.replace('/login'); // Use replace instead of push
       return;
     }
 
     // Redirect non-faculty users to appropriate dashboard
     if (!isLoading && user && user.userType !== 'FACULTY') {
-      router.push('/dashboard');
+      hasRedirected.current = true;
+      router.replace('/dashboard'); // Use replace instead of push
     }
   }, [user, isLoading, router]);
 
   const handleLogout = () => {
-    // Clear user data from localStorage
-    localStorage.removeItem('auth-user');
-    localStorage.removeItem('auth-token');
+    logout(); // Use AuthContext logout for consistency
     
     toast({
       title: "Logged Out",
@@ -40,7 +44,7 @@ const FacultyPage = () => {
     });
     
     // Redirect to login page
-    router.push('/login');
+    router.replace('/'); // Use replace to clear history
   };
 
   // Show loading state

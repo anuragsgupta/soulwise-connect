@@ -3,15 +3,19 @@
 import ManageSessions from "@/components/sessions/ManageSessions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export default function FacultySessionsPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
+    if (hasRedirected.current) return;
+    
     if (!user || user.userType !== 'FACULTY') {
-      router.push('/login');
+      hasRedirected.current = true;
+      router.replace('/login');
     }
   }, [user, router]);
 

@@ -3,15 +3,19 @@
 import BookSession from "@/components/sessions/BookSession";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export default function StudentSessionsPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
+    if (hasRedirected.current) return;
+    
     if (!user || user.userType !== 'STUDENT') {
-      router.push('/login');
+      hasRedirected.current = true;
+      router.replace('/login');
     }
   }, [user, router]);
 

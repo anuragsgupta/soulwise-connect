@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Download, X, Smartphone, Monitor } from "lucide-react";
+import { Download, Smartphone, Monitor } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -21,21 +21,34 @@ export default function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    // Check if device is mobile
+    const checkMobile = () => {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+             window.innerWidth < 768;
+    };
+    setIsMobile(checkMobile());
+
     // Check if app is already installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setIsInstalled(true);
       return;
     }
 
+    // Don't show on desktop
+    if (!checkMobile()) {
+      return;
+    }
+
     // Check if user has dismissed the prompt before
     const hasDismissed = localStorage.getItem('pwa-install-dismissed');
     const dismissedTime = hasDismissed ? parseInt(hasDismissed) : 0;
-    const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
+    const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000; // Changed to 7 days
     
-    // Don't show if dismissed within last 3 days
-    if (Date.now() - dismissedTime < threeDaysInMs) {
+    // Don't show if dismissed within last 7 days
+    if (Date.now() - dismissedTime < sevenDaysInMs) {
       return;
     }
 
@@ -81,26 +94,21 @@ export default function PWAInstallPrompt() {
     // Will show again on next visit (not saving to localStorage)
   };
 
-  if (isInstalled || !showPrompt) {
+  // Don't show on desktop or if already installed
+  if (isInstalled || !showPrompt || !isMobile) {
     return null;
   }
 
   return (
-    <Dialog open={showPrompt} onOpenChange={setShowPrompt}>
+    <Dialog open={showPrompt} onOpenChange={(open) => {
+      if (!open) handleDismiss();
+    }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-start mb-2">
             <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
               <Download className="w-6 h-6 text-white" />
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleDismiss}
-              className="h-8 w-8 rounded-full"
-            >
-              <X className="h-4 w-4" />
-            </Button>
           </div>
           <DialogTitle className="text-xl">
             Install Mann Mitra App

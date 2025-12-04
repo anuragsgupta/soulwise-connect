@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,8 @@ export default function LoginPage() {
   const { toast } = useToast();
   const { login } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || null;
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,13 +44,15 @@ export default function LoginPage() {
           description: 'Login successful. Redirecting to your dashboard...',
         });
         
-        // Redirect based on user type
-        if (user?.userType === 'FACULTY') {
-          router.push('/faculty');
+        // Use replace instead of push to prevent back button issues
+        if (redirectTo) {
+          router.replace(redirectTo);
+        } else if (user?.userType === 'FACULTY') {
+          router.replace('/faculty');
         } else if (user?.userType === 'STUDENT') {
-          router.push('/dashboard');
+          router.replace('/dashboard');
         } else {
-          router.push('/dashboard');
+          router.replace('/dashboard');
         }
       } else {
         toast({
@@ -85,13 +89,15 @@ export default function LoginPage() {
           description: 'Login successful. Redirecting to your dashboard...',
         });
         
-        // Redirect based on user type
-        if (user?.userType === 'STUDENT') {
-          router.push('/dashboard');
+        // Use replace instead of push to prevent back button issues
+        if (redirectTo) {
+          router.replace(redirectTo);
+        } else if (user?.userType === 'STUDENT') {
+          router.replace('/dashboard');
         } else if (user?.userType === 'FACULTY') {
-          router.push('/faculty');
+          router.replace('/faculty');
         } else {
-          router.push('/dashboard');
+          router.replace('/dashboard');
         }
       } else {
         toast({

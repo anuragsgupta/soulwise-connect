@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { PrismaClient } from '@prisma/client';
 import { calculateWellnessScore, WellnessScoreInput } from '@/lib/wellness-score';
+
+const prisma = new PrismaClient();
 
 /**
  * GET /api/wellness-score?studentId={id}
@@ -52,17 +54,27 @@ export async function GET(request: NextRequest) {
       date: new Date(checkIn.checkInDate),
     }));
 
-    // Fetch most recent PHQ-9 score
-    const latestPHQ9 = await prisma.pHQ9Survey.findFirst({
-      where: { studentId },
-      orderBy: { completedAt: 'desc' },
-    });
+    // Fetch most recent PHQ-9 score - try/catch to handle if model doesn't exist
+    let latestPHQ9 = null;
+    try {
+      latestPHQ9 = await prisma.pHQ9Survey.findFirst({
+        where: { studentId },
+        orderBy: { completedAt: 'desc' },
+      });
+    } catch (err) {
+      console.error('Error fetching PHQ9 survey:', err);
+    }
 
-    // Fetch most recent GAD-7 score
-    const latestGAD7 = await prisma.gAD7Survey.findFirst({
-      where: { studentId },
-      orderBy: { completedAt: 'desc' },
-    });
+    // Fetch most recent GAD-7 score - try/catch to handle if model doesn't exist
+    let latestGAD7 = null;
+    try {
+      latestGAD7 = await prisma.gAD7Survey.findFirst({
+        where: { studentId },
+        orderBy: { completedAt: 'desc' },
+      });
+    } catch (err) {
+      console.error('Error fetching GAD7 survey:', err);
+    }
 
     // Fetch chatbot sentiment scores from recent sessions (last 30 days)
     const chatSessions = await prisma.chatSession.findMany({
