@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -58,6 +59,8 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<DashboardTab>('dashboard');
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [wellnessScore, setWellnessScore] = useState(15);
   const [hasTodayMoodCheckIn, setHasTodayMoodCheckIn] = useState<boolean | null>(null);
@@ -134,7 +137,17 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
 
       const allowedTabs: DashboardTab[] = ['dashboard', 'mood', 'chat', 'mentor', 'diary', 'appointments', 'notifications', 'resources', 'forum', 'more', 'profile'];
       if (allowedTabs.includes(targetTab)) {
+        // Update active tab and push a history entry so Back goes to previous tab
         setActiveTab(targetTab);
+        try {
+          router.push(`/dashboard?tab=${encodeURIComponent(targetTab)}`);
+        } catch (e) {
+          if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', targetTab);
+            window.history.pushState({}, '', url.toString());
+          }
+        }
 
         if (detail?.source === 'chatbot') {
           toast({
@@ -159,6 +172,19 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
     window.addEventListener('dashboard:navigate', handleDashboardNavigation as EventListener);
     return () => window.removeEventListener('dashboard:navigate', handleDashboardNavigation as EventListener);
   }, [toast]);
+
+  // Sync initial tab from URL search params (e.g. /dashboard?tab=mood)
+  useEffect(() => {
+    try {
+      const tabFromUrl = searchParams?.get?.('tab') as DashboardTab | null;
+      if (tabFromUrl) {
+        setActiveTab(tabFromUrl);
+      }
+    } catch (e) {
+      // ignore if searchParams not available yet
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams?.toString()]);
 
   // Check and request location permission
   const checkLocationPermission = async () => {
@@ -342,6 +368,17 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   // Handle tab change
   const handleTabChange = (tab: DashboardTab) => {
     setActiveTab(tab);
+    // Update the URL so the route reflects the selected tab. Use push so Back navigates between tabs.
+    try {
+      router.push(`/dashboard?tab=${encodeURIComponent(tab)}`);
+    } catch (e) {
+      // Fallback: update location directly
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', tab);
+        window.history.pushState({}, '', url.toString());
+      }
+    }
   };
 
   // Enhanced logout function with proper cleanup
@@ -378,7 +415,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       description: "Track how you're feeling today",
       icon: Heart,
       color: "from-wellness to-wellness-light",
-      action: () => setActiveTab('mood')
+      action: () => handleTabChange('mood')
     },
     {
       title: "PHQ-9 Assessment",
@@ -399,21 +436,21 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       description: "Get instant mental health support",
       icon: MessageCircle,
       color: "from-primary to-support",
-      action: () => setActiveTab('chat')
+      action: () => handleTabChange('chat')
     },
     {
       title: "Book Appointment",
       description: "Schedule session with faculty/counsellor",
       icon: Calendar,
       color: "from-blue-500 to-blue-600",
-      action: () => setActiveTab('appointments')
+      action: () => handleTabChange('appointments')
     },
     {
       title: "Wellness Resources",
       description: "Access guides, videos & tools",
       icon: BookOpen,
       color: "from-secondary to-accent",
-      action: () => setActiveTab('resources')
+      action: () => handleTabChange('resources')
     }
   ];
 
