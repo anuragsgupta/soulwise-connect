@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Slider } from "@/components/ui/slider"; // Assuming you have this, if not I'll simulate
 import {
   BookOpen,
   Play,
@@ -26,8 +25,6 @@ import {
   Activity,
   X,
   Pause,
-  Maximize2,
-  Minimize2,
   SkipBack,
   SkipForward,
   Share2,
@@ -67,15 +64,9 @@ interface Resource {
 // --- HELPER COMPONENT: Full Screen Modal Wrapper ---
 // This ensures Games, Exercises, and Audio cover the page consistently
 const FullScreenModalWrapper = ({ 
-  children, 
-  title, 
-  onClose, 
-  icon: Icon 
+  children
 }: { 
-  children: React.ReactNode, 
-  title: string, 
-  onClose: () => void,
-  icon?: any
+  children: React.ReactNode
 }) => {
   return (
     <div>
@@ -224,11 +215,11 @@ const AudioResourceModal = ({ resource, onClose }: AudioModalProps) => {
   const [currentTime, setCurrentTime] = useState(0);
   
   // Parse duration from string (e.g. "8 min") to seconds, default to 300 (5 mins)
-  const getDurationInSeconds = () => {
+  const getDurationInSeconds = useCallback(() => {
     if (!resource.duration) return 300;
     const match = resource.duration.match(/(\d+)/);
     return match ? parseInt(match[0]) * 60 : 300;
-  };
+  }, [resource.duration]);
 
   const [totalDuration, setTotalDuration] = useState(getDurationInSeconds());
 
@@ -237,7 +228,7 @@ const AudioResourceModal = ({ resource, onClose }: AudioModalProps) => {
     setTotalDuration(getDurationInSeconds());
     setCurrentTime(0);
     setIsPlaying(true); // Auto-play when opened
-  }, [resource]);
+  }, [resource, getDurationInSeconds]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout | undefined;
@@ -409,40 +400,6 @@ const ResourceHub = () => {
   const [currentAudio, setCurrentAudio] = useState<Resource | null>(null); // NEW State for Audio Item
   const [currentVideo, setCurrentVideo] = useState<Resource | null>(null);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
-
-  // Audio playback state
-  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
-  const [audioTimer, setAudioTimer] = useState(0);
-  const [timerIntervalId, setTimerIntervalId] = useState<NodeJS.Timeout | null>(null);
-
-  // Helper function for audio timer
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  // Start fake audio playback
-  const startFakePlayback = (resource: Resource) => {
-    // Stop any currently playing audio
-    if (timerIntervalId) clearInterval(timerIntervalId);
-    
-    setPlayingAudioId(resource.id);
-    setAudioTimer(0);
-    
-    const interval = setInterval(() => {
-      setAudioTimer(prev => prev + 1);
-    }, 1000);
-    
-    setTimerIntervalId(interval);
-  };
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (timerIntervalId) clearInterval(timerIntervalId);
-    };
-  }, [timerIntervalId]);
 
   // Data
   const resources: Resource[] = [
@@ -984,11 +941,7 @@ const ResourceHub = () => {
       
       {/* 1. GAME MODALS (Wrapped in FullScreenModalWrapper) */}
       {showGame && (
-        <FullScreenModalWrapper 
-          title={resources.find(r => r.url === currentGame)?.title || "Relaxation Game"} 
-          onClose={() => setShowGame(false)}
-          icon={Gamepad2}
-        >
+        <FullScreenModalWrapper>
           {currentGame === 'breathing-ball' && <BreathingBall onClose={() => setShowGame(false)} />}
           {currentGame === 'calm-circle' && <CalmCircle onClose={() => setShowGame(false)} />}
           {currentGame === 'box-breathing' && <BoxBreathing onClose={() => setShowGame(false)} />}
@@ -1000,11 +953,7 @@ const ResourceHub = () => {
 
       {/* 2. EXERCISE MODALS (Wrapped in FullScreenModalWrapper) */}
       {showExercise && (
-         <FullScreenModalWrapper 
-         title={resources.find(r => r.url === currentExercise)?.title || "Breathing Exercise"} 
-         onClose={() => setShowExercise(false)}
-         icon={Wind}
-       >
+         <FullScreenModalWrapper>
         <div className="flex items-center justify-center w-full min-h-full">
           {currentExercise === '4-7-8-breathing' && <FourSevenEightBreathing onClose={() => setShowExercise(false)} />}
           {currentExercise === 'breath-awareness' && <BreathAwareness onClose={() => setShowExercise(false)} />}

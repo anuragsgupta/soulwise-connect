@@ -13,17 +13,28 @@ interface MoodCheckInData {
   journal: string;
 }
 
+interface MoodCheckIn {
+  id: string;
+  moodScore: number;
+  moodLabel: string;
+  factors: Record<string, number>;
+  notes: string | null;
+  checkInDate: string;
+  createdAt: string;
+}
+
 interface MoodCheckInFlowProps {
   onComplete: () => void;
   onScoreUpdate?: (score: number) => void;
+  existingCheckIn?: MoodCheckIn | null;
 }
 
-export default function MoodCheckInFlow({ onComplete, onScoreUpdate }: MoodCheckInFlowProps) {
+export default function MoodCheckInFlow({ onComplete, onScoreUpdate, existingCheckIn }: MoodCheckInFlowProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [checkInData, setCheckInData] = useState<MoodCheckInData>({
-    moodLevel: 4,
-    moodFactors: {},
-    journal: ""
+    moodLevel: existingCheckIn?.moodScore || 4,
+    moodFactors: existingCheckIn?.factors || {},
+    journal: existingCheckIn?.notes || ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);

@@ -88,6 +88,7 @@ const MoodTracker = ({ onScoreUpdate }: MoodTrackerProps) => {
         <MoodCheckInFlow
           onComplete={handleCheckInComplete}
           onScoreUpdate={onScoreUpdate}
+          existingCheckIn={todayCheckIn}
         />
       ) : (
         <MoodDashboard
