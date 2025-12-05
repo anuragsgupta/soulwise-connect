@@ -21,18 +21,27 @@ export interface AuthenticatedRequest extends NextRequest {
 
 // Authentication middleware
 export async function authenticateUser(request: NextRequest): Promise<AuthenticatedUser | null> {
+  // Try to get token from Authorization header first (for API clients)
+  let token = null;
   const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.log('No auth header or invalid format');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7);
+  }
+  
+  // If no Authorization header, try HTTP-only cookie (for browser requests)
+  if (!token) {
+    token = request.cookies.get('auth-token')?.value;
+  }
+  
+  if (!token) {
+    console.log('No token found in header or cookie');
     return null;
   }
-
-  const token = authHeader.substring(7);
   
   try {
     const decoded = verifyToken(token) as any;
     
-    if (!decoded || (!decoded.userId && !decoded.id) || !decoded.userType) {
+    if (!decoded || (!decoded.userId && !decoded.id) || (!decoded.userType && !decoded.role)) {
       console.log('Invalid token payload:', decoded);
       return null;
     }
@@ -40,7 +49,7 @@ export async function authenticateUser(request: NextRequest): Promise<Authentica
     return {
       userId: decoded.userId || decoded.id,
       email: decoded.email,
-      userType: decoded.userType,
+      userType: decoded.userType || decoded.role,
       roles: decoded.roles,
     };
   } catch (error) {

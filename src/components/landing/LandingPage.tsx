@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { HeroSpline } from './HeroSpline';
@@ -13,10 +14,30 @@ import Image from 'next/image';
 import logoMannMitra from '@/assets/logo-mann-mitra.png';
 import { analytics } from '@/lib/analytics';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const LandingPage = () => {
   const [abVariant] = useState<'A' | 'B'>(Math.random() > 0.5 ? 'A' : 'B');
   const { ref: howItWorksRef, isVisible: howItWorksVisible } = useScrollAnimation(0.2);
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  // Auto-redirect authenticated users to their dashboard
+  useEffect(() => {
+    if (!isLoading && user) {
+      console.log('🏠 LandingPage: User authenticated, redirecting to dashboard...', {
+        userType: user.userType
+      });
+      
+      if (user.userType === 'FACULTY') {
+        router.replace('/faculty');
+      } else if (user.userType === 'STUDENT') {
+        router.replace('/dashboard');
+      } else {
+        router.replace('/dashboard');
+      }
+    }
+  }, [user, isLoading, router]);
 
   const features = [
     {

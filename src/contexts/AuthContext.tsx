@@ -47,6 +47,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const verifySession = async () => {
       try {
+        console.log('🔐 AuthContext: Verifying session...');
+        
         // Always verify session with server (checks HTTP-only cookie)
         const response = await fetch('/api/auth/verify', {
           method: 'GET',
@@ -54,30 +56,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           cache: 'no-store' // Prevent caching of auth verification
         });
         
+        console.log('📥 AuthContext: Verify response status:', response.status);
+        
         if (response.ok) {
           const result = await response.json();
+          console.log('✅ AuthContext: Session verified successfully', {
+            success: result.success,
+            hasUser: !!result.data?.user,
+            userType: result.data?.user?.userType
+          });
+          
           if (result.success && result.data) {
             setUser(result.data.user);
             setToken(result.data.token);
             // Update localStorage for client-side quick checks (non-sensitive)
             localStorage.setItem('auth-user', JSON.stringify(result.data.user));
           } else {
+            console.log('⚠️ AuthContext: Response OK but no valid data');
             // Clear stale data
             setUser(null);
             setToken(null);
             localStorage.removeItem('auth-user');
           }
         } else if (response.status === 401) {
+          console.log('❌ AuthContext: No valid session (401)');
           // No valid session
           setUser(null);
           setToken(null);
           localStorage.removeItem('auth-user');
         }
       } catch (error) {
-        console.error('Error verifying session:', error);
+        console.error('❌ AuthContext: Error verifying session:', error);
         // On network error, don't change auth state
         // This prevents logout during temporary network issues
       } finally {
+        console.log('🏁 AuthContext: Verification complete, setting isLoading to false');
         setIsLoading(false);
       }
     };

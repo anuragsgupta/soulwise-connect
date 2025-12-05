@@ -23,10 +23,46 @@ export default function LoginPage() {
     password: '',
   });
   const { toast } = useToast();
-  const { login } = useAuth();
+  const { login, user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') || null;
+
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      console.log('🔐 LoginPage: User already authenticated, redirecting...', {
+        userType: user.userType,
+        adminType: user.adminType,
+        redirectTo
+      });
+      
+      // User is already authenticated, redirect them
+      if (redirectTo) {
+        router.replace(redirectTo);
+      } else if (user.userType === 'FACULTY') {
+        router.replace('/faculty');
+      } else if (user.userType === 'STUDENT') {
+        router.replace('/dashboard');
+      } else if (user.adminType) {
+        router.replace('/dashboard');
+      } else {
+        router.replace('/dashboard');
+      }
+    }
+  }, [user, authLoading, redirectTo, router]);
+
+  // Show loading state while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-background to-green-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-lg text-muted-foreground">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -181,8 +181,6 @@ export async function POST(request: NextRequest) {
       createResponse(false, `Internal server error: ${error instanceof Error ? error.message : 'Unknown error'}`),
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -207,30 +205,42 @@ export async function GET(request: NextRequest) {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    // Get mood check-ins
-    const moodCheckIns = await prisma.moodCheckIn.findMany({
-      where: {
-        studentId,
-        checkInDate: {
-          gte: startDate,
-          lte: endDate
+    // Get mood check-ins with error handling
+    let moodCheckIns = [];
+    try {
+      moodCheckIns = await prisma.moodCheckIn.findMany({
+        where: {
+          studentId,
+          checkInDate: {
+            gte: startDate,
+            lte: endDate
+          }
+        },
+        orderBy: {
+          checkInDate: 'desc'
         }
-      },
-      orderBy: {
-        checkInDate: 'desc'
-      }
-    });
+      });
+    } catch (error) {
+      console.error('Error fetching mood check-ins:', error);
+      moodCheckIns = [];
+    }
 
-    // Get today's check-in
+    // Get today's check-in with error handling
     const today = new Date();
     const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     
-    const todayCheckIn = await prisma.moodCheckIn.findFirst({
-      where: {
-        studentId,
-        checkInDate: todayDate
-      }
-    });
+    let todayCheckIn = null;
+    try {
+      todayCheckIn = await prisma.moodCheckIn.findFirst({
+        where: {
+          studentId,
+          checkInDate: todayDate
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching today check-in:', error);
+      todayCheckIn = null;
+    }
 
     return NextResponse.json(
       createResponse(true, 'Enhanced mood data retrieved successfully', {
@@ -247,7 +257,5 @@ export async function GET(request: NextRequest) {
       createResponse(false, 'Internal server error'),
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

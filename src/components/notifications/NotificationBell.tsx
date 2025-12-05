@@ -46,13 +46,8 @@ export default function NotificationBell() {
 
   const loadNotifications = async () => {
     try {
-      const token = localStorage.getItem('auth-token');
-      if (!token) return; // Silently skip if not authenticated
-      
       const response = await fetch('/api/notifications?limit=10', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include', // Include HTTP-only cookies
       });
       
       if (!response.ok) {
@@ -73,12 +68,11 @@ export default function NotificationBell() {
 
   const markAsRead = async (notificationId: string) => {
     try {
-      const token = localStorage.getItem('auth-token');
       await fetch(`/api/notifications/${notificationId}`, {
         method: 'PATCH',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ isRead: true }),
       });
@@ -92,12 +86,9 @@ export default function NotificationBell() {
   const markAllAsRead = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('auth-token');
       const response = await fetch('/api/notifications/mark-all-read', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
       
       const data = await response.json();

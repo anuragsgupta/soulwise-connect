@@ -89,8 +89,6 @@ export async function POST(request: NextRequest) {
       createResponse(false, 'Internal server error'),
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -151,7 +149,5 @@ export async function GET(request: NextRequest) {
       createResponse(false, 'Internal server error'),
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
