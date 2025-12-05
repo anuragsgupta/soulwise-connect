@@ -28,6 +28,16 @@ export default function AuthDebugConsole() {
     }]);
   };
 
+  const formatDetails = (details: unknown): string => {
+    try {
+      return typeof details === 'string' 
+        ? details 
+        : JSON.stringify(details, null, 2);
+    } catch {
+      return String(details);
+    }
+  };
+
   const checkEnvironment = async () => {
     addLog('info', '🔍 Checking environment variables...');
     
@@ -261,9 +271,9 @@ export default function AuthDebugConsole() {
               {getIcon(log.type)}
               <div className="flex-1 min-w-0">
                 <p className="text-gray-200 break-words">{log.message}</p>
-                {log.details && (
+                {log.details !== undefined && (
                   <pre className="mt-1 text-xs text-gray-400 bg-gray-800 p-2 rounded overflow-x-auto">
-                    {JSON.stringify(log.details, null, 2)}
+                    {formatDetails(log.details)}
                   </pre>
                 )}
               </div>
