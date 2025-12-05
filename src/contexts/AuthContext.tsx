@@ -229,16 +229,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('auth-user');
-    
-    // Clear HTTP-only cookie via API call
-    fetch('/api/auth/logout', {
-      method: 'POST',
-      credentials: 'include'
-    }).catch(err => console.error('Logout error:', err));
+  const logout = async () => {
+    try {
+      // Clear HTTP-only cookie via API call
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch (error) {
+      console.error('Logout API error:', error);
+      // Continue with client-side logout even if API fails
+    } finally {
+      // Always clear client-side state
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem('auth-user');
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      localStorage.removeItem('studentSession');
+    }
   };
 
   return (

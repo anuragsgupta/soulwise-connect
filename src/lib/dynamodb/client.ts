@@ -2,10 +2,11 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 
-const REGION = process.env.AWS_REGION;
+// Use NEXT_PUBLIC_ prefix to avoid Netlify reserved environment variables
+const REGION = process.env.NEXT_PUBLIC_AWS_REGION;
 
 if (!REGION) {
-  throw new Error("AWS_REGION is not set in .env");
+  throw new Error("NEXT_PUBLIC_AWS_REGION is not set in .env");
 }
 
 if (!process.env.DYNAMODB_CHAT_MEMORY_TABLE) {
@@ -20,10 +21,10 @@ if (!process.env.DYNAMODB_COMMUNITY_TABLE) {
 const baseClient = new DynamoDBClient({
   region: REGION,
   credentials:
-    process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY
+    process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID && process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY
       ? {
-          accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+          accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID!,
+          secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY!,
         }
       : undefined,
 });
