@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     // Fetch fresh user data from database
     let user = null;
     
-    if (decoded.role === 'STUDENT') {
+    if (decoded.userType === 'STUDENT') {
       user = await prisma.student.findUnique({
         where: { id: decoded.id },
         include: {
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
           batch: true,
         }
       });
-    } else if (decoded.role === 'FACULTY') {
+    } else if (decoded.userType === 'FACULTY') {
       user = await prisma.faculty.findUnique({
         where: { id: decoded.id },
         include: {
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
           department: true,
         }
       });
-    } else if (['SUPER_ADMIN', 'UNIVERSITY_ADMIN', 'INSTITUTE_ADMIN'].includes(decoded.role)) {
+    } else if (decoded.userType === 'ADMIN') {
       user = await prisma.admin.findUnique({
         where: { id: decoded.id },
         include: {
@@ -73,19 +73,19 @@ export async function GET(request: NextRequest) {
           id: user.id,
           email: user.email,
           name: user.name,
-          userType: decoded.role,
+          userType: decoded.userType,
           role: decoded.role,
-          ...(decoded.role === 'STUDENT' && {
+          ...(decoded.userType === 'STUDENT' && {
             rollNumber: ('rollNumber' in user) ? user.rollNumber : undefined,
             batchId: ('batchId' in user) ? user.batchId : undefined,
           }),
-          ...(decoded.role === 'FACULTY' && {
+          ...(decoded.userType === 'FACULTY' && {
             facultyType: ('facultyType' in user) ? user.facultyType : undefined,
             departmentId: ('departmentId' in user) ? user.departmentId : undefined,
           }),
-          ...(['SUPER_ADMIN', 'UNIVERSITY_ADMIN', 'INSTITUTE_ADMIN'].includes(decoded.role) && {
+          ...(decoded.userType === 'ADMIN' && {
             adminType: ('adminType' in user) ? user.adminType : undefined,
-            isSuperAdmin: ('adminType' in user) && user.adminType === 'SUPER_ADMIN',
+            isSuperAdmin: ('isSuperAdmin' in user) ? user.isSuperAdmin : false,
           }),
           universityId: user.universityId,
           instituteId: user.instituteId,
