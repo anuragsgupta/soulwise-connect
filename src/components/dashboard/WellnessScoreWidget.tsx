@@ -37,11 +37,13 @@ interface WellnessScoreData {
 interface WellnessScoreWidgetProps {
   studentId: string;
   showBreakdown?: boolean;
+  hideOverallScore?: boolean;
 }
 
 export default function WellnessScoreWidget({ 
   studentId, 
-  showBreakdown = true 
+  showBreakdown = true,
+  hideOverallScore = false
 }: WellnessScoreWidgetProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -118,64 +120,66 @@ export default function WellnessScoreWidget({
   return (
     <div className="space-y-4">
       {/* Main Wellness Score Card */}
-      <Card className={wellnessData.hasRedFlags ? "border-red-500 border-2" : ""}>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Activity className="w-5 h-5 text-primary" />
-              <CardTitle className="font-heading">Overall Wellness Score</CardTitle>
+      {!hideOverallScore && (
+        <Card className={wellnessData.hasRedFlags ? "border-red-500 border-2" : ""}>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="w-5 h-5 text-primary" />
+                <CardTitle className="font-heading">Overall Wellness Score</CardTitle>
+              </div>
+              <Badge 
+                variant={wellnessData.hasRedFlags ? "destructive" : "default"}
+                className={wellnessCategory.color}
+              >
+                {wellnessCategory.category}
+              </Badge>
             </div>
-            <Badge 
-              variant={wellnessData.hasRedFlags ? "destructive" : "default"}
-              className={wellnessCategory.color}
-            >
-              {wellnessCategory.category}
-            </Badge>
-          </div>
-          <CardDescription className="font-body">
-            Comprehensive mental health assessment based on multiple factors
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Score Display */}
-          <div className="flex items-center justify-center">
-            <div className="relative">
-              <div className="text-center">
-                <div className="text-6xl font-bold text-primary mb-2">
-                  {wellnessData.overallScore}
+            <CardDescription className="font-body">
+              Comprehensive mental health assessment based on multiple factors
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Score Display */}
+            <div className="flex items-center justify-center">
+              <div className="relative">
+                <div className="text-center">
+                  <div className="text-6xl font-bold text-primary mb-2">
+                    {wellnessData.overallScore}
+                  </div>
+                  <div className="text-sm text-muted-foreground">out of 100</div>
                 </div>
-                <div className="text-sm text-muted-foreground">out of 100</div>
               </div>
             </div>
-          </div>
 
-          {/* Progress Bar */}
-          <div className="space-y-2">
-            <Progress value={wellnessData.overallScore} className="h-3" />
-            <p className="text-sm text-center text-muted-foreground font-body">
-              {wellnessCategory.description}
-            </p>
-          </div>
+            {/* Progress Bar */}
+            <div className="space-y-2">
+              <Progress value={wellnessData.overallScore} className="h-3" />
+              <p className="text-sm text-center text-muted-foreground font-body">
+                {wellnessCategory.description}
+              </p>
+            </div>
 
-          {/* Red Flags Alert */}
-          {wellnessData.hasRedFlags && (
-            <Alert variant="destructive">
-              <AlertTriangle className="w-4 h-4" />
-              <AlertTitle className="font-heading">Critical Wellness Concerns Detected</AlertTitle>
-              <AlertDescription className="font-body">
-                <ul className="list-disc list-inside space-y-1 mt-2">
-                  {wellnessData.redFlagReasons.map((reason, index) => (
-                    <li key={index}>{reason}</li>
-                  ))}
-                </ul>
-                <p className="mt-3 font-semibold">
-                  Immediate professional support is recommended. Please contact your counselor or mental health services.
-                </p>
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
+            {/* Red Flags Alert */}
+            {wellnessData.hasRedFlags && (
+              <Alert variant="destructive">
+                <AlertTriangle className="w-4 h-4" />
+                <AlertTitle className="font-heading">Critical Wellness Concerns Detected</AlertTitle>
+                <AlertDescription className="font-body">
+                  <ul className="list-disc list-inside space-y-1 mt-2">
+                    {wellnessData.redFlagReasons.map((reason, index) => (
+                      <li key={index}>{reason}</li>
+                    ))}
+                  </ul>
+                  <p className="mt-3 font-semibold">
+                    Immediate professional support is recommended. Please contact your counselor or mental health services.
+                  </p>
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Score Breakdown */}
       {showBreakdown && (
@@ -272,18 +276,6 @@ export default function WellnessScoreWidget({
           </CardContent>
         </Card>
       )}
-
-      {/* Information Card */}
-      <Alert>
-        <Info className="w-4 h-4" />
-        <AlertTitle className="font-heading">How is this calculated?</AlertTitle>
-        <AlertDescription className="font-body">
-          Your wellness score is calculated using a Multi-Criteria Decision Analysis (MCDA) algorithm 
-          that combines your daily mood check-ins, clinical assessments (PHQ-9, GAD-7), and AI-analyzed 
-          conversation patterns. Recent data is weighted more heavily, and clinical assessments 
-          (50% weight) are prioritized over subjective daily inputs for accuracy.
-        </AlertDescription>
-      </Alert>
     </div>
   );
 }
