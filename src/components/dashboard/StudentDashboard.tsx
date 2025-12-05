@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from 'next/navigation';
 import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -59,11 +58,18 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<DashboardTab>('dashboard');
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const [isFabOpen, setIsFabOpen] = useState(false);
-  const [wellnessScore, setWellnessScore] = useState(15);
+  const [wellnessScore, setWellnessScore] = useState<number | null>(null);
   const [hasTodayMoodCheckIn, setHasTodayMoodCheckIn] = useState<boolean | null>(null);
+  const [upcomingSessions, setUpcomingSessions] = useState<Array<{
+    id: string;
+    title: string;
+    scheduledDate: string;
+    scheduledTime: string;
+    faculty: {
+      name: string;
+    };
+  }>>([]);
   const currentSemester = (user as { currentSemester?: string } | null)?.currentSemester;
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
@@ -103,6 +109,46 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
     checkTodayMoodCheckIn();
   }, [user]);
 
+  // Fetch wellness score
+  useEffect(() => {
+    const fetchWellnessScore = async () => {
+      if (!user?.id || user.userType !== 'STUDENT') return;
+
+      try {
+        const response = await fetch(`/api/wellness-score?studentId=${user.id}`);
+        const data = await response.json();
+
+        if (data.success && data.wellnessScore) {
+          setWellnessScore(data.wellnessScore.overallScore);
+        }
+      } catch (error) {
+        console.error('Error fetching wellness score:', error);
+      }
+    };
+
+    fetchWellnessScore();
+  }, [user]);
+
+  // Fetch upcoming sessions
+  useEffect(() => {
+    const fetchUpcomingSessions = async () => {
+      if (!user?.id || user.userType !== 'STUDENT') return;
+
+      try {
+        const response = await fetch(`/api/sessions/upcoming?studentId=${user.id}`);
+        const data = await response.json();
+
+        if (data.success && data.sessions) {
+          setUpcomingSessions(data.sessions);
+        }
+      } catch (error) {
+        console.error('Error fetching upcoming sessions:', error);
+      }
+    };
+
+    fetchUpcomingSessions();
+  }, [user]);
+
   // Location access on component mount (student login)
   useEffect(() => {
     const initializeLocation = async () => {
@@ -137,17 +183,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
 
       const allowedTabs: DashboardTab[] = ['dashboard', 'mood', 'chat', 'mentor', 'diary', 'appointments', 'notifications', 'resources', 'forum', 'more', 'profile'];
       if (allowedTabs.includes(targetTab)) {
-        // Update active tab and push a history entry so Back goes to previous tab
         setActiveTab(targetTab);
-        try {
-          router.push(`/dashboard?tab=${encodeURIComponent(targetTab)}`);
-        } catch (e) {
-          if (typeof window !== 'undefined') {
-            const url = new URL(window.location.href);
-            url.searchParams.set('tab', targetTab);
-            window.history.pushState({}, '', url.toString());
-          }
-        }
 
         if (detail?.source === 'chatbot') {
           toast({
@@ -172,19 +208,6 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
     window.addEventListener('dashboard:navigate', handleDashboardNavigation as EventListener);
     return () => window.removeEventListener('dashboard:navigate', handleDashboardNavigation as EventListener);
   }, [toast]);
-
-  // Sync initial tab from URL search params (e.g. /dashboard?tab=mood)
-  useEffect(() => {
-    try {
-      const tabFromUrl = searchParams?.get?.('tab') as DashboardTab | null;
-      if (tabFromUrl) {
-        setActiveTab(tabFromUrl);
-      }
-    } catch (e) {
-      // ignore if searchParams not available yet
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams?.toString()]);
 
   // Check and request location permission
   const checkLocationPermission = async () => {
@@ -368,17 +391,6 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   // Handle tab change
   const handleTabChange = (tab: DashboardTab) => {
     setActiveTab(tab);
-    // Update the URL so the route reflects the selected tab. Use push so Back navigates between tabs.
-    try {
-      router.push(`/dashboard?tab=${encodeURIComponent(tab)}`);
-    } catch (e) {
-      // Fallback: update location directly
-      if (typeof window !== 'undefined') {
-        const url = new URL(window.location.href);
-        url.searchParams.set('tab', tab);
-        window.history.pushState({}, '', url.toString());
-      }
-    }
   };
 
   // Enhanced logout function with proper cleanup
@@ -415,7 +427,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       description: "Track how you're feeling today",
       icon: Heart,
       color: "from-wellness to-wellness-light",
-      action: () => handleTabChange('mood')
+      action: () => setActiveTab('mood')
     },
     {
       title: "PHQ-9 Assessment",
@@ -436,21 +448,21 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       description: "Get instant mental health support",
       icon: MessageCircle,
       color: "from-primary to-support",
-      action: () => handleTabChange('chat')
+      action: () => setActiveTab('chat')
     },
     {
       title: "Book Appointment",
       description: "Schedule session with faculty/counsellor",
       icon: Calendar,
       color: "from-blue-500 to-blue-600",
-      action: () => handleTabChange('appointments')
+      action: () => setActiveTab('appointments')
     },
     {
       title: "Wellness Resources",
       description: "Access guides, videos & tools",
       icon: BookOpen,
       color: "from-secondary to-accent",
-      action: () => handleTabChange('resources')
+      action: () => setActiveTab('resources')
     }
   ];
 
@@ -555,193 +567,117 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
         );
       default:
         return (
-          <div className="space-y-6">
-            {/* Welcome Header */}
-            <Card className="relative bg-white/80 border border-gray-200/50 shadow-2xl rounded-3xl overflow-hidden backdrop-blur-sm">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/8 via-purple-500/8 to-pink-500/8" />
-              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-3xl" />
-              <CardHeader className="pb-6 relative">
-                <CardTitle className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-in fade-in slide-in-from-bottom-3 duration-700">
-                  Welcome back, {user?.name || 'Student'}! 👋
-                </CardTitle>
+          <div className="space-y-4 pb-6">
+            {/* Compact Welcome Header with Wellness Score */}
+            <Card className={`border-0 shadow-lg rounded-2xl overflow-hidden ${
+              wellnessScore === null ? 'bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600' :
+              wellnessScore >= 70 ? 'bg-gradient-to-br from-green-500 via-emerald-500 to-teal-600' :
+              wellnessScore >= 40 ? 'bg-gradient-to-br from-yellow-500 via-amber-500 to-orange-500' :
+              'bg-gradient-to-br from-red-500 via-rose-500 to-pink-600'
+            }`}>
+              <CardHeader className="pb-4 pt-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-2xl font-bold text-white flex items-center gap-2">
+                      Hi, {user?.name?.split(' ')[0] || 'Student'}! 👋
+                    </CardTitle>
+                    <CardDescription className="text-white/90 text-sm mt-1">
+                      How are you feeling today?
+                    </CardDescription>
+                  </div>
+                  {wellnessScore !== null && (
+                    <div className="text-right">
+                      <div className="text-3xl font-extrabold text-white">{wellnessScore}</div>
+                      <div className="text-xs text-white/80 font-medium">Wellness Score</div>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
             </Card>
 
-            {/* Wellness Score Widget */}
-            {user?.id && (
-              <WellnessScoreWidget studentId={user.id} showBreakdown={true} />
-            )}
-
-            {/* Quick Actions Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {quickActions.map((action, index) => (
-                <Card 
-                  key={index}
-                  className="group cursor-pointer hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 border border-gray-200/60 rounded-3xl overflow-hidden bg-white/90 backdrop-blur-sm hover:border-transparent"
-                  onClick={action.action}
-                >
-                  {/* Hover gradient overlay */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-0 group-hover:opacity-8 transition-opacity duration-500`} />
-                  {/* Shine effect */}
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                  </div>
-                  <CardHeader className="relative p-6">
-                    <div className="flex items-start space-x-4">
-                      <div className={`p-4 rounded-2xl bg-gradient-to-br ${action.color} shadow-lg group-hover:scale-110 group-hover:rotate-6 group-hover:shadow-xl transition-all duration-500`}>
+            {/* Main Actions Grid - PhonePe Style */}
+            <Card className="rounded-2xl shadow-md border-gray-100">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold text-gray-800">Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4">
+                  {quickActions.map((action, index) => (
+                    <button
+                      key={index}
+                      onClick={action.action}
+                      className="flex flex-col items-center p-4 rounded-xl hover:bg-gray-50 transition-all duration-200 active:scale-95 group"
+                    >
+                      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${action.color} flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow mb-2`}>
                         <action.icon className="w-7 h-7 text-white" />
                       </div>
-                      <div className="flex-1">
-                        <CardTitle className="text-base md:text-lg font-bold text-gray-800 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 group-hover:bg-clip-text transition-all duration-300">
-                          {action.title}
-                        </CardTitle>
-                        <CardDescription className="text-sm text-gray-500 mt-2 group-hover:text-gray-600 transition-colors">{action.description}</CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                </Card>
-              ))}
-            </div>
+                      <span className="text-xs font-medium text-gray-700 text-center leading-tight">
+                        {action.title}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
-            {/* Recent Activity & Insights */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-              <Card className="rounded-3xl border border-gray-200/60 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-white/90 backdrop-blur-sm">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center text-lg font-bold">
-                    <div className="p-2 rounded-xl bg-gradient-to-br from-green-100 to-emerald-100 mr-3">
-                      <TrendingUp className="w-5 h-5 text-green-600" />
-                    </div>
-                    Weekly Insights
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="group flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200/60 hover:shadow-md hover:scale-105 transition-all duration-300 cursor-pointer">
-                    <div className="flex items-center">
-                      <div className="p-2 rounded-xl bg-green-100 mr-3 group-hover:scale-110 transition-transform">
-                        <Smile className="w-5 h-5 text-green-600" />
-                      </div>
-                      <span className="text-sm font-semibold text-gray-700">Good days this week</span>
-                    </div>
-                    <span className="font-extrabold text-green-600 text-xl group-hover:scale-110 transition-transform">5/7</span>
-                  </div>
-                  <div className="group flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-violet-50 rounded-2xl border border-purple-200/60 hover:shadow-md hover:scale-105 transition-all duration-300 cursor-pointer">
-                    <div className="flex items-center">
-                      <div className="p-2 rounded-xl bg-purple-100 mr-3 group-hover:scale-110 transition-transform">
-                        <Brain className="w-5 h-5 text-purple-600" />
-                      </div>
-                      <span className="text-sm font-semibold text-gray-700">Meditation sessions</span>
-                    </div>
-                    <span className="font-extrabold text-purple-600 text-xl group-hover:scale-110 transition-transform">12 min</span>
-                  </div>
-                  <div className="group flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl border border-blue-200/60 hover:shadow-md hover:scale-105 transition-all duration-300 cursor-pointer">
-                    <div className="flex items-center">
-                      <div className="p-2 rounded-xl bg-blue-100 mr-3 group-hover:scale-110 transition-transform">
-                        <MessageCircle className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <span className="text-sm font-semibold text-gray-700">AI chat sessions</span>
-                    </div>
-                    <span className="font-extrabold text-blue-600 text-xl group-hover:scale-110 transition-transform">3</span>
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Wellness Score Breakdown */}
+            {user?.id && (
+              <WellnessScoreWidget studentId={user.id} showBreakdown={true} hideOverallScore={true} />
+            )}
 
-              <Card className="rounded-3xl border border-gray-200/60 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-white/90 backdrop-blur-sm">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center text-lg font-bold">
-                    <div className="p-2 rounded-xl bg-gradient-to-br from-orange-100 to-amber-100 mr-3">
-                      <Bell className="w-5 h-5 text-orange-600" />
-                    </div>
-                    Upcoming & Reminders
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="group p-4 border-l-4 border-blue-500 bg-gradient-to-r from-blue-50 to-transparent rounded-r-2xl hover:from-blue-100 hover:shadow-md transition-all duration-300 cursor-pointer">
-                    <p className="font-bold text-blue-700 flex items-center">📅 Counselling Session</p>
-                    <p className="text-sm text-gray-600 mt-1.5 font-medium">Tomorrow at 2:00 PM</p>
-                  </div>
-                  <div className="group p-4 border-l-4 border-green-500 bg-gradient-to-r from-green-50 to-transparent rounded-r-2xl hover:from-green-100 hover:shadow-md transition-all duration-300 cursor-pointer">
-                    <p className="font-bold text-green-700 flex items-center">💚 Daily Mood Check</p>
-                    <p className="text-sm text-gray-600 mt-1.5 font-medium">Complete your evening reflection</p>
-                  </div>
-                  <div className="group p-4 border-l-4 border-purple-500 bg-gradient-to-r from-purple-50 to-transparent rounded-r-2xl hover:from-purple-100 hover:shadow-md transition-all duration-300 cursor-pointer">
-                    <p className="font-bold text-purple-700 flex items-center">👥 Peer Group Chat</p>
-                    <p className="text-sm text-gray-600 mt-1.5 font-medium">Join the study stress discussion</p>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              {/* Safety & Location Status Card */}
-              <Card className="rounded-3xl border border-gray-200/60 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-white/90 backdrop-blur-sm">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center text-lg font-bold">
-                    <div className="p-2 rounded-xl bg-gradient-to-br from-green-100 to-emerald-100 mr-3">
-                      <MapPin className="w-5 h-5 text-green-600" />
-                    </div>
-                    Safety Status
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {userLocation ? (
-                    <>
-                      <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                            <span className="text-sm font-medium text-green-800">Location Active</span>
-                          </div>
-                          <Badge className="bg-green-100 text-green-800 text-xs">Protected</Badge>
+            {/* Upcoming Sessions */}
+            <Card className="rounded-2xl shadow-md border-gray-100">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-blue-600" />
+                  Upcoming Sessions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {upcomingSessions.length > 0 ? (
+                  upcomingSessions.map((session) => {
+                    const sessionDate = new Date(session.scheduledDate);
+                    const today = new Date();
+                    const tomorrow = new Date(today);
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    
+                    // Format date display
+                    let dateDisplay = '';
+                    if (sessionDate.toDateString() === today.toDateString()) {
+                      dateDisplay = 'Today';
+                    } else if (sessionDate.toDateString() === tomorrow.toDateString()) {
+                      dateDisplay = 'Tomorrow';
+                    } else {
+                      dateDisplay = sessionDate.toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric' 
+                      });
+                    }
+
+                    return (
+                      <div key={session.id} className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
+                        <div className="text-2xl">📅</div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-sm text-blue-900">
+                            {session.title}
+                          </p>
+                          <p className="text-xs text-blue-700 font-medium">
+                            with {session.faculty.name}
+                          </p>
+                          <p className="text-xs text-blue-600 mt-0.5">
+                            {dateDisplay} at {session.scheduledTime}
+                          </p>
                         </div>
-                        <p className="text-xs text-green-600 mt-1">
-                          Emergency services can locate you quickly if needed
-                        </p>
                       </div>
-                      
-                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div className="flex items-center">
-                          <Heart className="w-4 h-4 text-blue-600 mr-2" />
-                          <span className="text-sm font-medium text-blue-800">Campus Safety Connected</span>
-                        </div>
-                        <p className="text-xs text-blue-600 mt-1">
-                          Your location is monitored for enhanced student safety
-                        </p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <AlertTriangle className="w-4 h-4 text-yellow-600 mr-2" />
-                            <span className="text-sm font-medium text-yellow-800">Location Not Shared</span>
-                          </div>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={requestLocationAccess}
-                            className="text-xs"
-                          >
-                            Enable
-                          </Button>
-                        </div>
-                        <p className="text-xs text-yellow-600 mt-1">
-                          Enable location for enhanced safety features
-                        </p>
-                      </div>
-                    </>
-                  )}
-                  
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="flex items-center">
-                      <Phone className="w-4 h-4 text-red-600 mr-2" />
-                      <span className="text-sm font-medium text-red-800">24/7 Crisis Support</span>
-                    </div>
-                    <p className="text-xs text-red-600 mt-1">
-                      📞 1800-599-0019 - KIRAN Mental Health Helpline
-                    </p>
+                    );
+                  })
+                ) : (
+                  <div className="flex items-center justify-center p-6 bg-gray-50 rounded-xl border border-gray-100">
+                    <p className="text-sm text-gray-500">No upcoming sessions</p>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         );
     }
