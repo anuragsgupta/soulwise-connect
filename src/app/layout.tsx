@@ -3,6 +3,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "@/components/ui/toaster";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import AuthLoadingWrapper from "@/components/AuthLoadingWrapper";
+import AuthDebugConsole from "@/components/debug/AuthDebugConsole";
 import { fontHeading, fontBody, fontAccent, getFontVariables } from "@/config/fonts";
 import "./globals.css";
 
@@ -58,6 +59,7 @@ export default function RootLayout({
         </AuthProvider>
         <Toaster />
         <PWAInstallPrompt />
+        <AuthDebugConsole />
       </body>
     </html>
   );
