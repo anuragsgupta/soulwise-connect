@@ -15,18 +15,15 @@ import {
   Users, 
   Brain,
   Smile,
-  TrendingUp,
-  Bell,
   LogOut,
   MapPin,
   Navigation,
   AlertTriangle,
-  Phone,
   ClipboardCheck,
   UserCircle,
   NotebookPen,
   CheckSquare,
-  Settings,
+  Settings as SettingsIcon,
   HelpCircle,
   User,
   Plus,
@@ -46,13 +43,14 @@ import NotificationBell from "@/components/notifications/NotificationBell";
 import NotificationsPage from "@/components/notifications/NotificationsPage";
 import BookSession from "@/components/sessions/BookSession";
 import WellnessScoreWidget from "./WellnessScoreWidget";
+import SettingsPage from "./Settings";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface StudentDashboardProps {
   onLogout: () => void;
 }
 
-type DashboardTab = 'dashboard' | 'mood' | 'chat' | 'mentor' | 'diary' | 'tasks' | 'calendar' | 'appointments' | 'notifications' | 'resources' | 'forum' | 'profile' | 'more';
+type DashboardTab = 'dashboard' | 'mood' | 'chat' | 'mentor' | 'diary' | 'tasks' | 'calendar' | 'appointments' | 'notifications' | 'resources' | 'forum' | 'profile' | 'settings' | 'more';
 
 const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   const { toast } = useToast();
@@ -521,15 +519,18 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             
             {/* Settings and Help Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer rounded-2xl border-gray-100">
+              <Card 
+                onClick={() => setActiveTab('settings')}
+                className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer rounded-2xl border-gray-100"
+              >
                 <CardHeader>
                   <div className="flex items-center space-x-4">
                     <div className="w-14 h-14 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center">
-                      <Settings className="w-7 h-7 text-gray-700" />
+                      <SettingsIcon className="w-7 h-7 text-gray-700" />
                     </div>
                     <div>
                       <CardTitle className="text-lg font-semibold">Settings</CardTitle>
-                      <CardDescription className="text-gray-500">Preferences & notifications</CardDescription>
+                      <CardDescription className="text-gray-500">API key & preferences</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
@@ -565,6 +566,8 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             </Card>
           </div>
         );
+      case 'settings':
+        return user?.id ? <SettingsPage studentId={user.id} /> : null;
       default:
         return (
           <div className="space-y-4 pb-6">
