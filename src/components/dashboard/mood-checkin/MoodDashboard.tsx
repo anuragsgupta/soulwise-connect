@@ -109,18 +109,40 @@ export default function MoodDashboard({ onStartCheckIn, todayCheckIn }: MoodDash
       .sort((a, b) => b.avgScore - a.avgScore)
       .slice(0, 3);
 
-    // Calculate streak
-    const today = new Date();
+    // Calculate streak - count consecutive days starting from today
     let streak = 0;
-    for (let i = 0; i < checkIns.length; i++) {
-      const checkInDate = new Date(checkIns[i].checkInDate);
-      const expectedDate = new Date(today);
-      expectedDate.setDate(today.getDate() - i);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize to start of day
+    
+    // Sort check-ins by date descending (most recent first)
+    const sortedCheckIns = [...checkIns].sort((a, b) => 
+      new Date(b.checkInDate).getTime() - new Date(a.checkInDate).getTime()
+    );
+    
+    // Check if there's a check-in today
+    if (sortedCheckIns.length > 0) {
+      const mostRecentDate = new Date(sortedCheckIns[0].checkInDate);
+      mostRecentDate.setHours(0, 0, 0, 0);
       
-      if (checkInDate.toDateString() === expectedDate.toDateString()) {
-        streak++;
-      } else {
-        break;
+      // Start counting streak from today or yesterday (grace period)
+      const daysDiff = Math.floor((today.getTime() - mostRecentDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysDiff === 0 || daysDiff === 1) {
+        // Build a set of check-in dates for fast lookup
+        const checkInDates = new Set(
+          sortedCheckIns.map(c => {
+            const d = new Date(c.checkInDate);
+            d.setHours(0, 0, 0, 0);
+            return d.toDateString();
+          })
+        );
+        
+        // Count consecutive days going backwards from most recent check-in
+        let checkDate = new Date(mostRecentDate);
+        while (checkInDates.has(checkDate.toDateString())) {
+          streak++;
+          checkDate.setDate(checkDate.getDate() - 1);
+        }
       }
     }
 

@@ -691,7 +691,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-blue-300/10 to-cyan-300/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       
       {/* Navigation */}
-      <nav className="bg-white/90 backdrop-blur-2xl border-b border-gray-200/60 shadow-xl sticky top-0 z-50 relative">
+      <nav className="bg-white/90 backdrop-blur-2xl border-b border-gray-200/60 shadow-xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo and Brand */}

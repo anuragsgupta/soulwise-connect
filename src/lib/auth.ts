@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
+import { cache } from 'react';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key';
 
@@ -19,14 +20,19 @@ export function generateToken(payload: any): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
 
-// Verify JWT token
-export function verifyToken(token: string): any {
+// Verify JWT token (uncached version for internal use)
+function verifyTokenInternal(token: string): any {
   try {
     return jwt.verify(token, JWT_SECRET);
   } catch (error) {
     throw new Error('Invalid token');
   }
 }
+
+// Cached version of verifyToken - prevents duplicate token verification in a single render pass
+export const verifyToken = cache((token: string): any => {
+  return verifyTokenInternal(token);
+});
 
 // Generate secure invite token
 export function generateInviteToken(): string {
