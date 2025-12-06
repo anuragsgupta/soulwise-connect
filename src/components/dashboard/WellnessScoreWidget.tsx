@@ -202,11 +202,11 @@ export default function WellnessScoreWidget({
                   <span className="text-sm font-medium font-heading">Daily Mood</span>
                 </div>
                 <span className="text-sm font-bold">
-                  {wellnessData.breakdown.moodContribution.toFixed(1)} / 30
+                  {wellnessData.breakdown.moodContribution?.toFixed(1) ?? '0.0'} / 30
                 </span>
               </div>
               <Progress 
-                value={(wellnessData.breakdown.moodContribution / 30) * 100} 
+                value={((wellnessData.breakdown.moodContribution ?? 0) / 30) * 100} 
                 className="h-2"
               />
               <p className="text-xs text-muted-foreground">
@@ -222,11 +222,11 @@ export default function WellnessScoreWidget({
                   <span className="text-sm font-medium font-heading">PHQ-9 (Depression)</span>
                 </div>
                 <span className="text-sm font-bold">
-                  {wellnessData.breakdown.phq9Contribution.toFixed(1)} / 25
+                  {wellnessData.breakdown.phq9Contribution?.toFixed(1) ?? '0.0'} / 25
                 </span>
               </div>
               <Progress 
-                value={(wellnessData.breakdown.phq9Contribution / 25) * 100} 
+                value={((wellnessData.breakdown.phq9Contribution ?? 0) / 25) * 100} 
                 className="h-2"
               />
               <p className="text-xs text-muted-foreground">
@@ -242,11 +242,11 @@ export default function WellnessScoreWidget({
                   <span className="text-sm font-medium font-heading">GAD-7 (Anxiety)</span>
                 </div>
                 <span className="text-sm font-bold">
-                  {wellnessData.breakdown.gad7Contribution.toFixed(1)} / 25
+                  {wellnessData.breakdown.gad7Contribution?.toFixed(1) ?? '0.0'} / 25
                 </span>
               </div>
               <Progress 
-                value={(wellnessData.breakdown.gad7Contribution / 25) * 100} 
+                value={((wellnessData.breakdown.gad7Contribution ?? 0) / 25) * 100} 
                 className="h-2"
               />
               <p className="text-xs text-muted-foreground">
@@ -262,11 +262,11 @@ export default function WellnessScoreWidget({
                   <span className="text-sm font-medium font-heading">AI Conversation Analysis</span>
                 </div>
                 <span className="text-sm font-bold">
-                  {wellnessData.breakdown.chatbotContribution.toFixed(1)} / 20
+                  {wellnessData.breakdown.chatbotContribution?.toFixed(1) ?? '0.0'} / 20
                 </span>
               </div>
               <Progress 
-                value={(wellnessData.breakdown.chatbotContribution / 20) * 100} 
+                value={((wellnessData.breakdown.chatbotContribution ?? 0) / 20) * 100} 
                 className="h-2"
               />
               <p className="text-xs text-muted-foreground">

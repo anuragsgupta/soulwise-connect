@@ -67,8 +67,8 @@ export async function POST(request: NextRequest) {
     console.log('Checking for existing check-in with:', { studentId, checkInDate });
     const existingCheckIn = await prisma.mood_check_ins.findFirst({
       where: {
-        studentId,
-        checkInDate
+        student_id: studentId,
+        check_in_date: checkInDate
       }
     });
     console.log('Existing check-in:', existingCheckIn);
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
         where: { id: existingCheckIn.id },
         data: {
           mood_score: moodLevel,
-          moodLabel,
+          mood_label: moodLabel,
           factors: moodFactors || {},
           notes: journal || null
         }
@@ -98,12 +98,12 @@ export async function POST(request: NextRequest) {
       });
       moodCheckIn = await prisma.mood_check_ins.create({
         data: {
-          studentId,
+          student_id: studentId,
           mood_score: moodLevel,
-          moodLabel,
+          mood_label: moodLabel,
           factors: moodFactors || {},
           notes: journal || null,
-          checkInDate
+          check_in_date: checkInDate
         }
       });
     }
