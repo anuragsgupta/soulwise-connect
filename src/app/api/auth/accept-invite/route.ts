@@ -66,8 +66,8 @@ export async function POST(request: NextRequest) {
       data: {
         userId: user.userId,
         roleId: invite.roleId,
-        universityId: invite.universityId,
-        instituteId: invite.instituteId,
+        university_id: invite.universityId,
+        institute_id: invite.instituteId,
         grantedBy: invite.createdBy,
       },
     });
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Log audit event
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         actorUser: user.userId,
         action: 'INVITE_ACCEPTED',
@@ -88,8 +88,8 @@ export async function POST(request: NextRequest) {
         detail: {
           email: user.email,
           role: invite.role.name,
-          universityId: invite.universityId,
-          instituteId: invite.instituteId,
+          university_id: invite.universityId,
+          institute_id: invite.instituteId,
         },
       },
     });

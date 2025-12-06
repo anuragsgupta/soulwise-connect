@@ -62,7 +62,7 @@ export async function POST(
     }
 
     // Get institute
-    const institute = await prisma.institute.findUnique({
+    const institute = await prisma.institutes.findUnique({
       where: { instituteId },
       include: { university: true },
     });
@@ -124,14 +124,14 @@ export async function POST(
     for (const studentData of students) {
       try {
         // Check if student already exists
-        const existingStudent = await prisma.student.findUnique({
-          where: { enrollmentId: studentData.enrollment_id },
+        const existingStudent = await prisma.students.findUnique({
+          where: { enrollment_id: studentData.enrollment_id },
         });
 
         if (existingStudent) {
           // Update existing student
-          await prisma.student.update({
-            where: { enrollmentId: studentData.enrollment_id },
+          await prisma.students.update({
+            where: { enrollment_id: studentData.enrollment_id },
             data: {
               name: studentData.name,
               dob: studentData.dob ? new Date(studentData.dob) : null,
@@ -150,10 +150,10 @@ export async function POST(
           results.updated++;
         } else {
           // Create new student
-          await prisma.student.create({
+          await prisma.students.create({
             data: {
               instituteId,
-              enrollmentId: studentData.enrollment_id,
+              enrollment_id: studentData.enrollment_id,
               name: studentData.name,
               dob: studentData.dob ? new Date(studentData.dob) : null,
               program: studentData.program || null,
@@ -179,7 +179,7 @@ export async function POST(
     }
 
     // Log audit event
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         actorUser: user.userId,
         action: 'STUDENTS_BULK_UPLOAD',

@@ -10,7 +10,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const department = await prisma.department.findUnique({
+    const department = await prisma.departments.findUnique({
       where: { id: params.id },
       include: {
         institute: true,
@@ -76,7 +76,7 @@ export async function PUT(
       );
     }
 
-    const existingDepartment = await prisma.department.findUnique({
+    const existingDepartment = await prisma.departments.findUnique({
       where: { id: params.id },
     });
 
@@ -88,7 +88,7 @@ export async function PUT(
     }
 
     if (code && code !== existingDepartment.code) {
-      const codeConflict = await prisma.department.findUnique({
+      const codeConflict = await prisma.departments.findUnique({
         where: { code },
       });
 
@@ -105,7 +105,7 @@ export async function PUT(
     if (code !== undefined) updateData.code = code;
     if (hodId !== undefined) updateData.hodId = hodId;
 
-    const department = await prisma.department.update({
+    const department = await prisma.departments.update({
       where: { id: params.id },
       data: updateData,
       include: {
@@ -119,7 +119,7 @@ export async function PUT(
     });
 
     try {
-      await prisma.auditLog.create({
+      await prisma.audit_logs.create({
         data: {
           tableName: 'Department',
           recordId: department.id,
@@ -170,7 +170,7 @@ export async function DELETE(
       );
     }
 
-    const department = await prisma.department.findUnique({
+    const department = await prisma.departments.findUnique({
       where: { id: params.id },
       include: {
         _count: {
@@ -199,7 +199,7 @@ export async function DELETE(
     }
 
     try {
-      await prisma.auditLog.create({
+      await prisma.audit_logs.create({
         data: {
           tableName: 'Department',
           recordId: department.id,
@@ -213,7 +213,7 @@ export async function DELETE(
       console.error('Audit log creation failed:', auditError);
     }
 
-    await prisma.department.delete({
+    await prisma.departments.delete({
       where: { id: params.id },
     });
 

@@ -10,10 +10,10 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const batch = await prisma.batch.findUnique({
+    const batch = await prisma.batches.findUnique({
       where: { id: params.id },
       include: {
-        department: {
+        departments: {
           include: {
             institute: true,
           },
@@ -72,7 +72,7 @@ export async function PUT(
       );
     }
 
-    const existingBatch = await prisma.batch.findUnique({
+    const existingBatch = await prisma.batches.findUnique({
       where: { id: params.id },
     });
 
@@ -90,11 +90,11 @@ export async function PUT(
     if (totalSeats !== undefined) updateData.totalSeats = totalSeats;
     if (currentStrength !== undefined) updateData.currentStrength = currentStrength;
 
-    const batch = await prisma.batch.update({
+    const batch = await prisma.batches.update({
       where: { id: params.id },
       data: updateData,
       include: {
-        department: {
+        departments: {
           select: {
             id: true,
             name: true,
@@ -105,7 +105,7 @@ export async function PUT(
     });
 
     try {
-      await prisma.auditLog.create({
+      await prisma.audit_logs.create({
         data: {
           tableName: 'Batch',
           recordId: batch.id,
@@ -156,7 +156,7 @@ export async function DELETE(
       );
     }
 
-    const batch = await prisma.batch.findUnique({
+    const batch = await prisma.batches.findUnique({
       where: { id: params.id },
       include: {
         _count: {
@@ -182,7 +182,7 @@ export async function DELETE(
     }
 
     try {
-      await prisma.auditLog.create({
+      await prisma.audit_logs.create({
         data: {
           tableName: 'Batch',
           recordId: batch.id,
@@ -196,7 +196,7 @@ export async function DELETE(
       console.error('Audit log creation failed:', auditError);
     }
 
-    await prisma.batch.delete({
+    await prisma.batches.delete({
       where: { id: params.id },
     });
 

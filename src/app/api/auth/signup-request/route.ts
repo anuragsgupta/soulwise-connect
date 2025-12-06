@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     // Domain verification for UniversityAdmin
     if (requestedRole === 'UniversityAdmin' && universityId) {
-      const university = await prisma.university.findUnique({
+      const university = await prisma.universities.findUnique({
         where: { universityId },
       });
 

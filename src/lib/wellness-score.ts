@@ -18,11 +18,11 @@
  * Higher mood = higher wellness
  * Formula: N_mood = (Input - 1) / 9
  */
-export function normalizeMood(moodScore: number): number {
-  if (moodScore < 1 || moodScore > 10) {
+export function normalizeMood(mood_score: number): number {
+  if (mood_score < 1 || mood_score > 10) {
     throw new Error('Mood score must be between 1 and 10');
   }
-  return (moodScore - 1) / 9;
+  return (mood_score - 1) / 9;
 }
 
 /**

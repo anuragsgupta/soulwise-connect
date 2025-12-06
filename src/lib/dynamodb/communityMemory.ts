@@ -42,11 +42,11 @@ export async function createCommunityPost(
     author: input.author,
     category: input.category || "General",
     isAnonymous: input.isAnonymous ?? true,
-    instituteId: input.instituteId,
+    institute_id: input.instituteId,
     likes: 0,
     repliesCount: 0,
     createdAt,
-    updatedAt: createdAt,
+    updated_at: createdAt,
   };
 
   await dynamoClient.send(
@@ -75,10 +75,10 @@ export async function createCommunityReply(
     authorId: input.authorId,
     author: input.author,
     isAnonymous: input.isAnonymous ?? true,
-    instituteId: input.instituteId,
+    institute_id: input.instituteId,
     likes: 0,
     createdAt,
-    updatedAt: createdAt,
+    updated_at: createdAt,
   };
 
   // Save reply
@@ -258,7 +258,7 @@ export async function getFlaggedItems(limit = 50) {
 /**
  * ✅ Get items filtered by institute
  */
-export async function getCommunityItemsByInstitute(instituteId: string, limit = 50) {
+export async function getCommunityItemsByInstitute(institute_id: string, limit = 50) {
   const res = await dynamoClient.send(
     new ScanCommand({
       TableName: COMMUNITY_TABLE,

@@ -13,9 +13,9 @@ export async function GET(
     const faculty = await prisma.faculty.findUnique({
       where: { id: params.id },
       include: {
-        department: {
+        departments: {
           include: {
-            institute: {
+            institutes: {
               select: {
                 id: true,
                 name: true,
@@ -112,7 +112,7 @@ export async function PUT(
       where: { id: params.id },
       data: updateData,
       include: {
-        department: {
+        departments: {
           select: {
             id: true,
             name: true,
@@ -123,7 +123,7 @@ export async function PUT(
     });
 
     try {
-      await prisma.auditLog.create({
+      await prisma.audit_logs.create({
         data: {
           tableName: 'Faculty',
           recordId: faculty.id,
@@ -188,7 +188,7 @@ export async function DELETE(
     }
 
     try {
-      await prisma.auditLog.create({
+      await prisma.audit_logs.create({
         data: {
           tableName: 'Faculty',
           recordId: faculty.id,

@@ -40,10 +40,10 @@ export async function GET(request: NextRequest) {
     const faculties = await prisma.faculty.findMany({
       where,
       orderBy: [
-        { createdAt: 'desc' }
+        { created_at: 'desc' }
       ],
       include: {
-        department: {
+        departments: {
           select: {
             id: true,
             name: true,
@@ -137,9 +137,9 @@ export async function POST(request: NextRequest) {
 
     // Verify department, institute, and university exist
     const [department, institute, university] = await Promise.all([
-      prisma.department.findUnique({ where: { id: departmentId } }),
-      prisma.institute.findUnique({ where: { id: instituteId } }),
-      prisma.university.findUnique({ where: { id: universityId } }),
+      prisma.departments.findUnique({ where: { id: departmentId } }),
+      prisma.institutes.findUnique({ where: { id: instituteId } }),
+      prisma.universities.findUnique({ where: { id: universityId } }),
     ]);
 
     if (!department || !institute || !university) {
@@ -191,17 +191,17 @@ export async function POST(request: NextRequest) {
         passwordHash,
         phone,
         address,
-        jobTitle: jobTitle || null,
+        job_title: jobTitle || null,
         facultyType,
         departmentId,
         instituteId,
         universityId,
-        yearsOfExperience: yearsOfExperience || null,
+        years_of_experience: yearsOfExperience || null,
         status: 'ACTIVE',
-        availabilityStatus: 'AVAILABLE',
+        availability_status: 'AVAILABLE',
       },
       include: {
-        department: {
+        departments: {
           select: {
             id: true,
             name: true,
@@ -212,10 +212,10 @@ export async function POST(request: NextRequest) {
     });
 
     // Remove password hash from response
-    const { passwordHash: _, ...facultyResponse } = faculty;
+    const { password_hash: _, ...facultyResponse } = faculty;
 
     // Log audit event
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         tableName: 'faculty',
         recordId: faculty.id,
@@ -225,7 +225,7 @@ export async function POST(request: NextRequest) {
         newValues: {
           name: faculty.name,
           email: faculty.email,
-          facultyType: faculty.facultyType,
+          faculty_type: faculty.facultyType,
         },
         timestamp: new Date(),
       },

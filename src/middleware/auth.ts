@@ -63,13 +63,13 @@ export function hasRole(user: AuthenticatedUser, roleName: string): boolean {
   return user.roles?.some(role => role.roleName === roleName) || false;
 }
 
-export function hasUniversityAccess(user: AuthenticatedUser, universityId: string): boolean {
+export function hasUniversityAccess(user: AuthenticatedUser, university_id: string): boolean {
   return user.roles?.some(role => 
     role.roleName === 'SuperAdmin' || role.universityId === universityId
   ) || false;
 }
 
-export function hasInstituteAccess(user: AuthenticatedUser, instituteId: string): boolean {
+export function hasInstituteAccess(user: AuthenticatedUser, institute_id: string): boolean {
   return user.roles?.some(role => 
     role.roleName === 'SuperAdmin' || 
     role.instituteId === instituteId ||
@@ -132,9 +132,9 @@ export async function getUserFromRequest(request: NextRequest): Promise<any | nu
 }
 
 // Authorization helpers for specific resources
-export async function canModifyUniversity(userId: string, universityId: string): Promise<boolean> {
+export async function canModifyUniversity(userId: string, university_id: string): Promise<boolean> {
   try {
-    const admin = await prisma.admin.findUnique({
+    const admin = await prisma.admins.findUnique({
       where: { id: userId },
     });
 
@@ -155,9 +155,9 @@ export async function canModifyUniversity(userId: string, universityId: string):
   }
 }
 
-export async function canDeleteUniversity(userId: string, universityId: string): Promise<boolean> {
+export async function canDeleteUniversity(userId: string, university_id: string): Promise<boolean> {
   try {
-    const admin = await prisma.admin.findUnique({
+    const admin = await prisma.admins.findUnique({
       where: { id: userId },
     });
 
@@ -172,9 +172,9 @@ export async function canDeleteUniversity(userId: string, universityId: string):
   }
 }
 
-export async function canModifyInstitute(userId: string, instituteId: string): Promise<boolean> {
+export async function canModifyInstitute(userId: string, institute_id: string): Promise<boolean> {
   try {
-    const admin = await prisma.admin.findUnique({
+    const admin = await prisma.admins.findUnique({
       where: { id: userId },
     });
 
@@ -184,9 +184,9 @@ export async function canModifyInstitute(userId: string, instituteId: string): P
     if (admin.isSuperAdmin) return true;
 
     // Get the institute to check its university
-    const institute = await prisma.institute.findUnique({
+    const institute = await prisma.institutes.findUnique({
       where: { id: instituteId },
-      select: { universityId: true },
+      select: { university_id: true },
     });
 
     if (!institute) return false;
@@ -208,9 +208,9 @@ export async function canModifyInstitute(userId: string, instituteId: string): P
   }
 }
 
-export async function canDeleteInstitute(userId: string, instituteId: string): Promise<boolean> {
+export async function canDeleteInstitute(userId: string, institute_id: string): Promise<boolean> {
   try {
-    const admin = await prisma.admin.findUnique({
+    const admin = await prisma.admins.findUnique({
       where: { id: userId },
     });
 
@@ -220,9 +220,9 @@ export async function canDeleteInstitute(userId: string, instituteId: string): P
     if (admin.isSuperAdmin) return true;
 
     // Get the institute to check its university
-    const institute = await prisma.institute.findUnique({
+    const institute = await prisma.institutes.findUnique({
       where: { id: instituteId },
-      select: { universityId: true },
+      select: { university_id: true },
     });
 
     if (!institute) return false;
@@ -242,7 +242,7 @@ export async function canDeleteInstitute(userId: string, instituteId: string): P
 
 export async function canModifyAdmin(userId: string, targetAdminId: string): Promise<boolean> {
   try {
-    const requestingAdmin = await prisma.admin.findUnique({
+    const requestingAdmin = await prisma.admins.findUnique({
       where: { id: userId },
     });
 
@@ -251,11 +251,11 @@ export async function canModifyAdmin(userId: string, targetAdminId: string): Pro
     // SuperAdmin can modify any admin
     if (requestingAdmin.isSuperAdmin) return true;
 
-    const targetAdmin = await prisma.admin.findUnique({
+    const targetAdmin = await prisma.admins.findUnique({
       where: { id: targetAdminId },
       include: {
-        institute: {
-          select: { universityId: true },
+        institutes: {
+          select: { university_id: true },
         },
       },
     });
@@ -287,9 +287,9 @@ export async function canModifyAdmin(userId: string, targetAdminId: string): Pro
 }
 
 // Check if user can modify a faculty member
-export async function canModifyFaculty(userId: string, facultyId: string): Promise<boolean> {
+export async function canModifyFaculty(userId: string, faculty_id: string): Promise<boolean> {
   try {
-    const admin = await prisma.admin.findUnique({
+    const admin = await prisma.admins.findUnique({
       where: { id: userId },
     });
 
@@ -302,8 +302,8 @@ export async function canModifyFaculty(userId: string, facultyId: string): Promi
     const faculty = await prisma.faculty.findUnique({
       where: { id: facultyId },
       include: {
-        department: {
-          select: { instituteId: true },
+        departments: {
+          select: { institute_id: true },
         },
       },
     });
@@ -317,9 +317,9 @@ export async function canModifyFaculty(userId: string, facultyId: string): Promi
 
     // UniversityAdmin can modify faculty in institutes under their university
     if (admin.adminType === 'UNIVERSITY_ADMIN') {
-      const institute = await prisma.institute.findUnique({
+      const institute = await prisma.institutes.findUnique({
         where: { id: faculty.department.instituteId },
-        select: { universityId: true },
+        select: { university_id: true },
       });
       return institute?.universityId === admin.universityId;
     }
@@ -332,9 +332,9 @@ export async function canModifyFaculty(userId: string, facultyId: string): Promi
 }
 
 // Check if user can modify a student
-export async function canModifyStudent(userId: string, studentId: string): Promise<boolean> {
+export async function canModifyStudent(userId: string, student_id: string): Promise<boolean> {
   try {
-    const admin = await prisma.admin.findUnique({
+    const admin = await prisma.admins.findUnique({
       where: { id: userId },
     });
 
@@ -344,13 +344,13 @@ export async function canModifyStudent(userId: string, studentId: string): Promi
     if (admin.isSuperAdmin) return true;
 
     // Get the student to check their institute
-    const student = await prisma.student.findUnique({
+    const student = await prisma.students.findUnique({
       where: { id: studentId },
       include: {
-        batch: {
+        batches: {
           include: {
-            department: {
-              select: { instituteId: true },
+            departments: {
+              select: { institute_id: true },
             },
           },
         },
@@ -368,9 +368,9 @@ export async function canModifyStudent(userId: string, studentId: string): Promi
 
     // UniversityAdmin can modify students in institutes under their university
     if (admin.adminType === 'UNIVERSITY_ADMIN') {
-      const institute = await prisma.institute.findUnique({
+      const institute = await prisma.institutes.findUnique({
         where: { id: instituteId },
-        select: { universityId: true },
+        select: { university_id: true },
       });
       return institute?.universityId === admin.universityId;
     }
@@ -383,9 +383,9 @@ export async function canModifyStudent(userId: string, studentId: string): Promi
 }
 
 // Check if user can modify a department
-export async function canModifyDepartment(userId: string, departmentId: string): Promise<boolean> {
+export async function canModifyDepartment(userId: string, department_id: string): Promise<boolean> {
   try {
-    const admin = await prisma.admin.findUnique({
+    const admin = await prisma.admins.findUnique({
       where: { id: userId },
     });
 
@@ -395,9 +395,9 @@ export async function canModifyDepartment(userId: string, departmentId: string):
     if (admin.isSuperAdmin) return true;
 
     // Get the department to check its institute
-    const department = await prisma.department.findUnique({
+    const department = await prisma.departments.findUnique({
       where: { id: departmentId },
-      select: { instituteId: true },
+      select: { institute_id: true },
     });
 
     if (!department) return false;
@@ -409,9 +409,9 @@ export async function canModifyDepartment(userId: string, departmentId: string):
 
     // UniversityAdmin can modify departments in institutes under their university
     if (admin.adminType === 'UNIVERSITY_ADMIN') {
-      const institute = await prisma.institute.findUnique({
+      const institute = await prisma.institutes.findUnique({
         where: { id: department.instituteId },
-        select: { universityId: true },
+        select: { university_id: true },
       });
       return institute?.universityId === admin.universityId;
     }
@@ -424,9 +424,9 @@ export async function canModifyDepartment(userId: string, departmentId: string):
 }
 
 // Check if user can modify a batch
-export async function canModifyBatch(userId: string, batchId: string): Promise<boolean> {
+export async function canModifyBatch(userId: string, batch_id: string): Promise<boolean> {
   try {
-    const admin = await prisma.admin.findUnique({
+    const admin = await prisma.admins.findUnique({
       where: { id: userId },
     });
 
@@ -436,11 +436,11 @@ export async function canModifyBatch(userId: string, batchId: string): Promise<b
     if (admin.isSuperAdmin) return true;
 
     // Get the batch to check its institute
-    const batch = await prisma.batch.findUnique({
+    const batch = await prisma.batches.findUnique({
       where: { id: batchId },
       include: {
-        department: {
-          select: { instituteId: true },
+        departments: {
+          select: { institute_id: true },
         },
       },
     });
@@ -456,9 +456,9 @@ export async function canModifyBatch(userId: string, batchId: string): Promise<b
 
     // UniversityAdmin can modify batches in institutes under their university
     if (admin.adminType === 'UNIVERSITY_ADMIN') {
-      const institute = await prisma.institute.findUnique({
+      const institute = await prisma.institutes.findUnique({
         where: { id: instituteId },
-        select: { universityId: true },
+        select: { university_id: true },
       });
       return institute?.universityId === admin.universityId;
     }

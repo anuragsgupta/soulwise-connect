@@ -156,16 +156,35 @@ export default function AuthDebugConsole() {
     addLog('info', '🗄️ Testing database connection...');
     
     try {
-      // Create a simple test endpoint call
-      const response = await fetch('/api/auth/verify', {
+      // Call dedicated debug endpoint
+      const response = await fetch('/api/debug/env', {
         method: 'GET',
-        credentials: 'include'
+        cache: 'no-store'
       });
 
-      if (response.status === 500) {
-        addLog('error', '❌ Server error - likely database connection issue');
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.success) {
+          addLog('success', '✅ Environment check complete', {
+            warnings: data.warnings,
+            database: data.database.test,
+            hasJWT: data.environment.JWT_SECRET,
+            hasDB: data.environment.DATABASE_URL
+          });
+          
+          if (data.warnings && data.warnings.length > 0) {
+            addLog('warning', '⚠️ Configuration issues found', data.warnings);
+          }
+          
+          if (data.database.error) {
+            addLog('error', '❌ Database connection failed', { error: data.database.error });
+          }
+        } else {
+          addLog('error', '❌ Environment check failed', data);
+        }
       } else {
-        addLog('success', '✅ Server responding normally');
+        addLog('error', '❌ Server error during env check');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';

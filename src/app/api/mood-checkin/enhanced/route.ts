@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify student exists
-    const student = await prisma.student.findUnique({
+    const student = await prisma.students.findUnique({
       where: { id: studentId }
     });
 
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
     // Check if student already has a mood check-in for today
     console.log('Checking for existing check-in with:', { studentId, checkInDate });
-    const existingCheckIn = await prisma.moodCheckIn.findFirst({
+    const existingCheckIn = await prisma.mood_check_ins.findFirst({
       where: {
         studentId,
         checkInDate
@@ -78,10 +78,10 @@ export async function POST(request: NextRequest) {
     if (existingCheckIn) {
       // Update existing check-in
       console.log('Updating existing check-in with ID:', existingCheckIn.id);
-      moodCheckIn = await prisma.moodCheckIn.update({
+      moodCheckIn = await prisma.mood_check_ins.update({
         where: { id: existingCheckIn.id },
         data: {
-          moodScore: moodLevel,
+          mood_score: moodLevel,
           moodLabel,
           factors: moodFactors || {},
           notes: journal || null
@@ -91,15 +91,15 @@ export async function POST(request: NextRequest) {
       // Create new check-in
       console.log('Creating new check-in with data:', {
         studentId,
-        moodScore: moodLevel,
+        mood_score: moodLevel,
         moodLabel,
         factors: moodFactors || {},
         checkInDate
       });
-      moodCheckIn = await prisma.moodCheckIn.create({
+      moodCheckIn = await prisma.mood_check_ins.create({
         data: {
           studentId,
-          moodScore: moodLevel,
+          mood_score: moodLevel,
           moodLabel,
           factors: moodFactors || {},
           notes: journal || null,
@@ -124,10 +124,10 @@ export async function POST(request: NextRequest) {
       const charCount = journal.length;
 
       // Check if diary entry exists for today
-      const existingDiary = await prisma.diaryEntry.findFirst({
+      const existingDiary = await prisma.diary_entries.findFirst({
         where: {
           studentId,
-          entryDate: {
+          entry_date: {
             gte: checkInDate,
             lt: new Date(checkInDate.getTime() + 24 * 60 * 60 * 1000) // Next day
           }
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
 
       if (existingDiary) {
         // Update existing diary
-        diaryEntry = await prisma.diaryEntry.update({
+        diaryEntry = await prisma.diary_entries.update({
           where: { id: existingDiary.id },
           data: {
             content: journal,
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
         });
       } else {
         // Create new diary entry
-        diaryEntry = await prisma.diaryEntry.create({
+        diaryEntry = await prisma.diary_entries.create({
           data: {
             studentId,
             title: diaryTitle,
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
             mood: moodLabel,
             wordCount,
             charCount,
-            entryDate: today
+            entry_date: today
           }
         });
       }
@@ -208,16 +208,16 @@ export async function GET(request: NextRequest) {
     // Get mood check-ins with error handling
     let moodCheckIns = [];
     try {
-      moodCheckIns = await prisma.moodCheckIn.findMany({
+      moodCheckIns = await prisma.mood_check_ins.findMany({
         where: {
-          studentId,
-          checkInDate: {
+          student_id: studentId,
+          check_in_date: {
             gte: startDate,
             lte: endDate
           }
         },
         orderBy: {
-          checkInDate: 'desc'
+          check_in_date: 'desc'
         }
       });
     } catch (error) {
@@ -231,10 +231,10 @@ export async function GET(request: NextRequest) {
     
     let todayCheckIn = null;
     try {
-      todayCheckIn = await prisma.moodCheckIn.findFirst({
+      todayCheckIn = await prisma.mood_check_ins.findFirst({
         where: {
-          studentId,
-          checkInDate: todayDate
+          student_id: studentId,
+          check_in_date: todayDate
         }
       });
     } catch (error) {

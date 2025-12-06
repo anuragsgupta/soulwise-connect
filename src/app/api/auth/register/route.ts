@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
         
         // If creating institute admin, verify the institute is under their university
         if (adminType === 'INSTITUTE_ADMIN' && instituteId) {
-          const institute = await prisma.institute.findUnique({
+          const institute = await prisma.institutes.findUnique({
             where: { id: instituteId },
           });
           
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if admin already exists
-    const existingAdmin = await prisma.admin.findUnique({
+    const existingAdmin = await prisma.admins.findUnique({
       where: { email },
     });
 
@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
 
     // Verify university exists
     if (universityId) {
-      const university = await prisma.university.findUnique({
+      const university = await prisma.universities.findUnique({
         where: { id: universityId },
       });
 
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
 
     // Verify institute exists and belongs to the university
     if (instituteId) {
-      const institute = await prisma.institute.findUnique({
+      const institute = await prisma.institutes.findUnique({
         where: { id: instituteId },
       });
 
@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
     const passwordHash = await hashPassword(password);
 
     // Create admin
-    const admin = await prisma.admin.create({
+    const admin = await prisma.admins.create({
       data: {
         email,
         passwordHash,
@@ -224,26 +224,26 @@ export async function POST(request: NextRequest) {
         phone: phone || null,
         address: address || null,
         adminType,
-        universityId: universityId || null,
-        instituteId: instituteId || null,
+        university_id: universityId || null,
+        institute_id: instituteId || null,
         status: 'ACTIVE',
-        isSuperAdmin: false, // Regular admins are never super admins
+        is_super_admin: false, // Regular admins are never super admins
       },
       select: {
         id: true,
         email: true,
         name: true,
-        adminType: true,
-        universityId: true,
-        instituteId: true,
+        admin_type: true,
+        university_id: true,
+        institute_id: true,
         status: true,
-        isSuperAdmin: true,
-        createdAt: true,
+        is_super_admin: true,
+        created_at: true,
       },
     });
 
     // Log audit event
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         tableName: 'admins',
         recordId: admin.id,
@@ -253,7 +253,7 @@ export async function POST(request: NextRequest) {
         newValues: {
           email: admin.email,
           name: admin.name,
-          adminType: admin.adminType,
+          admin_type: admin.adminType,
         },
         timestamp: new Date(),
       },

@@ -21,11 +21,11 @@ export async function GET(request: NextRequest) {
       where.fieldId = fieldId;
     }
 
-    const institutes = await prisma.institute.findMany({
+    const institutes = await prisma.institutes.findMany({
       where,
       orderBy: { name: 'asc' },
       include: {
-        university: {
+        universities: {
           select: {
             id: true,
             name: true,
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if university exists
-    const university = await prisma.university.findUnique({
+    const university = await prisma.universities.findUnique({
       where: { id: universityId },
     });
 
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if code already exists
-    const existingInstitute = await prisma.institute.findUnique({
+    const existingInstitute = await prisma.institutes.findUnique({
       where: { code },
     });
 
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if email already exists
-    const existingEmail = await prisma.institute.findUnique({
+    const existingEmail = await prisma.institutes.findUnique({
       where: { email },
     });
 
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
 
     // Check if AISHE code already exists (if provided)
     if (aisheCode) {
-      const existingByAISHE = await prisma.institute.findFirst({
+      const existingByAISHE = await prisma.institutes.findFirst({
         where: { aisheCode: aisheCode.trim() } as never,
       });
 
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create institute
-    const institute = await prisma.institute.create({
+    const institute = await prisma.institutes.create({
       data: {
         name,
         code,
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
         status: 'ACTIVE',
       } as never,
       include: {
-        university: {
+        universities: {
           select: {
             id: true,
             name: true,
@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
 
     // Log audit event (skip if audit logging fails)
     try {
-      await prisma.auditLog.create({
+      await prisma.audit_logs.create({
         data: {
           tableName: 'Institute',
           recordId: institute.id,
@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
             name: institute.name,
             code: institute.code,
             email: institute.email,
-            universityId: institute.universityId,
+            university_id: institute.universityId,
             fieldId: institute.fieldId,
           },
         },

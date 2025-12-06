@@ -17,7 +17,7 @@ export async function PATCH(
       );
     }
 
-    const notification = await prisma.notification.findUnique({
+    const notification = await prisma.notifications.findUnique({
       where: { id: params.id },
     });
 
@@ -48,11 +48,11 @@ export async function PATCH(
     const body = await request.json();
     const { isRead } = body;
 
-    const updatedNotification = await prisma.notification.update({
+    const updatedNotification = await prisma.notifications.update({
       where: { id: params.id },
       data: {
         isRead,
-        readAt: isRead ? new Date() : null,
+        read_at: isRead ? new Date() : null,
       },
     });
 
@@ -83,7 +83,7 @@ export async function DELETE(
       );
     }
 
-    const notification = await prisma.notification.findUnique({
+    const notification = await prisma.notifications.findUnique({
       where: { id: params.id },
     });
 
@@ -111,7 +111,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.notification.delete({
+    await prisma.notifications.delete({
       where: { id: params.id },
     });
 

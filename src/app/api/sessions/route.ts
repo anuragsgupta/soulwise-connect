@@ -47,26 +47,26 @@ export async function GET(request: NextRequest) {
     console.log('Fetching sessions with where clause:', JSON.stringify(where));
 
     // Fetch sessions
-    const sessions = await prisma.sessionBooking.findMany({
+    const sessions = await prisma.session_bookings.findMany({
       where,
       include: {
-        student: {
+        students: {
           select: {
             id: true,
             name: true,
             email: true,
-            enrollmentId: true,
-            rollNumber: true,
-            currentSemester: true,
+            enrollment_id: true,
+            roll_number: true,
+            current_semester: true,
             phone: true,
-            department: {
+            departments: {
               select: {
                 id: true,
                 name: true,
                 code: true,
               },
             },
-            batch: {
+            batches: {
               select: {
                 id: true,
                 name: true,
@@ -80,9 +80,9 @@ export async function GET(request: NextRequest) {
             name: true,
             email: true,
             phone: true,
-            jobTitle: true,
-            facultyType: true,
-            department: {
+            job_title: true,
+            faculty_type: true,
+            departments: {
               select: {
                 id: true,
                 name: true,
@@ -93,8 +93,8 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: [
-        { scheduledDate: 'asc' },
-        { scheduledTime: 'asc' },
+        { scheduled_date: 'asc' },
+        { scheduled_time: 'asc' },
       ],
     });
 
@@ -167,10 +167,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Get student details to verify institute match
-    const student = await prisma.student.findUnique({
+    const student = await prisma.students.findUnique({
       where: { id: user.userId },
       select: {
-        instituteId: true,
+        institute_id: true,
         name: true,
       },
     });
@@ -191,26 +191,26 @@ export async function POST(request: NextRequest) {
     }
 
     // Create session booking
-    const session = await prisma.sessionBooking.create({
+    const session = await prisma.session_bookings.create({
       data: {
-        studentId: user.userId,
+        student_id: user.userId,
         facultyId,
         sessionType,
         title,
         description,
-        scheduledDate: new Date(scheduledDate),
+        scheduled_date: new Date(scheduledDate),
         scheduledTime,
         duration: duration || 30,
         studentNotes,
         status: 'PENDING',
       },
       include: {
-        student: {
+        students: {
           select: {
             id: true,
             name: true,
             email: true,
-            enrollmentId: true,
+            enrollment_id: true,
           },
         },
         faculty: {
@@ -218,24 +218,24 @@ export async function POST(request: NextRequest) {
             id: true,
             name: true,
             email: true,
-            jobTitle: true,
+            job_title: true,
           },
         },
       },
     });
 
     // Create notification for faculty
-    await prisma.notification.create({
+    await prisma.notifications.create({
       data: {
         title: 'New Session Request',
         message: `${student.name} has requested a ${sessionType.toLowerCase()} session on ${new Date(scheduledDate).toLocaleDateString()}`,
         type: 'SESSION_REQUEST',
-        recipientType: 'FACULTY',
-        facultyRecipientId: facultyId,
-        relatedId: session.id,
-        relatedType: 'SESSION_BOOKING',
-        actionUrl: `/faculty/sessions/${session.id}`,
-        sessionBookingId: session.id,
+        recipient_type: 'FACULTY',
+        faculty_recipient_id: facultyId,
+        related_id: session.id,
+        related_type: 'SESSION_BOOKING',
+        action_url: `/faculty/sessions/${session.id}`,
+        session_booking_id: session.id,
       },
     });
 

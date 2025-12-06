@@ -4,7 +4,7 @@ import { createApiResponse, authenticateUser, hasInstituteAccess, hasRole } from
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { enrollmentId: string } }
+  { params }: { params: { enrollment_id: string } }
 ) {
   try {
     // Authenticate user
@@ -16,7 +16,7 @@ export async function GET(
     const { enrollmentId } = params;
 
     // Find student
-    const student = await prisma.student.findUnique({
+    const student = await prisma.students.findUnique({
       where: { enrollmentId },
       include: {
         user: {
@@ -27,11 +27,11 @@ export async function GET(
             status: true,
           },
         },
-        institute: {
+        institutes: {
           include: {
-            university: {
+            universities: {
               select: {
-                universityId: true,
+                university_id: true,
                 name: true,
                 officialDomain: true,
               },
@@ -39,7 +39,7 @@ export async function GET(
           },
         },
         records: {
-          orderBy: { updatedAt: 'desc' },
+          orderBy: { updated_at: 'desc' },
           take: 5, // Latest 5 records
         },
       },
@@ -61,8 +61,8 @@ export async function GET(
 
     // Prepare response data
     const studentProfile = {
-      studentId: student.studentId,
-      enrollmentId: student.enrollmentId,
+      student_id: student.studentId,
+      enrollment_id: student.enrollmentId,
       name: student.name,
       dob: student.dob,
       program: student.program,
@@ -70,12 +70,12 @@ export async function GET(
       yearOfAdmission: student.yearOfAdmission,
       email: student.email,
       phone: student.phone,
-      institute: {
-        instituteId: student.institute.instituteId,
+      institutes: {
+        institute_id: student.institute.instituteId,
         name: student.institute.name,
         code: student.institute.code,
-        university: {
-          universityId: student.institute.university.universityId,
+        universities: {
+          university_id: student.institute.university.universityId,
           name: student.institute.university.name,
           officialDomain: student.institute.university.officialDomain,
         },
@@ -93,22 +93,22 @@ export async function GET(
         cgpa: record.cgpa,
         attendancePct: record.attendancePct,
         supportServices: record.supportServices,
-        updatedAt: record.updatedAt,
+        updated_at: record.updatedAt,
       })),
       meta: student.meta,
-      createdAt: student.createdAt,
-      updatedAt: student.updatedAt,
+      created_at: student.createdAt,
+      updated_at: student.updatedAt,
     };
 
     // Log audit event (for sensitive data access)
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         actorUser: user.userId,
         action: 'STUDENT_PROFILE_ACCESSED',
         objectType: 'STUDENT',
         objectId: student.studentId,
         detail: {
-          enrollmentId: student.enrollmentId,
+          enrollment_id: student.enrollmentId,
           studentName: student.name,
           accessedBy: user.email,
           instituteName: student.institute.name,

@@ -28,16 +28,16 @@ export async function GET(request: NextRequest) {
         id: true,
         name: true,
         email: true,
-        facultyType: true,
-        instituteId: true,
-        institute: {
+        faculty_type: true,
+        institute_id: true,
+        institutes: {
           select: {
             id: true,
             name: true,
             code: true,
           },
         },
-        department: {
+        departments: {
           select: {
             id: true,
             name: true,
@@ -55,17 +55,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Total students in institute
-    const totalStudents = await prisma.student.count({
+    const totalStudents = await prisma.students.count({
       where: {
-        instituteId: faculty.instituteId,
+        institute_id: faculty.instituteId,
         status: 'ACTIVE',
       },
     });
 
     // Pending meetings with this faculty
-    const pendingMeetings = await prisma.sessionBooking.count({
+    const pendingMeetings = await prisma.session_bookings.count({
       where: {
-        facultyId: faculty.id,
+        faculty_id: faculty.id,
         status: 'PENDING',
       },
     });
@@ -75,23 +75,23 @@ export async function GET(request: NextRequest) {
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
     // Weekly student activity (mood check-ins, diary entries, tasks created)
-    const weeklyMoodCheckIns = await prisma.moodCheckIn.count({
+    const weeklyMoodCheckIns = await prisma.mood_check_ins.count({
       where: {
-        student: {
-          instituteId: faculty.instituteId,
+        students: {
+          institute_id: faculty.instituteId,
         },
-        createdAt: {
+        created_at: {
           gte: oneWeekAgo,
         },
       },
     });
 
-    const weeklyDiaryEntries = await prisma.diaryEntry.count({
+    const weeklyDiaryEntries = await prisma.diary_entries.count({
       where: {
-        student: {
-          instituteId: faculty.instituteId,
+        students: {
+          institute_id: faculty.instituteId,
         },
-        createdAt: {
+        created_at: {
           gte: oneWeekAgo,
         },
       },
@@ -99,10 +99,10 @@ export async function GET(request: NextRequest) {
 
     const weeklyTasks = await prisma.task.count({
       where: {
-        student: {
-          instituteId: faculty.instituteId,
+        students: {
+          institute_id: faculty.instituteId,
         },
-        createdAt: {
+        created_at: {
           gte: oneWeekAgo,
         },
       },
@@ -111,46 +111,46 @@ export async function GET(request: NextRequest) {
     const avgWeeklyActivity = Math.round((weeklyMoodCheckIns + weeklyDiaryEntries + weeklyTasks) / 7);
 
     // Average weekly mood score
-    const weeklyMoodScores = await prisma.moodCheckIn.aggregate({
+    const weeklyMoodScores = await prisma.mood_check_ins.aggregate({
       where: {
-        student: {
-          instituteId: faculty.instituteId,
+        students: {
+          institute_id: faculty.instituteId,
         },
-        createdAt: {
+        created_at: {
           gte: oneWeekAgo,
         },
       },
       _avg: {
-        moodScore: true,
+        mood_score: true,
       },
     });
 
     const avgWeeklyMood = weeklyMoodScores._avg?.moodScore
       ? Math.round(weeklyMoodScores._avg.moodScore * 10) / 10
       : 0;    // Recent mood logs (last 10)
-    const recentMoodLogs = await prisma.moodCheckIn.findMany({
+    const recentMoodLogs = await prisma.mood_check_ins.findMany({
       where: {
-        student: {
-          instituteId: faculty.instituteId,
+        students: {
+          institute_id: faculty.instituteId,
         },
       },
       take: 10,
       orderBy: {
-        createdAt: 'desc',
+        created_at: 'desc',
       },
       select: {
         id: true,
-        moodScore: true,
-        moodLabel: true,
+        mood_score: true,
+        mood_label: true,
         notes: true,
-        checkInDate: true,
-        createdAt: true,
-        student: {
+        check_in_date: true,
+        created_at: true,
+        students: {
           select: {
             id: true,
             name: true,
-            rollNumber: true,
-            department: {
+            roll_number: true,
+            departments: {
               select: {
                 name: true,
               },
@@ -161,34 +161,34 @@ export async function GET(request: NextRequest) {
     });
 
     // Recent activities (sessions, crisis alerts)
-    const recentSessions = await prisma.sessionBooking.findMany({
+    const recentSessions = await prisma.session_bookings.findMany({
       where: {
-        facultyId: faculty.id,
+        faculty_id: faculty.id,
       },
       take: 5,
       orderBy: {
-        createdAt: 'desc',
+        created_at: 'desc',
       },
       select: {
         id: true,
         status: true,
-        scheduledDate: true,
-        scheduledTime: true,
-        sessionType: true,
-        createdAt: true,
-        student: {
+        scheduled_date: true,
+        scheduled_time: true,
+        session_type: true,
+        created_at: true,
+        students: {
           select: {
             name: true,
-            rollNumber: true,
+            roll_number: true,
           },
         },
       },
     });
 
-    const recentCrisisAlerts = await prisma.crisisAlert.count({
+    const recentCrisisAlerts = await prisma.crisis_alerts.count({
       where: {
-        student: {
-          instituteId: faculty.instituteId,
+        students: {
+          institute_id: faculty.instituteId,
         },
         severity: {
           in: ['HIGH', 'CRITICAL'],
@@ -202,7 +202,7 @@ export async function GET(request: NextRequest) {
         faculty: {
           name: faculty.name,
           email: faculty.email,
-          facultyType: faculty.facultyType,
+          faculty_type: faculty.facultyType,
           department: faculty.department,
           institute: faculty.institute,
         },

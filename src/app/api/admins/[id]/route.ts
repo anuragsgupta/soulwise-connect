@@ -19,16 +19,16 @@ export async function GET(
       );
     }
 
-    const admin = await prisma.admin.findUnique({
+    const admin = await prisma.admins.findUnique({
       where: { id: params.id },
       include: {
-        university: {
+        universities: {
           select: {
             id: true,
             name: true,
           },
         },
-        institute: {
+        institutes: {
           select: {
             id: true,
             name: true,
@@ -90,7 +90,7 @@ export async function PUT(
     }
 
     // Check if admin exists
-    const existingAdmin = await prisma.admin.findUnique({
+    const existingAdmin = await prisma.admins.findUnique({
       where: { id: params.id },
     });
 
@@ -119,7 +119,7 @@ export async function PUT(
 
     // Check if email is being changed and if it conflicts
     if (email && email !== existingAdmin.email) {
-      const emailConflict = await prisma.admin.findUnique({
+      const emailConflict = await prisma.admins.findUnique({
         where: { email },
       });
 
@@ -138,17 +138,17 @@ export async function PUT(
     if (phone !== undefined) updateData.phone = phone.trim();
     if (status !== undefined) updateData.status = status;
 
-    const admin = await prisma.admin.update({
+    const admin = await prisma.admins.update({
       where: { id: params.id },
       data: updateData,
       include: {
-        university: {
+        universities: {
           select: {
             id: true,
             name: true,
           },
         },
-        institute: {
+        institutes: {
           select: {
             id: true,
             name: true,
@@ -160,7 +160,7 @@ export async function PUT(
 
     // Log audit event
     try {
-      await prisma.auditLog.create({
+      await prisma.audit_logs.create({
         data: {
           tableName: 'Admin',
           recordId: admin.id,
@@ -235,7 +235,7 @@ export async function DELETE(
     }
 
     // Check if admin exists
-    const admin = await prisma.admin.findUnique({
+    const admin = await prisma.admins.findUnique({
       where: { id: params.id },
     });
 
@@ -256,7 +256,7 @@ export async function DELETE(
 
     // Log audit event before deletion
     try {
-      await prisma.auditLog.create({
+      await prisma.audit_logs.create({
         data: {
           tableName: 'Admin',
           recordId: admin.id,
@@ -266,7 +266,7 @@ export async function DELETE(
           oldValues: {
             name: admin.name,
             email: admin.email,
-            adminType: admin.adminType,
+            admin_type: admin.adminType,
           },
         },
       });
@@ -275,7 +275,7 @@ export async function DELETE(
     }
 
     // Delete admin
-    await prisma.admin.delete({
+    await prisma.admins.delete({
       where: { id: params.id },
     });
 

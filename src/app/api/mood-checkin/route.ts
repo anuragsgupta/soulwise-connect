@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if student exists
-    const student = await prisma.student.findUnique({
+    const student = await prisma.students.findUnique({
       where: { id: studentId }
     });
 
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     const checkInDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
     // Check if student already has a mood check-in for today
-    const existingCheckIn = await prisma.moodCheckIn.findFirst({
+    const existingCheckIn = await prisma.mood_check_ins.findFirst({
       where: {
         studentId,
         checkInDate
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     if (existingCheckIn) {
       // Update existing check-in
-      moodCheckIn = await prisma.moodCheckIn.update({
+      moodCheckIn = await prisma.mood_check_ins.update({
         where: { id: existingCheckIn.id },
         data: {
           moodScore,
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // Create new check-in
-      moodCheckIn = await prisma.moodCheckIn.create({
+      moodCheckIn = await prisma.mood_check_ins.create({
         data: {
           studentId,
           moodScore,
@@ -110,16 +110,16 @@ export async function GET(request: NextRequest) {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - (days - 1));
 
-    const moodCheckIns = await prisma.moodCheckIn.findMany({
+    const moodCheckIns = await prisma.mood_check_ins.findMany({
       where: {
         studentId,
-        checkInDate: {
+        check_in_date: {
           gte: new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()),
           lte: new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
         }
       },
       orderBy: {
-        checkInDate: 'asc'
+        check_in_date: 'asc'
       }
     });
 
@@ -127,10 +127,10 @@ export async function GET(request: NextRequest) {
     const today = new Date();
     const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     
-    const todayCheckIn = await prisma.moodCheckIn.findFirst({
+    const todayCheckIn = await prisma.mood_check_ins.findFirst({
       where: {
         studentId,
-        checkInDate: todayDate
+        check_in_date: todayDate
       }
     });
 

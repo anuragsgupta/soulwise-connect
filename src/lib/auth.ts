@@ -56,7 +56,7 @@ export async function logAuditEvent(
   objectId?: string,
   detail?: any
 ) {
-  await prisma.auditLog.create({
+  await prisma.audit_logs.create({
     data: {
       actorUser: actorUserId,
       action,

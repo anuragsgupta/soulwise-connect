@@ -26,25 +26,25 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch all admins with their relations
-    const admins = await prisma.admin.findMany({
+    const admins = await prisma.admins.findMany({
       orderBy: [
-        { isSuperAdmin: 'desc' },
-        { createdAt: 'desc' }
+        { is_super_admin: 'desc' },
+        { created_at: 'desc' }
       ],
       include: {
-        university: {
+        universities: {
           select: {
             id: true,
             name: true,
           },
         },
-        institute: {
+        institutes: {
           select: {
             id: true,
             name: true,
             code: true,
-            universityId: true,
-            university: {
+            university_id: true,
+            universities: {
               select: {
                 id: true,
                 name: true,

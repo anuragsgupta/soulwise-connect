@@ -37,26 +37,26 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch students with their relations
-    const students = await prisma.student.findMany({
+    const students = await prisma.students.findMany({
       where,
       orderBy: [
-        { createdAt: 'desc' }
+        { created_at: 'desc' }
       ],
       include: {
-        department: {
+        departments: {
           select: {
             id: true,
             name: true,
             code: true,
           },
         },
-        batch: {
+        batches: {
           select: {
             id: true,
             name: true,
           },
         },
-        mentor: {
+        faculty: {
           select: {
             id: true,
             name: true,
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if student already exists
-    const existingStudent = await prisma.student.findFirst({
+    const existingStudent = await prisma.students.findFirst({
       where: {
         OR: [
           { email },
@@ -157,10 +157,10 @@ export async function POST(request: NextRequest) {
 
     // Verify department, batch, institute, and university exist
     const [department, batch, institute, university] = await Promise.all([
-      prisma.department.findUnique({ where: { id: departmentId } }),
-      prisma.batch.findUnique({ where: { id: batchId } }),
-      prisma.institute.findUnique({ where: { id: instituteId } }),
-      prisma.university.findUnique({ where: { id: universityId } }),
+      prisma.departments.findUnique({ where: { id: departmentId } }),
+      prisma.batches.findUnique({ where: { id: batchId } }),
+      prisma.institutes.findUnique({ where: { id: instituteId } }),
+      prisma.universities.findUnique({ where: { id: universityId } }),
     ]);
 
     if (!department || !batch || !institute || !university) {
@@ -212,17 +212,17 @@ export async function POST(request: NextRequest) {
     const passwordHash = await hashPassword(password);
 
     // Create student
-    const student = await prisma.student.create({
+    const student = await prisma.students.create({
       data: {
         name,
         email,
         passwordHash,
         enrollmentId,
-        rollNumber: rollNumber || null,
+        roll_number: rollNumber || null,
         phone,
-        parentPhone: parentPhone || null,
-        emergencyContactName: emergencyContactName || null,
-        emergencyContactPhone: emergencyContactPhone || null,
+        parent_phone: parentPhone || null,
+        emergency_contact_name: emergencyContactName || null,
+        emergency_contact_phone: emergencyContactPhone || null,
         departmentId,
         batchId,
         instituteId,
@@ -232,14 +232,14 @@ export async function POST(request: NextRequest) {
         status: 'ACTIVE',
       },
       include: {
-        department: {
+        departments: {
           select: {
             id: true,
             name: true,
             code: true,
           },
         },
-        batch: {
+        batches: {
           select: {
             id: true,
             name: true,
@@ -249,10 +249,10 @@ export async function POST(request: NextRequest) {
     });
 
     // Remove password hash from response
-    const { passwordHash: _, ...studentResponse } = student;
+    const { password_hash: _, ...studentResponse } = student;
 
     // Log audit event
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         tableName: 'students',
         recordId: student.id,
@@ -262,7 +262,7 @@ export async function POST(request: NextRequest) {
         newValues: {
           name: student.name,
           email: student.email,
-          enrollmentId: student.enrollmentId,
+          enrollment_id: student.enrollmentId,
         },
         timestamp: new Date(),
       },

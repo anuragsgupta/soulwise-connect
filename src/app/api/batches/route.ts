@@ -37,13 +37,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch batches
-    const batches = await prisma.batch.findMany({
+    const batches = await prisma.batches.findMany({
       where,
       orderBy: [
-        { startYear: 'desc' }
+        { start_year: 'desc' }
       ],
       include: {
-        department: {
+        departments: {
           select: {
             id: true,
             name: true,
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify department exists
-    const department = await prisma.department.findUnique({
+    const department = await prisma.departments.findUnique({
       where: { id: departmentId },
       include: {
         institute: true,
@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for duplicate batch name in the same department
-    const existingBatch = await prisma.batch.findFirst({
+    const existingBatch = await prisma.batches.findFirst({
       where: {
         name,
         departmentId,
@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the batch
-    const batch = await prisma.batch.create({
+    const batch = await prisma.batches.create({
       data: {
         name,
         startYear,
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
         departmentId,
       },
       include: {
-        department: {
+        departments: {
           select: {
             id: true,
             name: true,
@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Log audit event
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         tableName: 'batches',
         recordId: batch.id,
@@ -203,12 +203,12 @@ export async function POST(request: NextRequest) {
         performedByType: 'ADMIN',
         newValues: {
           name: batch.name,
-          startYear: batch.startYear,
-          endYear: batch.endYear,
-          currentSemester: batch.currentSemester,
-          departmentId: batch.departmentId,
+          start_year: batch.startYear,
+          end_year: batch.endYear,
+          current_semester: batch.currentSemester,
+          department_id: batch.departmentId,
         },
-        departmentId: batch.departmentId,
+        department_id: batch.departmentId,
         timestamp: new Date(),
       },
     });

@@ -45,7 +45,7 @@ export async function POST(
     }
 
     // Get university
-    const university = await prisma.university.findUnique({
+    const university = await prisma.universities.findUnique({
       where: { universityId },
     });
 
@@ -99,7 +99,7 @@ export async function POST(
     });
 
     // Log audit event
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         actorUser: user.userId,
         action: 'UNIVERSITY_ADMIN_INVITED',

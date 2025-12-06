@@ -9,7 +9,7 @@ export async function GET(
   try {
     await prisma.$connect();
 
-    const university = await prisma.university.findUnique({
+    const university = await prisma.universities.findUnique({
       where: { id: params.id },
       include: {
         _count: {
@@ -72,7 +72,7 @@ export async function PUT(
     }
 
     // Check if university exists
-    const existingUniversity = await prisma.university.findUnique({
+    const existingUniversity = await prisma.universities.findUnique({
       where: { id: params.id },
     });
 
@@ -112,7 +112,7 @@ export async function PUT(
 
     // Check if domain is being changed and if it conflicts with another university
     if (domain !== existingUniversity.domain) {
-      const domainConflict = await prisma.university.findUnique({
+      const domainConflict = await prisma.universities.findUnique({
         where: { domain: domain.toLowerCase().trim() },
       });
 
@@ -125,7 +125,7 @@ export async function PUT(
     }
 
     // Update university
-    const university = await prisma.university.update({
+    const university = await prisma.universities.update({
       where: { id: params.id },
       data: {
         name: name.trim(),
@@ -146,7 +146,7 @@ export async function PUT(
 
     // Log audit event
     try {
-      await prisma.auditLog.create({
+      await prisma.audit_logs.create({
         data: {
           tableName: 'University',
           recordId: university.id,
@@ -221,7 +221,7 @@ export async function DELETE(
     }
 
     // Check if university exists
-    const university = await prisma.university.findUnique({
+    const university = await prisma.universities.findUnique({
       where: { id: params.id },
       include: {
         _count: {
@@ -250,7 +250,7 @@ export async function DELETE(
 
     // Log audit event before deletion
     try {
-      await prisma.auditLog.create({
+      await prisma.audit_logs.create({
         data: {
           tableName: 'University',
           recordId: university.id,
@@ -269,7 +269,7 @@ export async function DELETE(
     }
 
     // Delete university
-    await prisma.university.delete({
+    await prisma.universities.delete({
       where: { id: params.id },
     });
 

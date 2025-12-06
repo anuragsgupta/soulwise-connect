@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 /**
  * Calculate current semester based on start year and current date
  */
-function calculateCurrentSemester(startYear: number): number {
+function calculateCurrentSemester(start_year: number): number {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1; // 0-indexed, so add 1
@@ -62,11 +62,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch all active batches
-    const batches = await prisma.batch.findMany({
+    const batches = await prisma.batches.findMany({
       select: {
         id: true,
-        startYear: true,
-        currentSemester: true,
+        start_year: true,
+        current_semester: true,
         name: true,
       },
     });
@@ -81,13 +81,13 @@ export async function POST(request: NextRequest) {
       
       // Only update if semester has changed
       if (calculatedSemester !== batch.currentSemester) {
-        await prisma.batch.update({
+        await prisma.batches.update({
           where: { id: batch.id },
-          data: { currentSemester: calculatedSemester },
+          data: { current_semester: calculatedSemester },
         });
 
         updates.push({
-          batchId: batch.id,
+          batch_id: batch.id,
           batchName: batch.name,
           oldSemester: batch.currentSemester,
           newSemester: calculatedSemester,
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     // Log the update operation
     if (updatedCount > 0) {
-      await prisma.auditLog.create({
+      await prisma.audit_logs.create({
         data: {
           tableName: 'batches',
           recordId: 'SYSTEM',

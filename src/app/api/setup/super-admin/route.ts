@@ -7,10 +7,10 @@ const prisma = new PrismaClient();
 export async function POST(request: NextRequest) {
   try {
     // Check if super admin already exists
-    const existingSuperAdmin = await prisma.admin.findFirst({
+    const existingSuperAdmin = await prisma.admins.findFirst({
       where: {
-        adminType: 'SUPER_ADMIN',
-        isSuperAdmin: true,
+        admin_type: 'SUPER_ADMIN',
+        is_super_admin: true,
       },
     });
 
@@ -36,19 +36,19 @@ export async function POST(request: NextRequest) {
     const passwordHash = await bcrypt.hash(password, 12);
 
     // Create Super Admin
-    const superAdmin = await prisma.admin.create({
+    const superAdmin = await prisma.admins.create({
       data: {
         name,
         email,
         passwordHash,
-        adminType: 'SUPER_ADMIN',
-        isSuperAdmin: true,
+        admin_type: 'SUPER_ADMIN',
+        is_super_admin: true,
         status: 'ACTIVE',
       },
     });
 
     // Create audit log
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         tableName: 'admins',
         recordId: superAdmin.id,
@@ -58,8 +58,8 @@ export async function POST(request: NextRequest) {
         newValues: {
           email: superAdmin.email,
           name: superAdmin.name,
-          adminType: superAdmin.adminType,
-          isSuperAdmin: true,
+          admin_type: superAdmin.adminType,
+          is_super_admin: true,
           createdBy: 'SYSTEM_API',
         },
         timestamp: new Date(),
@@ -98,18 +98,18 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   try {
     // Check if super admin exists
-    const superAdmin = await prisma.admin.findFirst({
+    const superAdmin = await prisma.admins.findFirst({
       where: {
-        adminType: 'SUPER_ADMIN',
-        isSuperAdmin: true,
+        admin_type: 'SUPER_ADMIN',
+        is_super_admin: true,
       },
       select: {
         id: true,
         name: true,
         email: true,
         status: true,
-        createdAt: true,
-        lastLogin: true,
+        created_at: true,
+        last_login: true,
       },
     });
 

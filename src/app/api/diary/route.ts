@@ -36,10 +36,10 @@ export async function GET(request: NextRequest) {
       whereClause.mood = mood;
     }
 
-    const entries = await prisma.diaryEntry.findMany({
+    const entries = await prisma.diary_entries.findMany({
       where: whereClause,
       orderBy: {
-        entryDate: 'desc'
+        entry_date: 'desc'
       }
     });
 
@@ -87,15 +87,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Create diary entry
-    const entry = await prisma.diaryEntry.create({
+    const entry = await prisma.diary_entries.create({
       data: {
         studentId,
         title,
         content,
         mood,
         tags: tags || [],
-        wordCount: wordCount || 0,
-        charCount: charCount || 0
+        word_count: wordCount || 0,
+        char_count: charCount || 0
       }
     });
 
@@ -126,7 +126,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Verify ownership
-    const existingEntry = await prisma.diaryEntry.findFirst({
+    const existingEntry = await prisma.diary_entries.findFirst({
       where: {
         id,
         studentId
@@ -141,15 +141,15 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update entry
-    const updatedEntry = await prisma.diaryEntry.update({
+    const updatedEntry = await prisma.diary_entries.update({
       where: { id },
       data: {
         title,
         content,
         mood,
         tags: tags || [],
-        wordCount: wordCount || 0,
-        charCount: charCount || 0
+        word_count: wordCount || 0,
+        char_count: charCount || 0
       }
     });
 
@@ -181,7 +181,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verify ownership
-    const existingEntry = await prisma.diaryEntry.findFirst({
+    const existingEntry = await prisma.diary_entries.findFirst({
       where: {
         id,
         studentId
@@ -196,7 +196,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete entry
-    await prisma.diaryEntry.delete({
+    await prisma.diary_entries.delete({
       where: { id }
     });
 

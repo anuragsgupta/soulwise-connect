@@ -20,44 +20,44 @@ export async function GET(
       );
     }
 
-    const session = await prisma.sessionBooking.findUnique({
+    const session = await prisma.session_bookings.findUnique({
       where: { id },
       include: {
-        student: {
+        students: {
           select: {
             id: true,
             name: true,
             email: true,
-            enrollmentId: true,
-            rollNumber: true,
-            currentSemester: true,
+            enrollment_id: true,
+            roll_number: true,
+            current_semester: true,
             phone: true,
-            parentPhone: true,
-            emergencyContactName: true,
-            emergencyContactPhone: true,
+            parent_phone: true,
+            emergency_contact_name: true,
+            emergency_contact_phone: true,
             cgpa: true,
-            admissionYear: true,
-            department: {
+            admission_year: true,
+            departments: {
               select: {
                 id: true,
                 name: true,
                 code: true,
               },
             },
-            batch: {
+            batches: {
               select: {
                 id: true,
                 name: true,
-                startYear: true,
-                endYear: true,
+                start_year: true,
+                end_year: true,
               },
             },
-            mentor: {
+            faculty: {
               select: {
                 id: true,
                 name: true,
                 email: true,
-                jobTitle: true,
+                job_title: true,
               },
             },
           },
@@ -68,9 +68,9 @@ export async function GET(
             name: true,
             email: true,
             phone: true,
-            jobTitle: true,
-            facultyType: true,
-            department: {
+            job_title: true,
+            faculty_type: true,
+            departments_faculty_department_idTodepartments: {
               select: {
                 id: true,
                 name: true,
@@ -132,10 +132,10 @@ export async function PATCH(
     const { action, facultyNotes, rejectionReason, scheduledDate, scheduledTime } = body;
 
     // Get the session
-    const existingSession = await prisma.sessionBooking.findUnique({
+    const existingSession = await prisma.session_bookings.findUnique({
       where: { id },
       include: {
-        student: {
+        students: {
           select: {
             id: true,
             name: true,
@@ -194,7 +194,7 @@ export async function PATCH(
     let notificationTitle = '';
     let notificationMessage = '';
     let notificationType: any = 'GENERAL';
-    let recipientType: 'STUDENT' | 'FACULTY' = 'STUDENT';
+    let recipient_type: 'STUDENT' | 'FACULTY' = 'STUDENT';
     let recipientId = existingSession.studentId;
 
     switch (action) {
@@ -309,16 +309,16 @@ export async function PATCH(
     }
 
     // Update the session
-    const updatedSession = await prisma.sessionBooking.update({
+    const updatedSession = await prisma.session_bookings.update({
       where: { id },
       data: updateData,
       include: {
-        student: {
+        students: {
           select: {
             id: true,
             name: true,
             email: true,
-            enrollmentId: true,
+            enrollment_id: true,
           },
         },
         faculty: {
@@ -326,7 +326,7 @@ export async function PATCH(
             id: true,
             name: true,
             email: true,
-            jobTitle: true,
+            job_title: true,
           },
         },
       },
@@ -338,9 +338,9 @@ export async function PATCH(
       message: notificationMessage,
       type: notificationType,
       recipientType,
-      relatedId: updatedSession.id,
-      relatedType: 'SESSION_BOOKING',
-      sessionBookingId: updatedSession.id,
+      related_id: updatedSession.id,
+      related_type: 'SESSION_BOOKING',
+      session_booking_id: updatedSession.id,
     };
 
     if (recipientType === 'STUDENT') {
@@ -351,7 +351,7 @@ export async function PATCH(
       notificationData.actionUrl = `/faculty/sessions/${updatedSession.id}`;
     }
 
-    await prisma.notification.create({
+    await prisma.notifications.create({
       data: notificationData,
     });
 
@@ -374,7 +374,7 @@ export async function PATCH(
           sessionTime: updatedSession.scheduledTime,
           duration: updatedSession.duration,
           meetLink: updatedSession.meetingLink,
-          sessionType: updatedSession.sessionType,
+          session_type: updatedSession.sessionType,
           location: updatedSession.location,
           notes: updatedSession.facultyNotes,
         });
@@ -419,7 +419,7 @@ export async function DELETE(
       );
     }
 
-    const session = await prisma.sessionBooking.findUnique({
+    const session = await prisma.session_bookings.findUnique({
       where: { id },
     });
 
@@ -446,7 +446,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.sessionBooking.delete({
+    await prisma.session_bookings.delete({
       where: { id },
     });
 

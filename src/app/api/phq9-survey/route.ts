@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 // Helper function to calculate PHQ-9 severity
-function calculateSeverity(totalScore: number): string {
+function calculateSeverity(total_score: number): string {
   if (totalScore <= 4) return 'NONE';
   if (totalScore <= 9) return 'MILD';
   if (totalScore <= 14) return 'MODERATE';
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     const severity = calculateSeverity(totalScore) as 'NONE' | 'MILD' | 'MODERATE' | 'MODERATELY_SEVERE' | 'SEVERE';
 
     // Check if student exists
-    const student = await prisma.student.findUnique({
+    const student = await prisma.students.findUnique({
       where: { id: studentId },
     });
 
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the survey
-    const survey = await prisma.pHQ9Survey.create({
+    const survey = await prisma.phq9_surveys.create({
       data: {
         studentId,
         q1Interest: q1_interest,
@@ -93,9 +93,9 @@ export async function POST(request: NextRequest) {
       success: true,
       survey: {
         id: survey.id,
-        totalScore: survey.totalScore,
+        total_score: survey.totalScore,
         severity: survey.severity,
-        completedAt: survey.completedAt,
+        completed_at: survey.completedAt,
       },
       message: 'Survey submitted successfully',
     });
@@ -121,17 +121,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const surveys = await prisma.pHQ9Survey.findMany({
-      where: { studentId },
+    const surveys = await prisma.phq9_surveys.findMany({
+      where: { student_id: studentId },
       orderBy: {
-        completedAt: 'desc',
+        completed_at: 'desc',
       },
       include: {
-        student: {
+        students: {
           select: {
             id: true,
             name: true,
-            rollNumber: true,
+            roll_number: true,
             email: true,
           },
         },
@@ -139,8 +139,8 @@ export async function GET(request: NextRequest) {
     });
 
     // Get count of completed surveys
-    const completedSurveys = await prisma.pHQ9Survey.count({
-      where: { studentId },
+    const completedSurveys = await prisma.phq9_surveys.count({
+      where: { student_id: studentId },
     });
 
     return NextResponse.json({

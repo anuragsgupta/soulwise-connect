@@ -76,11 +76,11 @@ export interface CommunityPostDB {
   author: string;            // Display name (could be "Anonymous User")
   category: string;
   isAnonymous: boolean;      // If true, frontend shows "Anonymous"
-  instituteId: string;       // NEW: Filter posts by institute
+  institute_id: string;       // NEW: Filter posts by institute
   likes: number;
   repliesCount: number;
-  createdAt: string;         // ISO date string
-  updatedAt: string;         // ISO date string
+  created_at: string;         // ISO date string
+  updated_at: string;         // ISO date string
   
   // ✅ NEW: Moderation & Tracking fields
   ipAddress?: string;        // Optional: User's IP for severe cases
@@ -101,10 +101,10 @@ export interface CommunityReplyDB {
   authorId: string;          // ⚠️ ALWAYS stored for admin tracking
   author: string;            // Display name (could be "Anonymous User")
   isAnonymous: boolean;
-  instituteId: string;       // NEW: Filter replies by institute
+  institute_id: string;       // NEW: Filter replies by institute
   likes: number;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
   
   // ✅ NEW: Moderation & Tracking fields
   ipAddress?: string;
@@ -124,7 +124,7 @@ export interface CommunityPostInput {
   isAnonymous?: boolean;
   authorId: string;          // ⚠️ REQUIRED: Never expose to public, admin only
   author: string;
-  instituteId: string;       // NEW: REQUIRED for filtering by institute
+  institute_id: string;       // NEW: REQUIRED for filtering by institute
   
   // ✅ NEW: Optional metadata for tracking & moderation
   ipAddress?: string;
@@ -140,7 +140,7 @@ export interface CommunityReplyInput {
   isAnonymous?: boolean;
   authorId: string;          // ⚠️ REQUIRED: Never expose to public, admin only
   author: string;
-  instituteId: string;       // NEW: REQUIRED for filtering by institute
+  institute_id: string;       // NEW: REQUIRED for filtering by institute
   
   // ✅ NEW: Optional metadata for tracking & moderation
   ipAddress?: string;

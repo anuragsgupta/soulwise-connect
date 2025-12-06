@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 // Helper function to calculate GAD-7 severity
-function calculateSeverity(totalScore: number): string {
+function calculateSeverity(total_score: number): string {
   if (totalScore <= 4) return 'MINIMAL';
   if (totalScore <= 9) return 'MILD';
   if (totalScore <= 14) return 'MODERATE';
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     const severity = calculateSeverity(totalScore);
 
     // Create survey entry
-    const survey = await prisma.gAD7Survey.create({
+    const survey = await prisma.gad7_surveys.create({
       data: {
         studentId,
         q1Nervous: q1_nervous,
@@ -76,9 +76,9 @@ export async function POST(request: NextRequest) {
       success: true,
       survey: {
         id: survey.id,
-        totalScore: survey.totalScore,
+        total_score: survey.totalScore,
         severity: survey.severity,
-        completedAt: survey.completedAt.toISOString(),
+        completed_at: survey.completedAt.toISOString(),
       },
       message: 'Survey submitted successfully',
     });
@@ -105,13 +105,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch all surveys for this student
-    const surveys = await prisma.gAD7Survey.findMany({
-      where: { studentId },
-      orderBy: { completedAt: 'desc' },
+    const surveys = await prisma.gad7_surveys.findMany({
+      where: { student_id: studentId },
+      orderBy: { completed_at: 'desc' },
       select: {
         id: true,
-        completedAt: true,
-        totalScore: true,
+        completed_at: true,
+        total_score: true,
         severity: true,
         q1Nervous: true,
         q2Control: true,
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
         q5Restless: true,
         q6Irritable: true,
         q7Afraid: true,
-        student: {
+        students: {
           select: {
             name: true,
             email: true,
@@ -130,8 +130,8 @@ export async function GET(request: NextRequest) {
     });
 
     // Get count of completed surveys
-    const completedSurveys = await prisma.gAD7Survey.count({
-      where: { studentId },
+    const completedSurveys = await prisma.gad7_surveys.count({
+      where: { student_id: studentId },
     });
 
     return NextResponse.json({

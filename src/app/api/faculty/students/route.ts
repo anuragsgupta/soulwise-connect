@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
     const faculty = await prisma.faculty.findUnique({
       where: { id: user.userId },
       select: {
-        instituteId: true,
-        departmentId: true,
+        institute_id: true,
+        department_id: true,
       },
     });
 
@@ -45,15 +45,15 @@ export async function GET(request: NextRequest) {
 
     // Build where clause
     const where: any = {
-      instituteId: faculty.instituteId,
+      institute_id: faculty.instituteId,
     };
 
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } },
-        { rollNumber: { contains: search, mode: 'insensitive' } },
-        { enrollmentId: { contains: search, mode: 'insensitive' } },
+        { roll_number: { contains: search, mode: 'insensitive' } },
+        { enrollment_id: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch students
-    const students = await prisma.student.findMany({
+    const students = await prisma.students.findMany({
       where,
       orderBy: [
         { name: 'asc' },
@@ -76,27 +76,27 @@ export async function GET(request: NextRequest) {
         name: true,
         email: true,
         phone: true,
-        rollNumber: true,
-        enrollmentId: true,
-        currentSemester: true,
+        roll_number: true,
+        enrollment_id: true,
+        current_semester: true,
         cgpa: true,
-        admissionYear: true,
+        admission_year: true,
         status: true,
-        lastLogin: true,
-        department: {
+        last_login: true,
+        departments: {
           select: {
             id: true,
             name: true,
             code: true,
           },
         },
-        batch: {
+        batches: {
           select: {
             id: true,
             name: true,
           },
         },
-        mentor: {
+        faculty: {
           select: {
             id: true,
             name: true,
@@ -120,9 +120,9 @@ export async function GET(request: NextRequest) {
     });
 
     // Get departments for filter
-    const departments = await prisma.department.findMany({
+    const departments = await prisma.departments.findMany({
       where: {
-        instituteId: faculty.instituteId,
+        institute_id: faculty.instituteId,
       },
       select: {
         id: true,

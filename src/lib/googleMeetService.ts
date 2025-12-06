@@ -120,7 +120,7 @@ export async function generateGoogleMeetLink(details: MeetingDetails): Promise<G
 export async function generateSessionMeetLink(
   sessionTitle: string,
   sessionDescription: string,
-  scheduledDate: Date,
+  scheduled_date: Date,
   duration: number, // in minutes
   studentEmail: string,
   facultyEmail: string,

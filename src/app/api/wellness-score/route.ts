@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify student exists
-    const student = await prisma.student.findUnique({
+    const student = await prisma.students.findUnique({
       where: { id: studentId },
     });
 
@@ -36,15 +36,15 @@ export async function GET(request: NextRequest) {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const moodCheckIns = await prisma.moodCheckIn.findMany({
+    const moodCheckIns = await prisma.mood_check_ins.findMany({
       where: {
-        studentId,
-        checkInDate: {
+        student_id: studentId,
+        check_in_date: {
           gte: thirtyDaysAgo,
         },
       },
       orderBy: {
-        checkInDate: 'asc',
+        check_in_date: 'asc',
       },
     });
 
@@ -57,9 +57,9 @@ export async function GET(request: NextRequest) {
     // Fetch most recent PHQ-9 score - try/catch to handle if model doesn't exist
     let latestPHQ9 = null;
     try {
-      latestPHQ9 = await prisma.pHQ9Survey.findFirst({
-        where: { studentId },
-        orderBy: { completedAt: 'desc' },
+      latestPHQ9 = await prisma.phq9_surveys.findFirst({
+        where: { student_id: studentId },
+        orderBy: { completed_at: 'desc' },
       });
     } catch (err) {
       console.error('Error fetching PHQ9 survey:', err);
@@ -68,33 +68,33 @@ export async function GET(request: NextRequest) {
     // Fetch most recent GAD-7 score - try/catch to handle if model doesn't exist
     let latestGAD7 = null;
     try {
-      latestGAD7 = await prisma.gAD7Survey.findFirst({
-        where: { studentId },
-        orderBy: { completedAt: 'desc' },
+      latestGAD7 = await prisma.gad7_surveys.findFirst({
+        where: { student_id: studentId },
+        orderBy: { completed_at: 'desc' },
       });
     } catch (err) {
       console.error('Error fetching GAD7 survey:', err);
     }
 
     // Fetch chatbot sentiment scores from recent sessions (last 30 days)
-    const chatSessions = await prisma.chatSession.findMany({
+    const chatSessions = await prisma.chat_sessions.findMany({
       where: {
-        studentId,
-        sessionStart: {
+        student_id: studentId,
+        session_start: {
           gte: thirtyDaysAgo,
         },
       },
       orderBy: {
-        sessionStart: 'asc',
+        session_start: 'asc',
       },
       select: {
-        sentimentScore: true,
+        sentiment_score: true,
       },
     });
 
     // Convert sentiment scores to array (default to 0.5 if null)
     const chatbotSentiments = chatSessions
-      .map(session => session.sentimentScore ? parseFloat(session.sentimentScore.toString()) : 0.5)
+      .map(session => session.sentiment_score ? parseFloat(session.sentiment_score.toString()) : 0.5)
       .filter(score => score >= 0 && score <= 1); // Ensure valid range
 
     // If no chatbot data, provide a default neutral sentiment

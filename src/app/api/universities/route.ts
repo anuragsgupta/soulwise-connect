@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
 
     // Check if AISHE code already exists (if provided)
     if (aisheCode) {
-      const existingByAISHE = await prisma.university.findUnique({
+      const existingByAISHE = await prisma.universities.findUnique({
         where: { aisheCode: aisheCode.trim() },
       });
 
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if domain already exists
-    const existingUniversity = await prisma.university.findUnique({
+    const existingUniversity = await prisma.universities.findUnique({
       where: { domain: domain.toLowerCase().trim() },
     });
 
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create university
-    const university = await prisma.university.create({
+    const university = await prisma.universities.create({
       data: {
         aisheCode: aisheCode?.trim() || null,
         name: name.trim(),
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'University created successfully',
         data: {
-          university: {
+          universities: {
             id: university.id,
             name: university.name,
             email: university.email,
@@ -163,7 +163,7 @@ export async function GET(request: NextRequest) {
     await prisma.$connect();
     
     // Get all active universities with institute count
-    const universities = await prisma.university.findMany({
+    const universities = await prisma.universities.findMany({
       where: { status: 'ACTIVE' },
       orderBy: { name: 'asc' },
       include: {
@@ -203,8 +203,8 @@ export async function GET(request: NextRequest) {
             city: 'Sample City',
             state: 'Sample State',
             status: 'ACTIVE' as const,
-            createdAt: new Date(),
-            updatedAt: new Date(),
+            created_at: new Date(),
+            updated_at: new Date(),
             _count: { institutes: 3 }
           },
           {
@@ -217,8 +217,8 @@ export async function GET(request: NextRequest) {
             city: 'Another City',
             state: 'Another State',
             status: 'ACTIVE' as const,
-            createdAt: new Date(),
-            updatedAt: new Date(),
+            created_at: new Date(),
+            updated_at: new Date(),
             _count: { institutes: 5 }
           }
         ];

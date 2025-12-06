@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,29 +28,29 @@ export async function GET(request: NextRequest) {
     let user = null;
     
     if (decoded.userType === 'STUDENT') {
-      user = await prisma.student.findUnique({
+      user = await prisma.students.findUnique({
         where: { id: decoded.id },
         include: {
-          university: true,
-          institute: true,
-          batch: true,
+          universities: true,
+          institutes: true,
+          batches: true,
         }
       });
     } else if (decoded.userType === 'FACULTY') {
       user = await prisma.faculty.findUnique({
         where: { id: decoded.id },
         include: {
-          university: true,
-          institute: true,
-          department: true,
+          universities: true,
+          institutes_faculty_institute_idToinstitutes: true,
+          departments_faculty_department_idTodepartments: true,
         }
       });
     } else if (decoded.userType === 'ADMIN') {
-      user = await prisma.admin.findUnique({
+      user = await prisma.admins.findUnique({
         where: { id: decoded.id },
         include: {
-          university: true,
-          institute: true,
+          universities: true,
+          institutes: true,
         }
       });
     }
@@ -76,21 +74,23 @@ export async function GET(request: NextRequest) {
           userType: decoded.userType,
           role: decoded.role,
           ...(decoded.userType === 'STUDENT' && {
-            rollNumber: ('rollNumber' in user) ? user.rollNumber : undefined,
-            batchId: ('batchId' in user) ? user.batchId : undefined,
+            roll_number: ('roll_number' in user) ? user.roll_number : undefined,
+            batch_id: ('batch_id' in user) ? user.batch_id : undefined,
           }),
           ...(decoded.userType === 'FACULTY' && {
-            facultyType: ('facultyType' in user) ? user.facultyType : undefined,
-            departmentId: ('departmentId' in user) ? user.departmentId : undefined,
+            faculty_type: ('faculty_type' in user) ? user.faculty_type : undefined,
+            department_id: ('department_id' in user) ? user.department_id : undefined,
           }),
           ...(decoded.userType === 'ADMIN' && {
-            adminType: ('adminType' in user) ? user.adminType : undefined,
-            isSuperAdmin: ('isSuperAdmin' in user) ? user.isSuperAdmin : false,
+            admin_type: ('admin_type' in user) ? user.admin_type : undefined,
+            is_super_admin: ('is_super_admin' in user) ? user.is_super_admin : false,
           }),
-          universityId: user.universityId,
-          instituteId: user.instituteId,
-          university: user.university,
-          institute: user.institute,
+          university_id: user.university_id,
+          institute_id: user.institute_id,
+          university: user.universities,
+          institute: decoded.userType === 'STUDENT' ? ('institutes' in user ? user.institutes : null) : 
+                     decoded.userType === 'FACULTY' ? ('institutes_faculty_institute_idToinstitutes' in user ? user.institutes_faculty_institute_idToinstitutes : null) :
+                     ('institutes' in user ? user.institutes : null),
         }
       }
     });

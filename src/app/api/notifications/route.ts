@@ -20,48 +20,48 @@ export async function GET(request: NextRequest) {
 
     // Build where clause based on user type
     const where: any = {
-      recipientType: user.userType,
+      recipient_type: user.userType,
     };
 
     if (user.userType === 'STUDENT') {
-      where.studentRecipientId = user.userId;
+      where.student_recipient_id = user.userId;
     } else if (user.userType === 'FACULTY') {
-      where.facultyRecipientId = user.userId;
+      where.faculty_recipient_id = user.userId;
     } else if (user.userType === 'ADMIN') {
-      where.adminRecipientId = user.userId;
+      where.admin_recipient_id = user.userId;
     }
 
     // Add isRead filter if provided
     if (isRead !== null) {
-      where.isRead = isRead === 'true';
+      where.is_read = isRead === 'true';
     }
 
     // Fetch notifications
-    const notifications = await prisma.notification.findMany({
+    const notifications = await prisma.notifications.findMany({
       where,
       include: {
-        sessionBooking: {
+        session_bookings: {
           select: {
             id: true,
             title: true,
-            scheduledDate: true,
-            scheduledTime: true,
+            scheduled_date: true,
+            scheduled_time: true,
             status: true,
-            sessionType: true,
+            session_type: true,
           },
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        created_at: 'desc',
       },
       take: limit ? parseInt(limit) : undefined,
     });
 
     // Get unread count
-    const unreadCount = await prisma.notification.count({
+    const unreadCount = await prisma.notifications.count({
       where: {
         ...where,
-        isRead: false,
+        is_read: false,
       },
     });
 
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
       notificationData.adminRecipientId = recipientId;
     }
 
-    const notification = await prisma.notification.create({
+    const notification = await prisma.notifications.create({
       data: notificationData,
     });
 

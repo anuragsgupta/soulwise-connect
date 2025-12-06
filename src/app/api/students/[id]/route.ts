@@ -10,19 +10,19 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const student = await prisma.student.findUnique({
+    const student = await prisma.students.findUnique({
       where: { id: params.id },
       include: {
-        batch: {
+        batches: {
           include: {
-            department: {
+            departments: {
               include: {
                 institute: true,
               },
             },
           },
         },
-        mentor: {
+        faculty: {
           select: {
             id: true,
             name: true,
@@ -79,7 +79,7 @@ export async function PUT(
       );
     }
 
-    const existingStudent = await prisma.student.findUnique({
+    const existingStudent = await prisma.students.findUnique({
       where: { id: params.id },
     });
 
@@ -91,7 +91,7 @@ export async function PUT(
     }
 
     if (email && email !== existingStudent.email) {
-      const emailConflict = await prisma.student.findUnique({
+      const emailConflict = await prisma.students.findUnique({
         where: { email },
       });
 
@@ -104,7 +104,7 @@ export async function PUT(
     }
 
     if (rollNumber && rollNumber !== existingStudent.rollNumber) {
-      const rollConflict = await prisma.student.findFirst({
+      const rollConflict = await prisma.students.findFirst({
         where: { 
           rollNumber,
           id: { not: params.id }
@@ -128,17 +128,17 @@ export async function PUT(
     if (cgpa !== undefined) updateData.cgpa = cgpa;
     if (status !== undefined) updateData.status = status;
 
-    const student = await prisma.student.update({
+    const student = await prisma.students.update({
       where: { id: params.id },
       data: updateData,
       include: {
-        batch: {
+        batches: {
           select: {
             id: true,
             name: true,
           },
         },
-        department: {
+        departments: {
           select: {
             id: true,
             name: true,
@@ -149,15 +149,15 @@ export async function PUT(
     });
 
     try {
-      await prisma.auditLog.create({
+      await prisma.audit_logs.create({
         data: {
           tableName: 'Student',
           recordId: student.id,
           action: 'UPDATE',
           performedById: user.id,
           performedByType: 'ADMIN',
-          oldValues: { name: existingStudent.name, rollNumber: existingStudent.rollNumber },
-          newValues: { name: student.name, rollNumber: student.rollNumber },
+          oldValues: { name: existingStudent.name, roll_number: existingStudent.rollNumber },
+          newValues: { name: student.name, roll_number: student.rollNumber },
         },
       });
     } catch (auditError) {
@@ -202,7 +202,7 @@ export async function DELETE(
       );
     }
 
-    const student = await prisma.student.findUnique({
+    const student = await prisma.students.findUnique({
       where: { id: params.id },
     });
 
@@ -214,21 +214,21 @@ export async function DELETE(
     }
 
     try {
-      await prisma.auditLog.create({
+      await prisma.audit_logs.create({
         data: {
           tableName: 'Student',
           recordId: student.id,
           action: 'DELETE',
           performedById: user.id,
           performedByType: 'ADMIN',
-          oldValues: { name: student.name, enrollmentId: student.enrollmentId },
+          oldValues: { name: student.name, enrollment_id: student.enrollmentId },
         },
       });
     } catch (auditError) {
       console.error('Audit log creation failed:', auditError);
     }
 
-    await prisma.student.delete({
+    await prisma.students.delete({
       where: { id: params.id },
     });
 

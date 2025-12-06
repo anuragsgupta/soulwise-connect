@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch departments with their relations
-    const departments = await prisma.department.findMany({
+    const departments = await prisma.departments.findMany({
       where,
       orderBy: [
         { name: 'asc' }
@@ -115,10 +115,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if department code already exists in this institute
-    const existingDepartment = await prisma.department.findFirst({
+    const existingDepartment = await prisma.departments.findFirst({
       where: { 
         code: code,
-        instituteId: instituteId
+        institute_id: instituteId
       },
     });
 
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify institute exists
-    const institute = await prisma.institute.findUnique({
+    const institute = await prisma.institutes.findUnique({
       where: { id: instituteId },
     });
 
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create department
-    const department = await prisma.department.create({
+    const department = await prisma.departments.create({
       data: {
         name,
         code,
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Log audit event
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         tableName: 'departments',
         recordId: department.id,

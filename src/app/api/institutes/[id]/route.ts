@@ -10,10 +10,10 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const institute = await prisma.institute.findUnique({
+    const institute = await prisma.institutes.findUnique({
       where: { id: params.id },
       include: {
-        university: {
+        universities: {
           select: {
             id: true,
             name: true,
@@ -84,7 +84,7 @@ export async function PUT(
     }
 
     // Check if institute exists
-    const existingInstitute = await prisma.institute.findUnique({
+    const existingInstitute = await prisma.institutes.findUnique({
       where: { id: params.id },
     });
 
@@ -128,7 +128,7 @@ export async function PUT(
 
     // Check if code is being changed and if it conflicts
     if (code !== existingInstitute.code) {
-      const codeConflict = await prisma.institute.findUnique({
+      const codeConflict = await prisma.institutes.findUnique({
         where: { code },
       });
 
@@ -142,7 +142,7 @@ export async function PUT(
 
     // Check if email is being changed and if it conflicts
     if (email !== existingInstitute.email) {
-      const emailConflict = await prisma.institute.findUnique({
+      const emailConflict = await prisma.institutes.findUnique({
         where: { email },
       });
 
@@ -155,7 +155,7 @@ export async function PUT(
     }
 
     // Update institute
-    const institute = await prisma.institute.update({
+    const institute = await prisma.institutes.update({
       where: { id: params.id },
       data: {
         name,
@@ -167,7 +167,7 @@ export async function PUT(
         ...(status && { status }),
       },
       include: {
-        university: {
+        universities: {
           select: {
             id: true,
             name: true,
@@ -191,7 +191,7 @@ export async function PUT(
 
     // Log audit event
     try {
-      await prisma.auditLog.create({
+      await prisma.audit_logs.create({
         data: {
           tableName: 'Institute',
           recordId: institute.id,
@@ -259,7 +259,7 @@ export async function DELETE(
     }
 
     // Check if institute exists
-    const institute = await prisma.institute.findUnique({
+    const institute = await prisma.institutes.findUnique({
       where: { id: params.id },
       include: {
         _count: {
@@ -297,7 +297,7 @@ export async function DELETE(
 
     // Log audit event before deletion
     try {
-      await prisma.auditLog.create({
+      await prisma.audit_logs.create({
         data: {
           tableName: 'Institute',
           recordId: institute.id,
@@ -316,7 +316,7 @@ export async function DELETE(
     }
 
     // Delete institute
-    await prisma.institute.delete({
+    await prisma.institutes.delete({
       where: { id: params.id },
     });
 

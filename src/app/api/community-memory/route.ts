@@ -38,7 +38,7 @@ function mapPostToDTO(post: CommunityPostDB, includeAuthorId = false) {
     repliesCount: post.repliesCount,
     isAnonymous: post.isAnonymous,
     timestamp: post.createdAt,
-    createdAt: post.createdAt,
+    created_at: post.createdAt,
   };
 
   // ⚠️ ONLY include sensitive admin data for admin requests
@@ -63,7 +63,7 @@ function mapReplyToDTO(reply: CommunityReplyDB, includeAuthorId = false) {
     likes: reply.likes,
     isAnonymous: reply.isAnonymous,
     timestamp: reply.createdAt,
-    createdAt: reply.createdAt,
+    created_at: reply.createdAt,
   };
 
   // ⚠️ ONLY include sensitive admin data for admin requests

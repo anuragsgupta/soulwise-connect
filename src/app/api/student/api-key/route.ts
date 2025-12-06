@@ -14,9 +14,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const student = await prisma.student.findUnique({
+    const student = await prisma.students.findUnique({
       where: { id: decoded.id },
-      select: { geminiApiKey: true },
+      select: { gemini_api_key: true },
     });
 
     if (!student) {
@@ -52,9 +52,9 @@ export async function POST(req: NextRequest) {
     const { apiKey } = await req.json();
 
     // Update the student's API key
-    await prisma.student.update({
+    await prisma.students.update({
       where: { id: decoded.id },
-      data: { geminiApiKey: apiKey || null },
+      data: { gemini_api_key: apiKey || null },
     });
 
     return NextResponse.json({
@@ -83,9 +83,9 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Remove the student's API key
-    await prisma.student.update({
+    await prisma.students.update({
       where: { id: decoded.id },
-      data: { geminiApiKey: null },
+      data: { gemini_api_key: null },
     });
 
     return NextResponse.json({

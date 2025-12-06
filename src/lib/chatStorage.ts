@@ -10,8 +10,8 @@ interface ChatMessage {
 interface ChatSession {
   id: string;
   messages: ChatMessage[];
-  createdAt: Date;
-  updatedAt: Date;
+  created_at: Date;
+  updated_at: Date;
 }
 
 class ChatStorage {
@@ -62,8 +62,8 @@ class ChatStorage {
           ...msg,
           timestamp: new Date(msg.timestamp) // Ensure timestamp is Date object
         })),
-        createdAt: new Date(),
-        updatedAt: new Date()
+        created_at: new Date(),
+        updated_at: new Date()
       };
 
       const request = store.put(session);

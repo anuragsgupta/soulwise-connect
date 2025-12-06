@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
       orderBy: [
         { completed: 'asc' },
         { dueDate: 'asc' },
-        { createdAt: 'desc' }
+        { created_at: 'desc' }
       ]
     });
 

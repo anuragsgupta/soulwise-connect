@@ -16,8 +16,8 @@ export async function POST(request: NextRequest) {
 
     // Build where clause based on user type
     const where: any = {
-      recipientType: user.userType,
-      isRead: false,
+      recipient_type: user.userType,
+      is_read: false,
     };
 
     if (user.userType === 'STUDENT') {
@@ -28,11 +28,11 @@ export async function POST(request: NextRequest) {
       where.adminRecipientId = user.userId;
     }
 
-    const result = await prisma.notification.updateMany({
+    const result = await prisma.notifications.updateMany({
       where,
       data: {
-        isRead: true,
-        readAt: new Date(),
+        is_read: true,
+        read_at: new Date(),
       },
     });
 

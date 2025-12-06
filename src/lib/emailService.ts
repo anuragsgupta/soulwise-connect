@@ -17,7 +17,7 @@ interface SessionEmailData {
   sessionTime: string;
   duration: number;
   meetLink: string;
-  sessionType: string;
+  session_type: string;
   location?: string | null;
   notes?: string | null;
 }

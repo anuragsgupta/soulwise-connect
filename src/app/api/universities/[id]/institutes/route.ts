@@ -29,7 +29,7 @@ export async function POST(
     }
 
     // Check if university exists
-    const university = await prisma.university.findUnique({
+    const university = await prisma.universities.findUnique({
       where: { universityId },
     });
 
@@ -39,7 +39,7 @@ export async function POST(
 
     // Check if code already exists (if provided)
     if (code) {
-      const existingInstitute = await prisma.institute.findUnique({
+      const existingInstitute = await prisma.institutes.findUnique({
         where: { code },
       });
 
@@ -49,7 +49,7 @@ export async function POST(
     }
 
     // Create institute
-    const institute = await prisma.institute.create({
+    const institute = await prisma.institutes.create({
       data: {
         universityId,
         name,
@@ -63,7 +63,7 @@ export async function POST(
     });
 
     // Log audit event
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         actorUser: user.userId,
         action: 'INSTITUTE_CREATED',
@@ -82,14 +82,14 @@ export async function POST(
       true,
       'Institute created successfully',
       {
-        institute: {
-          instituteId: institute.instituteId,
+        institutes: {
+          institute_id: institute.instituteId,
           name: institute.name,
           code: institute.code,
           address: institute.address,
           state: institute.state,
           city: institute.city,
-          universityId: institute.universityId,
+          university_id: institute.universityId,
         },
       }
     );
@@ -119,7 +119,7 @@ export async function GET(
     }
 
     // Get institutes for this university
-    const institutes = await prisma.institute.findMany({
+    const institutes = await prisma.institutes.findMany({
       where: {
         universityId,
         deletedAt: null,

@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { verifyPassword, generateToken, createResponse } from '@/lib/auth';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { email, password, enrollmentId } = body;
 
-    console.log('🔐 Login attempt:', { email, enrollmentId: !!enrollmentId });
+    console.log('🔐 Login attempt:', { email, enrollment_id: !!enrollmentId });
 
     // Validate required fields
     if ((!email && !enrollmentId) || !password) {
@@ -57,16 +55,16 @@ export async function POST(request: NextRequest) {
 
     // Handle student login with enrollment ID
     if (enrollmentId) {
-      const student = await prisma.student.findUnique({
-        where: { enrollmentId },
+      const student = await prisma.students.findUnique({
+        where: { enrollment_id: enrollmentId },
         include: {
-          batch: {
+          batches: {
             include: {
-              department: {
+              departments: {
                 include: {
-                  institute: {
+                  institutes: {
                     include: {
-                      university: true,
+                      universities: true,
                     },
                   },
                 },
@@ -93,23 +91,23 @@ export async function POST(request: NextRequest) {
 
       userType = 'STUDENT';
       userData = student;
-      passwordHash = student.passwordHash;
+      passwordHash = student.password_hash;
     } else {
       // Try to find admin first
       console.log('🔍 Looking for admin with email:', email);
-      const admin = await prisma.admin.findUnique({
+      const admin = await prisma.admins.findUnique({
         where: { email },
         include: {
-          university: true,
-          institute: true,
+          universities: true,
+          institutes: true,
         },
       });
 
       console.log('📋 Admin found:', admin ? {
         id: admin.id,
         email: admin.email,
-        adminType: admin.adminType,
-        isSuperAdmin: admin.isSuperAdmin,
+        admin_type: admin.admin_type,
+        is_super_admin: admin.is_super_admin,
         status: admin.status
       } : 'null');
 
@@ -126,17 +124,17 @@ export async function POST(request: NextRequest) {
         console.log('✅ Admin found and active');
         userType = 'ADMIN';
         userData = admin;
-        passwordHash = admin.passwordHash;
+        passwordHash = admin.password_hash;
       } else {
         // Try to find faculty
         const faculty = await prisma.faculty.findUnique({
           where: { email },
           include: {
-            department: {
+            departments_faculty_department_idTodepartments: {
               include: {
-                institute: {
+                institutes: {
                   include: {
-                    university: true,
+                    universities: true,
                   },
                 },
               },
@@ -161,7 +159,7 @@ export async function POST(request: NextRequest) {
 
         userType = 'FACULTY';
         userData = faculty;
-        passwordHash = faculty.passwordHash;
+        passwordHash = faculty.password_hash;
       }
     }
 
@@ -204,27 +202,27 @@ export async function POST(request: NextRequest) {
     };
 
     if (userType === 'ADMIN') {
-      tokenPayload.adminType = userData.adminType;
-      tokenPayload.isSuperAdmin = userData.isSuperAdmin;
-      tokenPayload.universityId = userData.universityId;
-      tokenPayload.instituteId = userData.instituteId;
-      tokenPayload.role = userData.adminType || 'ADMIN';
+      tokenPayload.adminType = userData.admin_type as string;
+      tokenPayload.isSuperAdmin = userData.is_super_admin as boolean;
+      tokenPayload.universityId = userData.university_id as string | null;
+      tokenPayload.instituteId = userData.institute_id as string | null;
+      tokenPayload.role = (userData.admin_type as string) || 'ADMIN';
       console.log('🎫 Admin token payload:', {
-        adminType: userData.adminType,
-        isSuperAdmin: userData.isSuperAdmin,
+        admin_type: userData.admin_type,
+        is_super_admin: userData.is_super_admin,
         role: tokenPayload.role
       });
     } else if (userType === 'FACULTY') {
-      tokenPayload.facultyType = userData.facultyType;
-      tokenPayload.departmentId = userData.departmentId;
-      tokenPayload.instituteId = userData.department?.instituteId;
-      tokenPayload.universityId = userData.department?.institute?.universityId;
+      tokenPayload.facultyType = userData.faculty_type as string;
+      tokenPayload.departmentId = userData.department_id as string;
+      tokenPayload.instituteId = userData.institute_id as string;
+      tokenPayload.universityId = userData.university_id as string;
     } else if (userType === 'STUDENT') {
-      tokenPayload.rollNumber = userData.rollNumber;
-      tokenPayload.batchId = userData.batchId;
-      tokenPayload.departmentId = userData.batch?.departmentId;
-      tokenPayload.instituteId = userData.batch?.department?.instituteId;
-      tokenPayload.universityId = userData.batch?.department?.institute?.universityId;
+      tokenPayload.rollNumber = userData.roll_number as string | null;
+      tokenPayload.batchId = userData.batch_id as string;
+      tokenPayload.departmentId = userData.department_id as string;
+      tokenPayload.instituteId = userData.institute_id as string;
+      tokenPayload.universityId = userData.university_id as string;
     }
 
     // Generate JWT token
@@ -232,14 +230,15 @@ export async function POST(request: NextRequest) {
     console.log('🎫 Token generated successfully');
 
     // Log audit event
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
-        tableName: userType === 'ADMIN' ? 'admins' : userType === 'FACULTY' ? 'faculties' : 'students',
-        recordId: userData.id,
+        id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        table_name: userType === 'ADMIN' ? 'admins' : userType === 'FACULTY' ? 'faculty' : 'students',
+        record_id: userData.id,
         action: 'LOGIN',
-        performedById: userData.id,
-        performedByType: userType,
-        newValues: {
+        performed_by_id: userData.id,
+        performed_by_type: userType,
+        new_values: {
           loginMethod: enrollmentId ? 'enrollment_id' : 'email',
           timestamp: new Date().toISOString(),
         },
@@ -272,30 +271,30 @@ export async function POST(request: NextRequest) {
       email: userData.email,
       name: userData.name,
       userType,
-      role: userType === 'ADMIN' ? (userData.adminType || 'ADMIN') : userType,
+      role: userType === 'ADMIN' ? ((userData.admin_type as string) || 'ADMIN') : userType,
     };
 
     if (userType === 'ADMIN') {
-      responseUser.adminType = userData.adminType;
-      responseUser.isSuperAdmin = userData.isSuperAdmin;
-      responseUser.universityId = userData.universityId;
-      responseUser.instituteId = userData.instituteId;
-      responseUser.university = userData.university;
-      responseUser.institute = userData.institute;
-      responseUser.role = userData.adminType || 'ADMIN';
+      responseUser.adminType = userData.admin_type as string;
+      responseUser.isSuperAdmin = userData.is_super_admin as boolean;
+      responseUser.universityId = userData.university_id as string | null;
+      responseUser.instituteId = userData.institute_id as string | null;
+      responseUser.university = userData.universities;
+      responseUser.institute = userData.institutes;
+      responseUser.role = (userData.admin_type as string) || 'ADMIN';
     } else if (userType === 'FACULTY') {
-      responseUser.facultyType = userData.facultyType;
-      responseUser.departmentId = userData.departmentId;
-      responseUser.instituteId = userData.department?.instituteId;
-      responseUser.universityId = userData.department?.institute?.universityId;
-      responseUser.department = userData.department;
+      responseUser.facultyType = userData.faculty_type as string;
+      responseUser.departmentId = userData.department_id as string;
+      responseUser.instituteId = userData.institute_id as string;
+      responseUser.universityId = userData.university_id as string;
+      responseUser.department = userData.departments_faculty_department_idTodepartments;
     } else if (userType === 'STUDENT') {
-      responseUser.rollNumber = userData.rollNumber;
-      responseUser.batchId = userData.batchId;
-      responseUser.departmentId = userData.batch?.departmentId;
-      responseUser.instituteId = userData.batch?.department?.instituteId;
-      responseUser.universityId = userData.batch?.department?.institute?.universityId;
-      responseUser.batch = userData.batch;
+      responseUser.rollNumber = userData.roll_number as string | null;
+      responseUser.batchId = userData.batch_id as string;
+      responseUser.departmentId = userData.department_id as string;
+      responseUser.instituteId = userData.institute_id as string;
+      responseUser.universityId = userData.university_id as string;
+      responseUser.batch = userData.batches;
     }
 
     const response = NextResponse.json(
@@ -318,8 +317,8 @@ export async function POST(request: NextRequest) {
     console.log('✅ Login successful for:', {
       email: userData.email,
       userType,
-      adminType: userData.adminType,
-      isSuperAdmin: userData.isSuperAdmin
+      admin_type: userData.admin_type,
+      is_super_admin: userData.is_super_admin
     });
 
     return response;

@@ -30,10 +30,10 @@ export async function GET(request: NextRequest) {
     console.log('Looking up student:', user.userId);
     
     // Get student details
-    const student = await prisma.student.findUnique({
+    const student = await prisma.students.findUnique({
       where: { id: user.userId },
       select: {
-        instituteId: true,
+        institute_id: true,
       },
     });
 
@@ -51,18 +51,18 @@ export async function GET(request: NextRequest) {
     // Fetch ALL faculty from the same institute (no status filter)
     const faculties = await prisma.faculty.findMany({
       where: {
-        instituteId: student.instituteId,
+        institute_id: student.instituteId,
       },
       select: {
         id: true,
         name: true,
         email: true,
         phone: true,
-        jobTitle: true,
-        facultyType: true,
-        availabilityStatus: true,
-        yearsOfExperience: true,
-        department: {
+        job_title: true,
+        faculty_type: true,
+        availability_status: true,
+        years_of_experience: true,
+        departments: {
           select: {
             id: true,
             name: true,
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: [
-        { facultyType: 'asc' },
+        { faculty_type: 'asc' },
         { name: 'asc' },
       ],
     });
