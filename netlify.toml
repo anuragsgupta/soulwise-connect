@@ -9,8 +9,8 @@
   command = "npm run build"
 
 [build.environment]
-  # Set Node.js version
-  NODE_VERSION = "22"
+  # Set Node.js version (matching local environment)
+  NODE_VERSION = "24"
 
 # Next.js specific configuration
 [[plugins]]
