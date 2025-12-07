@@ -55,13 +55,12 @@ export default function StudentsTable({ instituteId }: StudentsTableProps) {
   const loadStudents = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('auth-token');
       const url = instituteId 
         ? `/api/students?instituteId=${instituteId}`
         : '/api/students';
       
       const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${token}` },
+        credentials: 'include', // Use cookies for auth
       });
       
       const result = await response.json();
@@ -80,10 +79,9 @@ export default function StudentsTable({ instituteId }: StudentsTableProps) {
 
     setIsDeleting(true);
     try {
-      const token = localStorage.getItem('auth-token');
       const response = await fetch(`/api/students/${deletingStudent.id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
+        credentials: 'include', // Use cookies for auth
       });
 
       const result = await response.json();

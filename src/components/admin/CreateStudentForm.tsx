@@ -91,9 +91,8 @@ const CreateStudentForm: React.FC<CreateStudentFormProps> = ({
   const loadDepartments = async () => {
     try {
       setIsLoadingDepartments(true);
-      const token = localStorage.getItem('auth-token');
       const response = await fetch(`/api/departments?instituteId=${instituteId}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
+        credentials: 'include', // Use cookies for auth
       });
       const result = await response.json();
       
@@ -110,9 +109,8 @@ const CreateStudentForm: React.FC<CreateStudentFormProps> = ({
   const loadBatches = async (departmentId: string) => {
     try {
       setIsLoadingBatches(true);
-      const token = localStorage.getItem('auth-token');
       const response = await fetch(`/api/batches?departmentId=${departmentId}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
+        credentials: 'include', // Use cookies for auth
       });
       const result = await response.json();
       
@@ -166,13 +164,12 @@ const CreateStudentForm: React.FC<CreateStudentFormProps> = ({
     setIsSubmitting(true);
 
     try {
-      const token = localStorage.getItem('auth-token');
       const response = await fetch('/api/students', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include', // Use cookies for auth
         body: JSON.stringify({
           ...formData,
           instituteId,
