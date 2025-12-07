@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { calculateWellnessScore, WellnessScoreInput } from '@/lib/wellness-score';
-
-const prisma = new PrismaClient();
 
 /**
  * GET /api/wellness-score?studentId={id}

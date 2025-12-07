@@ -493,6 +493,7 @@ model SessionBooking {
   duration        Int            @default(30)
   status          SessionStatus  @default(PENDING)
   meetingLink     String?        @map("meeting_link")
+  googleEventId   String?        @map("google_event_id")
   location        String?
   studentNotes    String?        @map("student_notes")
   facultyNotes    String?        @map("faculty_notes")
@@ -504,7 +505,6 @@ model SessionBooking {
   updatedAt       DateTime       @updatedAt @map("updated_at")
   studentId       String         @map("student_id")
   facultyId       String         @map("faculty_id")
-  googleEventId   String?        @map("google_event_id")
   notifications   Notification[]
   faculty         Faculty        @relation(fields: [facultyId], references: [id], onDelete: Cascade)
   student         Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)

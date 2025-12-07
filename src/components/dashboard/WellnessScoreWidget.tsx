@@ -37,11 +37,15 @@ interface WellnessScoreData {
 interface WellnessScoreWidgetProps {
   studentId: string;
   showBreakdown?: boolean;
+  hideOverallScore?: boolean;
+  hideCalculationInfo?: boolean;
 }
 
 export default function WellnessScoreWidget({ 
   studentId, 
-  showBreakdown = true 
+  showBreakdown = true,
+  hideOverallScore = false,
+  hideCalculationInfo = false
 }: WellnessScoreWidgetProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -118,6 +122,7 @@ export default function WellnessScoreWidget({
   return (
     <div className="space-y-4">
       {/* Main Wellness Score Card */}
+      {!hideOverallScore && (
       <Card className={wellnessData.hasRedFlags ? "border-red-500 border-2" : ""}>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -176,6 +181,7 @@ export default function WellnessScoreWidget({
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* Score Breakdown */}
       {showBreakdown && (
@@ -274,16 +280,18 @@ export default function WellnessScoreWidget({
       )}
 
       {/* Information Card */}
-      <Alert>
-        <Info className="w-4 h-4" />
-        <AlertTitle className="font-heading">How is this calculated?</AlertTitle>
-        <AlertDescription className="font-body">
-          Your wellness score is calculated using a Multi-Criteria Decision Analysis (MCDA) algorithm 
-          that combines your daily mood check-ins, clinical assessments (PHQ-9, GAD-7), and AI-analyzed 
-          conversation patterns. Recent data is weighted more heavily, and clinical assessments 
-          (50% weight) are prioritized over subjective daily inputs for accuracy.
-        </AlertDescription>
-      </Alert>
+      {!hideCalculationInfo && (
+        <Alert>
+          <Info className="w-4 h-4" />
+          <AlertTitle className="font-heading">How is this calculated?</AlertTitle>
+          <AlertDescription className="font-body">
+            Your wellness score is calculated using a Multi-Criteria Decision Analysis (MCDA) algorithm 
+            that combines your daily mood check-ins, clinical assessments (PHQ-9, GAD-7), and AI-analyzed 
+            conversation patterns. Recent data is weighted more heavily, and clinical assessments 
+            (50% weight) are prioritized over subjective daily inputs for accuracy.
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 }

@@ -47,6 +47,8 @@ import NotificationBell from "@/components/notifications/NotificationBell";
 import NotificationsPage from "@/components/notifications/NotificationsPage";
 import BookSession from "@/components/sessions/BookSession";
 import WellnessScoreWidget from "./WellnessScoreWidget";
+import UpcomingSessionsTable from "./UpcomingSessionsTable";
+import SettingsPage from "./Settings";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface StudentDashboardProps {
@@ -556,55 +558,100 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       default:
         return (
           <div className="space-y-6">
-            {/* Welcome Header */}
-            <Card className="relative bg-white/80 border border-gray-200/50 shadow-2xl rounded-3xl overflow-hidden backdrop-blur-sm">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/8 via-purple-500/8 to-pink-500/8" />
-              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-3xl" />
-              <CardHeader className="pb-6 relative">
-                <CardTitle className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-in fade-in slide-in-from-bottom-3 duration-700">
-                  Welcome back, {user?.name || 'Student'}! 👋
-                </CardTitle>
+            {/* Welcome Header with Wellness Score */}
+            <Card className={`relative border-0 shadow-2xl rounded-3xl overflow-hidden backdrop-blur-sm transition-all duration-500 ${
+              wellnessScore === null 
+                ? 'bg-gradient-to-br from-blue-500/90 via-purple-500/90 to-pink-500/90' 
+                : wellnessScore >= 80
+                  ? 'bg-gradient-to-br from-green-500/90 via-emerald-500/90 to-teal-500/90'
+                  : wellnessScore >= 60
+                    ? 'bg-gradient-to-br from-blue-500/90 via-cyan-500/90 to-teal-500/90'
+                    : wellnessScore >= 40
+                      ? 'bg-gradient-to-br from-yellow-500/90 via-amber-500/90 to-orange-500/90'
+                      : wellnessScore >= 20
+                        ? 'bg-gradient-to-br from-orange-500/90 via-red-500/90 to-pink-500/90'
+                        : 'bg-gradient-to-br from-red-600/90 via-rose-600/90 to-pink-600/90'
+            }`}>
+              <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-black/10" />
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
+              <CardHeader className="pb-6 pt-8 relative">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-3xl md:text-4xl font-extrabold text-white animate-in fade-in slide-in-from-bottom-3 duration-700 drop-shadow-lg">
+                      Hi, {user?.name?.split(' ')[0] || 'Student'}! 👋
+                    </CardTitle>
+                    <CardDescription className="text-white/90 text-base mt-2 font-medium drop-shadow">
+                      {wellnessScore === null 
+                        ? 'Loading your wellness data...'
+                        : wellnessScore >= 80
+                          ? '🌟 Your wellness is excellent! Keep it up!'
+                          : wellnessScore >= 60
+                            ? '😊 You\'re doing well! Stay consistent.'
+                            : wellnessScore >= 40
+                              ? '💛 Taking care of yourself is important.'
+                              : wellnessScore >= 20
+                                ? '🧡 We\'re here to support you.'
+                                : '❤️ Please reach out for support.'
+                      }
+                    </CardDescription>
+                  </div>
+                  {wellnessScore !== null && (
+                    <div className="text-right">
+                      <div className="text-5xl md:text-6xl font-extrabold text-white drop-shadow-2xl">
+                        {wellnessScore}
+                      </div>
+                      <div className="text-white/90 text-sm font-semibold mt-1 drop-shadow">
+                        Wellness Score
+                      </div>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
             </Card>
 
-            {/* Wellness Score Widget */}
+            {/* Quick Actions Grid - PhonePe Style */}
+            <Card className="rounded-3xl border border-gray-200/60 shadow-lg bg-white">
+              <CardContent className="p-4 sm:p-6">
+                <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                  {quickActions.map((action, index) => (
+                    <button
+                      key={index}
+                      onClick={action.action}
+                      className="flex flex-col items-center justify-center p-3 sm:p-4 rounded-2xl hover:bg-gray-50 active:scale-95 transition-all duration-200 group"
+                    >
+                      <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br ${action.color} flex items-center justify-center mb-2 group-hover:scale-110 group-hover:shadow-lg transition-all duration-300`}>
+                        <action.icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-medium text-gray-700 text-center leading-tight">
+                        {action.title}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Wellness Score Breakdown */}
             {user?.id && (
-              <WellnessScoreWidget studentId={user.id} showBreakdown={true} />
+              <WellnessScoreWidget studentId={user.id} showBreakdown={true} hideOverallScore={true} hideCalculationInfo={true} />
             )}
 
-            {/* Quick Actions Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {quickActions.map((action, index) => (
-                <Card 
-                  key={index}
-                  className="group cursor-pointer hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 border border-gray-200/60 rounded-3xl overflow-hidden bg-white/90 backdrop-blur-sm hover:border-transparent"
-                  onClick={action.action}
-                >
-                  {/* Hover gradient overlay */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-0 group-hover:opacity-8 transition-opacity duration-500`} />
-                  {/* Shine effect */}
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                  </div>
-                  <CardHeader className="relative p-6">
-                    <div className="flex items-start space-x-4">
-                      <div className={`p-4 rounded-2xl bg-gradient-to-br ${action.color} shadow-lg group-hover:scale-110 group-hover:rotate-6 group-hover:shadow-xl transition-all duration-500`}>
-                        <action.icon className="w-7 h-7 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <CardTitle className="text-base md:text-lg font-bold text-gray-800 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 group-hover:bg-clip-text transition-all duration-300">
-                          {action.title}
-                        </CardTitle>
-                        <CardDescription className="text-sm text-gray-500 mt-2 group-hover:text-gray-600 transition-colors">{action.description}</CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                </Card>
-              ))}
-            </div>
+            {/* Upcoming Sessions Table */}
+            <Card className="rounded-3xl border border-gray-200/60 shadow-lg bg-white">
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg font-bold">
+                  <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+                  Upcoming Sessions
+                </CardTitle>
+                <CardDescription>Your approved counseling sessions with faculty</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <UpcomingSessionsTable studentId={user?.id || ''} />
+              </CardContent>
+            </Card>
 
-            {/* Recent Activity & Insights */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+            {/* Hidden section - keeping for structure */}
+            <div className="hidden">
               <Card className="rounded-3xl border border-gray-200/60 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-white/90 backdrop-blur-sm">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center text-lg font-bold">
