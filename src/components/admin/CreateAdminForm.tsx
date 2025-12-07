@@ -134,14 +134,13 @@ const CreateAdminForm: React.FC<CreateAdminFormProps> = ({
     setIsSubmitting(true);
 
     try {
-      const token = localStorage.getItem('auth-token');
-      
+      // Don't send Authorization header - use cookies instead
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include', // Send cookies automatically
         body: JSON.stringify({
           ...formData,
           universityId,

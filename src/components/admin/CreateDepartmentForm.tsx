@@ -65,13 +65,12 @@ const CreateDepartmentForm: React.FC<CreateDepartmentFormProps> = ({
     setIsSubmitting(true);
 
     try {
-      const token = localStorage.getItem('auth-token');
       const response = await fetch('/api/departments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include', // Use cookies for auth
         body: JSON.stringify({
           ...formData,
           instituteId,

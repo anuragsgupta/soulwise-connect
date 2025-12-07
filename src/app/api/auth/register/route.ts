@@ -6,16 +6,23 @@ const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Verify authentication - check both cookie and Authorization header
+    let token = request.cookies.get('auth-token')?.value;
+    
+    if (!token) {
+      const authHeader = request.headers.get('authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+      }
+    }
+    
+    if (!token) {
       return NextResponse.json(
         createResponse(false, 'Unauthorized. Authentication required.'),
         { status: 401 }
       );
     }
 
-    const token = authHeader.substring(7);
     const decoded = verifyToken(token);
 
     if (!decoded || decoded.userType !== 'ADMIN') {

@@ -49,6 +49,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         console.log('🔐 AuthContext: Verifying session...');
         
+        // Clean up old auth tokens from localStorage (security - use cookies instead)
+        localStorage.removeItem('auth-token');
+        
         // Always verify session with server (checks HTTP-only cookie)
         const response = await fetch('/api/auth/verify', {
           method: 'GET',
@@ -172,7 +175,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setToken(authToken);
         setUser(userData);
         
-        // Keep localStorage as backup (non-sensitive data only)
+        // Clear any old auth tokens from localStorage
+        localStorage.removeItem('auth-token');
+        
+        // Keep user data in localStorage as backup (non-sensitive data only)
         // The actual auth token is in HTTP-only cookie
         localStorage.setItem('auth-user', JSON.stringify(userData));
         

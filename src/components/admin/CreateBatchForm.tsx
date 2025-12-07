@@ -68,9 +68,8 @@ const CreateBatchForm: React.FC<CreateBatchFormProps> = ({
   const loadDepartments = async () => {
     try {
       setIsLoadingDepartments(true);
-      const token = localStorage.getItem('auth-token');
       const response = await fetch(`/api/departments?instituteId=${instituteId}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
+        credentials: 'include', // Use cookies for auth
       });
       const result = await response.json();
       
@@ -163,8 +162,6 @@ const CreateBatchForm: React.FC<CreateBatchFormProps> = ({
     setIsSubmitting(true);
 
     try {
-      const token = localStorage.getItem('auth-token');
-      
       // Calculate current semester based on start year
       const calculatedSemester = calculateCurrentSemester(parseInt(formData.startYear));
       
@@ -172,8 +169,8 @@ const CreateBatchForm: React.FC<CreateBatchFormProps> = ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include', // Use cookies for auth
         body: JSON.stringify({
           name: formData.name,
           startYear: parseInt(formData.startYear),

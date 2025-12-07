@@ -72,17 +72,16 @@ export default function InstituteAdminDashboard({ onLogout }: InstituteAdminDash
     
     try {
       setLoading(true);
-      const token = localStorage.getItem('auth-token');
       
       console.log('Loading data for instituteId:', user.instituteId);
       
       // Load institute details with stats and admins count
       const [instituteResponse, adminsResponse] = await Promise.all([
         fetch(`/api/institutes?universityId=${user.universityId}`, {
-          headers: { 'Authorization': `Bearer ${token}` },
+          credentials: 'include', // Use cookies for auth
         }),
         fetch(`/api/admins`, {
-          headers: { 'Authorization': `Bearer ${token}` },
+          credentials: 'include', // Use cookies for auth
         })
       ]);
       
