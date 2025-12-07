@@ -1,9 +1,11 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
-import { cache } from 'react';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key';
+
+// Log JWT secret status (only first few chars for security)
+console.log('🔑 JWT_SECRET loaded:', JWT_SECRET ? `${JWT_SECRET.substring(0, 5)}...` : 'NOT SET');
 
 // Hash password utility
 export async function hashPassword(password: string): Promise<string> {
@@ -17,22 +19,34 @@ export async function verifyPassword(password: string, hashedPassword: string): 
 
 // Generate JWT token
 export function generateToken(payload: any): string {
+  console.log('🎫 Generating token with secret:', JWT_SECRET ? `${JWT_SECRET.substring(0, 5)}...` : 'NOT SET');
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
 
-// Verify JWT token (uncached version for internal use)
-function verifyTokenInternal(token: string): any {
+// Verify JWT token
+export function verifyToken(token: string): any {
   try {
-    return jwt.verify(token, JWT_SECRET);
+    console.log('🔍 Verifying token...');
+    console.log('🔍 Token (first 20 chars):', token.substring(0, 20));
+    console.log('🔍 JWT_SECRET exists:', !!JWT_SECRET);
+    console.log('🔍 JWT_SECRET (first 5 chars):', JWT_SECRET ? JWT_SECRET.substring(0, 5) : 'NOT SET');
+    
+    const decoded = jwt.verify(token, JWT_SECRET);
+    console.log('✅ Token verified successfully:', {
+      id: (decoded as any).id,
+      userType: (decoded as any).userType,
+      email: (decoded as any).email
+    });
+    return decoded;
   } catch (error) {
+    console.error('❌ Token verification failed');
+    console.error('Error:', error instanceof Error ? error.message : error);
+    if (error instanceof Error && 'name' in error) {
+      console.error('Error name:', (error as any).name);
+    }
     throw new Error('Invalid token');
   }
 }
-
-// Cached version of verifyToken - prevents duplicate token verification in a single render pass
-export const verifyToken = cache((token: string): any => {
-  return verifyTokenInternal(token);
-});
 
 // Generate secure invite token
 export function generateInviteToken(): string {

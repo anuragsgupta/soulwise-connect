@@ -24,36 +24,56 @@ export async function authenticateUser(request: NextRequest): Promise<Authentica
   // Try to get token from Authorization header first (for API clients)
   let token = null;
   const authHeader = request.headers.get('authorization');
+  
+  console.log('🔐 Auth header:', authHeader ? `Bearer ${authHeader.substring(7, 27)}...` : 'none');
+  
   if (authHeader && authHeader.startsWith('Bearer ')) {
     token = authHeader.substring(7);
+    console.log('✅ Token from Authorization header');
   }
   
   // If no Authorization header, try HTTP-only cookie (for browser requests)
   if (!token) {
-    token = request.cookies.get('auth-token')?.value;
+    const cookieToken = request.cookies.get('auth-token')?.value;
+    if (cookieToken) {
+      token = cookieToken;
+      console.log('✅ Token from cookie');
+    }
   }
   
   if (!token) {
-    console.log('No token found in header or cookie');
+    console.log('❌ No token found in header or cookie');
     return null;
   }
+  
+  console.log('🎫 Token to verify (first 20 chars):', token.substring(0, 20));
   
   try {
     const decoded = verifyToken(token) as any;
     
+    console.log('🔓 Decoded token:', {
+      id: decoded.id,
+      userId: decoded.userId,
+      userType: decoded.userType,
+      role: decoded.role
+    });
+    
     if (!decoded || (!decoded.userId && !decoded.id) || (!decoded.userType && !decoded.role)) {
-      console.log('Invalid token payload:', decoded);
+      console.log('❌ Invalid token payload:', decoded);
       return null;
     }
 
-    return {
+    const user = {
       userId: decoded.userId || decoded.id,
       email: decoded.email,
       userType: decoded.userType || decoded.role,
       roles: decoded.roles,
     };
+    
+    console.log('✅ Authenticated user:', user);
+    return user;
   } catch (error) {
-    console.error('Token verification error:', error);
+    console.error('❌ Token verification error:', error);
     return null;
   }
 }

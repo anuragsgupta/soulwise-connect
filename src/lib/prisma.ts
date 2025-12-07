@@ -1,24 +1,19 @@
 import { PrismaClient } from '@prisma/client';
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
+declare global {
+  // eslint-disable-next-line no-var
+  var prisma: PrismaClient | undefined;
+}
 
-// Use Supabase Transaction Mode (port 6543) for serverless with connection pooling
-// Transaction mode is required for serverless to avoid exhausting connections
-const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres.mqnibarfktnjncodliba:7pnsqtgZmpdZexF3@aws-1-ap-south-1.pooler.supabase.com:5432/postgres?pgbouncer=true&connection_limit=1';
+// Use a singleton pattern to avoid multiple instances in development
+export const prisma =
+  global.prisma ||
+  new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+  });
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-  datasources: {
-    db: {
-      url: DATABASE_URL,
-    },
-  },
-  errorFormat: 'pretty',
-});
+if (process.env.NODE_ENV !== 'production') {
+  global.prisma = prisma;
+}
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
-
-// Don't disconnect in serverless - let connection pooling handle it
-// Prisma handles connection pooling automatically
+export default prisma;

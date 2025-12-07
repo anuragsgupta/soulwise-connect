@@ -138,6 +138,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('🔐 AuthContext: Attempting login...', { email, enrollmentId: !!enrollmentId });
       
+      // Clear any old tokens from localStorage
+      localStorage.removeItem('auth-token');
+      
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {

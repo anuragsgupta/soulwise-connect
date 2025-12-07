@@ -79,25 +79,11 @@ export default function BookSession() {
     console.log('loadData called');
     try {
       setLoading(true);
-      const token = localStorage.getItem('auth-token');
-      console.log('Token:', token ? 'exists' : 'missing');
       
-      if (!token) {
-        toast({
-          title: "Authentication Required",
-          description: "Please log in to view appointments",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-      
-      // Fetch available faculty
+      // Fetch available faculty - rely on cookie authentication
       console.log('Fetching faculty...');
       const facultyResponse = await fetch('/api/sessions/faculty', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include', // Use cookie for auth
       });
       
       console.log('Faculty API response status:', facultyResponse.status);
@@ -174,14 +160,13 @@ export default function BookSession() {
 
     try {
       setSubmitting(true);
-      const token = localStorage.getItem('auth-token');
 
       const response = await fetch('/api/sessions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include', // Use cookie for auth
         body: JSON.stringify({
           facultyId: selectedFaculty.id,
           ...formData,
