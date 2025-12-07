@@ -98,6 +98,7 @@ export async function POST(request: NextRequest) {
       });
       moodCheckIn = await prisma.mood_check_ins.create({
         data: {
+          id: crypto.randomUUID(),
           student_id: studentId,
           mood_score: moodLevel,
           mood_label: moodLabel,
@@ -126,7 +127,7 @@ export async function POST(request: NextRequest) {
       // Check if diary entry exists for today
       const existingDiary = await prisma.diary_entries.findFirst({
         where: {
-          studentId,
+          student_id: studentId,
           entry_date: {
             gte: checkInDate,
             lt: new Date(checkInDate.getTime() + 24 * 60 * 60 * 1000) // Next day
@@ -141,21 +142,23 @@ export async function POST(request: NextRequest) {
           data: {
             content: journal,
             mood: moodLabel,
-            wordCount,
-            charCount
+            word_count: wordCount,
+            char_count: charCount
           }
         });
       } else {
         // Create new diary entry
         diaryEntry = await prisma.diary_entries.create({
           data: {
-            studentId,
+            id: crypto.randomUUID(),
+            student_id: studentId,
             title: diaryTitle,
             content: journal,
             mood: moodLabel,
-            wordCount,
-            charCount,
-            entry_date: today
+            word_count: wordCount,
+            char_count: charCount,
+            entry_date: today,
+            updated_at: new Date()
           }
         });
       }
@@ -206,7 +209,7 @@ export async function GET(request: NextRequest) {
     startDate.setDate(startDate.getDate() - days);
 
     // Get mood check-ins with error handling
-    let moodCheckIns = [];
+    let moodCheckIns: any[] = [];
     try {
       moodCheckIns = await prisma.mood_check_ins.findMany({
         where: {

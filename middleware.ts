@@ -62,12 +62,7 @@ export function middleware(request: NextRequest) {
 
   return NextResponse.next();
 }
-      return response;
-    }
-  }
 
-  return NextResponse.next();
-}
 
 export const config = {
   matcher: ['/dashboard/:path*', '/admin/:path*', '/faculty/:path*', '/student/:path*'],
