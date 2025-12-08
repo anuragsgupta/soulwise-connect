@@ -144,40 +144,42 @@ model Batch {
 }
 
 model Faculty {
-  id                 String             @id @default(uuid())
-  name               String
-  email              String             @unique
-  passwordHash       String             @map("password_hash")
-  phone              String?
-  address            String?
-  jobTitle           String?            @map("job_title")
-  facultyType        FacultyType        @map("faculty_type")
-  status             FacultyStatus      @default(ACTIVE)
-  availabilityStatus AvailabilityStatus @default(AVAILABLE) @map("availability_status")
-  yearsOfExperience  Int?               @map("years_of_experience")
-  panNumber          String?            @map("pan_number")
-  aadhaarNumber      String?            @map("aadhaar_number")
-  lastLogin          DateTime?          @map("last_login")
-  createdAt          DateTime           @default(now()) @map("created_at")
-  updatedAt          DateTime           @updatedAt @map("updated_at")
-  departmentId       String             @map("department_id")
-  instituteId        String             @map("institute_id")
-  universityId       String             @map("university_id")
-  mentorSupervisorId String?            @map("mentor_supervisor_id")
-  auditLogs          AuditLog[]         @relation("FacultyAuditLogs")
-  crisisAlerts       CrisisAlert[]
-  hodOfDepartments   Department[]       @relation("DepartmentHOD")
-  department         Department         @relation("DepartmentFaculty", fields: [departmentId], references: [id])
-  institute          Institute          @relation("InstituteFaculty", fields: [instituteId], references: [id])
-  mentorSupervisor   Faculty?           @relation("MentorSupervisor", fields: [mentorSupervisorId], references: [id])
-  mentoredFaculty    Faculty[]          @relation("MentorSupervisor")
-  university         University         @relation(fields: [universityId], references: [id])
-  hodOfInstitutes    Institute[]        @relation("InstituteHOD")
-  createdInvites     Invite[]           @relation("FacultyInviteCreator")
-  notifications      Notification[]
-  sessionBookings    SessionBooking[]
-  sessions           Session[]
-  mentoredStudents   Student[]
+  id                        String                      @id @default(uuid())
+  name                      String
+  email                     String                      @unique
+  passwordHash              String                      @map("password_hash")
+  phone                     String?
+  address                   String?
+  jobTitle                  String?                     @map("job_title")
+  facultyType               FacultyType                 @map("faculty_type")
+  status                    FacultyStatus               @default(ACTIVE)
+  availabilityStatus        AvailabilityStatus          @default(AVAILABLE) @map("availability_status")
+  yearsOfExperience         Int?                        @map("years_of_experience")
+  panNumber                 String?                     @map("pan_number")
+  aadhaarNumber             String?                     @map("aadhaar_number")
+  lastLogin                 DateTime?                   @map("last_login")
+  createdAt                 DateTime                    @default(now()) @map("created_at")
+  updatedAt                 DateTime                    @updatedAt @map("updated_at")
+  departmentId              String                      @map("department_id")
+  instituteId               String                      @map("institute_id")
+  universityId              String                      @map("university_id")
+  mentorSupervisorId        String?                     @map("mentor_supervisor_id")
+  anonymous_mentor_requests anonymous_mentor_requests[]
+  anonymous_mentor_sessions anonymous_mentor_sessions[]
+  auditLogs                 AuditLog[]                  @relation("FacultyAuditLogs")
+  crisisAlerts              CrisisAlert[]
+  hodOfDepartments          Department[]                @relation("DepartmentHOD")
+  department                Department                  @relation("DepartmentFaculty", fields: [departmentId], references: [id])
+  institute                 Institute                   @relation("InstituteFaculty", fields: [instituteId], references: [id])
+  mentorSupervisor          Faculty?                    @relation("MentorSupervisor", fields: [mentorSupervisorId], references: [id])
+  mentoredFaculty           Faculty[]                   @relation("MentorSupervisor")
+  university                University                  @relation(fields: [universityId], references: [id])
+  hodOfInstitutes           Institute[]                 @relation("InstituteHOD")
+  createdInvites            Invite[]                    @relation("FacultyInviteCreator")
+  notifications             Notification[]
+  sessionBookings           SessionBooking[]
+  sessions                  Session[]
+  mentoredStudents          Student[]
 
   @@index([email])
   @@index([instituteId])
@@ -188,45 +190,47 @@ model Faculty {
 }
 
 model Student {
-  id                    String           @id @default(uuid())
-  name                  String
-  email                 String           @unique
-  passwordHash          String           @map("password_hash")
-  enrollmentId          String           @unique @map("enrollment_id")
-  rollNumber            String?          @map("roll_number")
-  phone                 String?
-  parentPhone           String?          @map("parent_phone")
-  emergencyContactName  String?          @map("emergency_contact_name")
-  emergencyContactPhone String?          @map("emergency_contact_phone")
-  currentSemester       Int              @map("current_semester")
-  cgpa                  Decimal?         @db.Decimal(3, 2)
-  admissionYear         Int              @map("admission_year")
-  status                StudentStatus    @default(ACTIVE)
-  lastLogin             DateTime?        @map("last_login")
-  createdAt             DateTime         @default(now()) @map("created_at")
-  updatedAt             DateTime         @updatedAt @map("updated_at")
-  universityId          String           @map("university_id")
-  instituteId           String           @map("institute_id")
-  departmentId          String           @map("department_id")
-  batchId               String           @map("batch_id")
-  mentorId              String?          @map("mentor_id")
-  auditLogs             AuditLog[]       @relation("StudentAuditLogs")
-  chatSessions          ChatSession[]
-  crisisAlerts          CrisisAlert[]
-  diaryEntries          DiaryEntry[]
-  gad7Surveys           GAD7Survey[]
-  locations             Location[]
-  moodCheckIns          MoodCheckIn[]
-  notifications         Notification[]
-  phq9Surveys           PHQ9Survey[]
-  sessionBookings       SessionBooking[]
-  sessions              Session[]
-  batch                 Batch            @relation(fields: [batchId], references: [id])
-  department            Department       @relation(fields: [departmentId], references: [id])
-  institute             Institute        @relation(fields: [instituteId], references: [id])
-  mentor                Faculty?         @relation(fields: [mentorId], references: [id])
-  university            University       @relation(fields: [universityId], references: [id])
-  tasks                 Task[]
+  id                        String                      @id @default(uuid())
+  name                      String
+  email                     String                      @unique
+  passwordHash              String                      @map("password_hash")
+  enrollmentId              String                      @unique @map("enrollment_id")
+  rollNumber                String?                     @map("roll_number")
+  phone                     String?
+  parentPhone               String?                     @map("parent_phone")
+  emergencyContactName      String?                     @map("emergency_contact_name")
+  emergencyContactPhone     String?                     @map("emergency_contact_phone")
+  currentSemester           Int                         @map("current_semester")
+  cgpa                      Decimal?                    @db.Decimal(3, 2)
+  admissionYear             Int                         @map("admission_year")
+  status                    StudentStatus               @default(ACTIVE)
+  lastLogin                 DateTime?                   @map("last_login")
+  createdAt                 DateTime                    @default(now()) @map("created_at")
+  updatedAt                 DateTime                    @updatedAt @map("updated_at")
+  universityId              String                      @map("university_id")
+  instituteId               String                      @map("institute_id")
+  departmentId              String                      @map("department_id")
+  batchId                   String                      @map("batch_id")
+  mentorId                  String?                     @map("mentor_id")
+  anonymous_mentor_requests anonymous_mentor_requests[]
+  anonymous_mentor_sessions anonymous_mentor_sessions[]
+  auditLogs                 AuditLog[]                  @relation("StudentAuditLogs")
+  chatSessions              ChatSession[]
+  crisisAlerts              CrisisAlert[]
+  diaryEntries              DiaryEntry[]
+  gad7Surveys               GAD7Survey[]
+  locations                 Location[]
+  moodCheckIns              MoodCheckIn[]
+  notifications             Notification[]
+  phq9Surveys               PHQ9Survey[]
+  sessionBookings           SessionBooking[]
+  sessions                  Session[]
+  batch                     Batch                       @relation(fields: [batchId], references: [id])
+  department                Department                  @relation(fields: [departmentId], references: [id])
+  institute                 Institute                   @relation(fields: [instituteId], references: [id])
+  mentor                    Faculty?                    @relation(fields: [mentorId], references: [id])
+  university                University                  @relation(fields: [universityId], references: [id])
+  tasks                     Task[]
 
   @@index([email])
   @@index([enrollmentId])
@@ -493,6 +497,7 @@ model SessionBooking {
   duration        Int            @default(30)
   status          SessionStatus  @default(PENDING)
   meetingLink     String?        @map("meeting_link")
+  googleEventId   String?        @map("google_event_id")
   location        String?
   studentNotes    String?        @map("student_notes")
   facultyNotes    String?        @map("faculty_notes")
@@ -504,7 +509,6 @@ model SessionBooking {
   updatedAt       DateTime       @updatedAt @map("updated_at")
   studentId       String         @map("student_id")
   facultyId       String         @map("faculty_id")
-  googleEventId   String?        @map("google_event_id")
   notifications   Notification[]
   faculty         Faculty        @relation(fields: [facultyId], references: [id], onDelete: Cascade)
   student         Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -543,6 +547,63 @@ model Notification {
   @@index([recipientType, isRead])
   @@index([createdAt])
   @@map("notifications")
+}
+
+model anonymous_mentor_messages {
+  id                        String                    @id
+  session_id                String
+  sender_role               MessageSenderRole
+  message_text              String
+  sentiment_label           String?
+  risk_score                Float?
+  emotion_tags              String[]                  @default([])
+  is_read                   Boolean                   @default(false)
+  created_at                DateTime                  @default(now())
+  anonymous_mentor_sessions anonymous_mentor_sessions @relation(fields: [session_id], references: [id], onDelete: Cascade)
+
+  @@index([session_id, created_at])
+  @@index([session_id, is_read])
+}
+
+model anonymous_mentor_requests {
+  id               String                @id
+  anonymous_name   String
+  message          String
+  topic            String?
+  status           AnonymousMentorStatus @default(PENDING)
+  student_id       String
+  mentor_id        String
+  created_at       DateTime              @default(now())
+  updated_at       DateTime
+  response_message String?
+  responded_at     DateTime?
+  faculty          Faculty               @relation(fields: [mentor_id], references: [id], onDelete: Cascade)
+  students         Student               @relation(fields: [student_id], references: [id], onDelete: Cascade)
+
+  @@index([created_at])
+  @@index([mentor_id])
+  @@index([status])
+  @@index([student_id])
+}
+
+model anonymous_mentor_sessions {
+  id                        String                      @id
+  student_id                String
+  mentor_id                 String
+  student_alias             String
+  status                    AnonymousSessionStatus      @default(ACTIVE)
+  risk_level                RiskLevel                   @default(NORMAL)
+  created_at                DateTime                    @default(now())
+  updated_at                DateTime
+  last_message_at           DateTime?
+  ended_at                  DateTime?
+  anonymous_mentor_messages anonymous_mentor_messages[]
+  faculty                   Faculty                     @relation(fields: [mentor_id], references: [id], onDelete: Cascade)
+  students                  Student                     @relation(fields: [student_id], references: [id], onDelete: Cascade)
+
+  @@index([mentor_id, status])
+  @@index([status, last_message_at])
+  @@index([student_id, status])
 }
 
 enum AdminType {
@@ -613,6 +674,7 @@ enum TriggerSource {
   MOOD_TRACKER
   MANUAL
   SYSTEM
+  CHATBOT
 }
 
 enum CrisisStatus {
@@ -621,6 +683,7 @@ enum CrisisStatus {
   IN_PROGRESS
   RESOLVED
   FALSE_ALARM
+  PENDING
 }
 
 enum SenderType {
@@ -678,6 +741,7 @@ enum NotificationType {
   SESSION_COMPLETED
   CRISIS_ALERT
   GENERAL
+  ANONYMOUS_MENTOR_REQUEST
 }
 
 enum PHQ9Severity {
@@ -693,4 +757,29 @@ enum GAD7Severity {
   MILD
   MODERATE
   SEVERE
+}
+
+enum AnonymousMentorStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  COMPLETED
+}
+
+enum AnonymousSessionStatus {
+  ACTIVE
+  ENDED
+  BLOCKED
+}
+
+enum MessageSenderRole {
+  STUDENT
+  MENTOR
+}
+
+enum RiskLevel {
+  NORMAL
+  MODERATE
+  HIGH
+  CRISIS
 }

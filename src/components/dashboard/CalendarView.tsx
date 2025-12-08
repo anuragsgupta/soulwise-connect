@@ -37,12 +37,20 @@ interface DiaryEntry {
   createdAt: Date;
 }
 
+interface MoodCheckIn {
+  id: string;
+  moodScore: number;
+  moodLabel: string;
+  checkInDate: string;
+  createdAt: string;
+}
+
 interface CalendarEvent {
   id: string;
-  type: 'task' | 'diary';
+  type: 'task' | 'diary' | 'mood';
   title: string;
   date: Date;
-  data: Task | DiaryEntry;
+  data: Task | DiaryEntry | MoodCheckIn;
 }
 
 const CalendarView = () => {
@@ -56,7 +64,7 @@ const CalendarView = () => {
     loadEvents();
   }, [user?.id]);
 
-  const loadEvents = () => {
+  const loadEvents = async () => {
     const allEvents: CalendarEvent[] = [];
 
     // Load tasks
@@ -99,6 +107,28 @@ const CalendarView = () => {
       }
     }
 
+    // Load mood check-ins from API
+    if (user?.id) {
+      try {
+        const response = await fetch(`/api/mood-checkin/enhanced?studentId=${user.id}&days=30`);
+        const data = await response.json();
+        
+        if (data.success && data.data.moodCheckIns) {
+          data.data.moodCheckIns.forEach((mood: MoodCheckIn) => {
+            allEvents.push({
+              id: `mood-${mood.id}`,
+              type: 'mood',
+              title: mood.moodLabel,
+              date: new Date(mood.checkInDate),
+              data: mood
+            });
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load mood check-ins:', error);
+      }
+    }
+
     setEvents(allEvents);
   };
 
@@ -120,6 +150,20 @@ const CalendarView = () => {
              eventDate.getMonth() === date.getMonth() &&
              eventDate.getFullYear() === date.getFullYear();
     });
+  };
+
+  const getMoodEmoji = (moodScore: number) => {
+    // Using the same emojis as in MoodSliderScreen
+    const moodEmojis: Record<number, string> = {
+      1: "😢", // Very Low
+      2: "😞", // Low
+      3: "😐", // Slightly Low
+      4: "🙂", // Neutral
+      5: "😊", // Good
+      6: "😄", // Great
+      7: "🤩", // Excellent
+    };
+    return moodEmojis[moodScore] || "😊";
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
@@ -208,11 +252,18 @@ const CalendarView = () => {
           }`}
           onClick={() => setSelectedDate(date)}
         >
-          <div className={`text-sm font-medium mb-1 ${today ? 'text-purple-600' : 'text-gray-700'}`}>
-            {day}
+          <div className="flex items-center justify-between mb-1">
+            <div className={`text-sm font-medium ${today ? 'text-purple-600' : 'text-gray-700'}`}>
+              {day}
+            </div>
+            {dayEvents.find(e => e.type === 'mood') && (
+              <div className="text-4xl leading-none" style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, Android Emoji, sans-serif' }}>
+                {getMoodEmoji((dayEvents.find(e => e.type === 'mood')!.data as MoodCheckIn).moodScore)}
+              </div>
+            )}
           </div>
           <div className="space-y-1 overflow-y-auto max-h-16">
-            {dayEvents.slice(0, 3).map(event => (
+            {dayEvents.filter(e => e.type !== 'mood').slice(0, 2).map(event => (
               <div
                 key={event.id}
                 className={`text-xs px-1 py-0.5 rounded truncate flex items-center space-x-1 ${
@@ -234,9 +285,9 @@ const CalendarView = () => {
                 )}
               </div>
             ))}
-            {dayEvents.length > 3 && (
+            {dayEvents.filter(e => e.type !== 'mood').length > 2 && (
               <div className="text-xs text-gray-500 font-medium">
-                +{dayEvents.length - 3} more
+                +{dayEvents.filter(e => e.type !== 'mood').length - 2} more
               </div>
             )}
           </div>

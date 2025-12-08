@@ -6,9 +6,11 @@ import { TrendingUp, Activity, Target, Heart } from "lucide-react";
 
 interface MoodData {
   date: string;
-  happy: number;
-  neutral: number;
-  sad: number;
+  happy?: number;
+  neutral?: number;
+  sad?: number;
+  moodScore?: number;
+  moodLabel?: string;
 }
 
 interface TaskData {
@@ -38,6 +40,9 @@ const MOOD_COLORS = {
 const CATEGORY_COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
 
 const StatisticsCharts = ({ moodData, taskData, categoryData, priorityData }: StatisticsChartsProps) => {
+  // Check if we have the new mood score format (for mood tracker) or old format (for diary)
+  const hasMoodScore = moodData.length > 0 && moodData[0].moodScore !== undefined;
+  
   return (
     <div className="space-y-4">
       {/* Mood Trends Over Time */}
@@ -46,39 +51,71 @@ const StatisticsCharts = ({ moodData, taskData, categoryData, priorityData }: St
           <CardHeader>
             <CardTitle className="flex items-center text-lg">
               <Heart className="w-5 h-5 mr-2 text-purple-600" />
-              Mood Trends (Last 7 Days)
+              {hasMoodScore ? 'Recent Mood Check-ins' : 'Mood Trends (Last 7 Days)'}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={moodData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="happy" 
-                  stroke={MOOD_COLORS.happy} 
-                  strokeWidth={2}
-                  name="Happy" 
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="neutral" 
-                  stroke={MOOD_COLORS.neutral} 
-                  strokeWidth={2}
-                  name="Neutral" 
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="sad" 
-                  stroke={MOOD_COLORS.sad} 
-                  strokeWidth={2}
-                  name="Sad" 
-                />
-              </LineChart>
+              {hasMoodScore ? (
+                <LineChart data={moodData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis domain={[0, 7]} ticks={[1, 2, 3, 4, 5, 6, 7]} />
+                  <Tooltip 
+                    content={({ active, payload }) => {
+                      if (active && payload && payload[0]) {
+                        return (
+                          <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
+                            <p className="font-semibold">{payload[0].payload.date}</p>
+                            <p className="text-purple-600">
+                              {payload[0].payload.moodLabel} ({payload[0].value}/7)
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="moodScore" 
+                    stroke="#8b5cf6" 
+                    strokeWidth={3}
+                    name="Mood Score"
+                    dot={{ fill: '#8b5cf6', r: 6 }}
+                    activeDot={{ r: 8 }}
+                  />
+                </LineChart>
+              ) : (
+                <LineChart data={moodData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="happy" 
+                    stroke={MOOD_COLORS.happy} 
+                    strokeWidth={2}
+                    name="Happy" 
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="neutral" 
+                    stroke={MOOD_COLORS.neutral} 
+                    strokeWidth={2}
+                    name="Neutral" 
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="sad" 
+                    stroke={MOOD_COLORS.sad} 
+                    strokeWidth={2}
+                    name="Sad" 
+                  />
+                </LineChart>
+              )}
             </ResponsiveContainer>
           </CardContent>
         </Card>

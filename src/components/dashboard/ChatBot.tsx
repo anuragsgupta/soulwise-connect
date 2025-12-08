@@ -21,7 +21,8 @@ import {
   Navigation,
   UserCircle,
   Square, // Added for Stop button
-  CheckCheck // Added for context
+  CheckCheck, // Added for context
+  Plus // Added for new chat button
 } from "lucide-react";
 
 // Lazy load Spline component
@@ -1214,15 +1215,26 @@ const ChatBot = () => {
               </Button>
             </div>
             
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearChatHistory}
-              className="text-white hover:bg-teal-600 h-8 px-2 text-xs"
-              title="Clear chat history"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearChatHistory}
+                className="text-white hover:bg-teal-600 h-8 px-2 text-xs"
+                title="New chat"
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearChatHistory}
+                className="text-white hover:bg-teal-600 h-8 px-2 text-xs"
+                title="Clear chat history"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
             {isLoading && (
               <div className="flex items-center text-xs text-teal-100">
                 <RefreshCw className="w-4 h-4 animate-spin" />

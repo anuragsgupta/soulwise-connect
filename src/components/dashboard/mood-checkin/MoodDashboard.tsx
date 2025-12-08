@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar, TrendingUp, Brain, Heart, Activity, Moon, Zap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import StatisticsCharts from "../StatisticsCharts";
 
 interface MoodCheckIn {
   id: string;
@@ -166,6 +167,32 @@ export default function MoodDashboard({ onStartCheckIn, todayCheckIn }: MoodDash
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
+  // Prepare mood chart data for StatisticsCharts component
+  const prepareMoodChartData = () => {
+    // Get actual mood check-ins and map them to chart data
+    const chartData = [];
+    
+    // Take the last 7 check-ins or all if less than 7
+    const recentMoods = [...moodHistory].slice(0, 7).reverse();
+    
+    recentMoods.forEach(mood => {
+      const date = new Date(mood.checkInDate);
+      const displayDate = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      
+      // Map the mood score (1-7) to a single point value for the chart
+      // We'll show the actual mood score on the line
+      chartData.push({
+        date: displayDate,
+        moodScore: mood.moodScore,
+        moodLabel: mood.moodLabel
+      });
+    });
+    
+    return chartData;
+  };
+
+  const moodChartData = prepareMoodChartData();
+
   return (
     <div className="space-y-6">
       {/* Header with Check-in Button */}
@@ -274,13 +301,13 @@ export default function MoodDashboard({ onStartCheckIn, todayCheckIn }: MoodDash
         </div>
       )}
 
-      {/* Mood History Feed */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">Recent Check-ins</h3>
-        
-        {loading ? (
+      {/* Mood Trends Chart */}
+      {loading ? (
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
           <div className="text-center py-8 text-gray-500">Loading your mood history...</div>
-        ) : moodHistory.length === 0 ? (
+        </div>
+      ) : moodHistory.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
           <div className="text-center py-8">
             <div className="text-5xl mb-3">📊</div>
             <p className="text-gray-600 mb-4">No mood check-ins yet</p>
@@ -288,44 +315,15 @@ export default function MoodDashboard({ onStartCheckIn, todayCheckIn }: MoodDash
               Start Your First Check-in
             </Button>
           </div>
-        ) : (
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {moodHistory.map((checkIn) => (
-              <div
-                key={checkIn.id}
-                className="flex items-start space-x-4 p-4 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
-              >
-                <div className="text-4xl">{moodEmojis[checkIn.moodLabel] || "😊"}</div>
-                
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="font-semibold text-gray-800">{checkIn.moodLabel}</div>
-                    <div className="text-sm text-gray-500">{formatDate(checkIn.checkInDate)}</div>
-                  </div>
-                  
-                  {checkIn.factors && Object.keys(checkIn.factors).length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {Object.entries(checkIn.factors).map(([factor, value]) => {
-                        const Icon = factorIcons[factor] || Activity;
-                        return (
-                          <div key={factor} className="flex items-center text-xs bg-white px-2 py-1 rounded-full border border-gray-200">
-                            <Icon className="w-3 h-3 mr-1 text-gray-600" />
-                            <span className="capitalize">{factor}: {value}/5</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                  
-                  {checkIn.notes && (
-                    <p className="text-sm text-gray-600 italic">&ldquo;{checkIn.notes}&rdquo;</p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <StatisticsCharts 
+          moodData={moodChartData}
+          taskData={[]}
+          categoryData={[]}
+          priorityData={[]}
+        />
+      )}
     </div>
   );
 }
