@@ -46,6 +46,7 @@ import NotificationBell from "@/components/notifications/NotificationBell";
 import NotificationsPage from "@/components/notifications/NotificationsPage";
 import BookSession from "@/components/sessions/BookSession";
 import WellnessScoreWidget from "./WellnessScoreWidget";
+import WellnessRecommendations from "./WellnessRecommendations";
 import SettingsPage from "./Settings";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -75,6 +76,8 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [showBreakdown, setShowBreakdown] = useState(false);
   const breakdownRef = useRef<HTMLDivElement>(null);
+  const [recommendedGame, setRecommendedGame] = useState<string | null>(null);
+  const [recommendedVideo, setRecommendedVideo] = useState<{id: string, title: string, duration: string} | null>(null);
   const currentSemester = (user as { currentSemester?: string } | null)?.currentSemester;
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
@@ -518,7 +521,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       case 'notifications':
         return <NotificationsPage />;
       case 'resources':
-        return <ResourceHub />;
+        return <ResourceHub recommendedGame={recommendedGame} recommendedVideo={recommendedVideo} onGameClose={() => setRecommendedGame(null)} onVideoClose={() => setRecommendedVideo(null)} />;
       case 'forum':
         return <PeerForum />;
       case 'profile':
@@ -698,6 +701,56 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Wellness Recommendations */}
+            {user?.id && wellnessScore !== null && (
+              <WellnessRecommendations
+                studentId={user.id}
+                wellnessScore={wellnessScore}
+                onResourceClick={(resource) => {
+                  // If resource is a game, navigate to resources and pass game ID
+                  if (resource.gameId) {
+                    setRecommendedGame(resource.gameId);
+                    setRecommendedVideo(null);
+                    setActiveTab('resources');
+                    toast({
+                      title: "Loading Game",
+                      description: resource.title,
+                    });
+                  }
+                  // If resource is a video with videoId, play in-app
+                  else if (resource.videoId) {
+                    setRecommendedVideo({
+                      id: resource.videoId,
+                      title: resource.title,
+                      duration: resource.duration || 'Video'
+                    });
+                    setRecommendedGame(null);
+                    setActiveTab('resources');
+                    toast({
+                      title: "Playing Video",
+                      description: resource.title,
+                    });
+                  }
+                  // If resource has a URL (external article), open it in new tab
+                  else if (resource.url) {
+                    window.open(resource.url, '_blank', 'noopener,noreferrer');
+                    toast({
+                      title: "Opening Resource",
+                      description: resource.title,
+                    });
+                  } 
+                  // If resource has a tab target, navigate to that tab
+                  else if (resource.tabTarget) {
+                    setActiveTab(resource.tabTarget);
+                    toast({
+                      title: "Navigating",
+                      description: `Opening ${resource.title}`,
+                    });
+                  }
+                }}
+              />
+            )}
 
             {/* Upcoming Sessions */}
             <Card className="rounded-2xl shadow-md border-gray-100">

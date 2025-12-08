@@ -384,7 +384,14 @@ const AudioResourceModal = ({ resource, onClose }: AudioModalProps) => {
 };
 
 
-const ResourceHub = () => {
+interface ResourceHubProps {
+  recommendedGame?: string | null;
+  recommendedVideo?: {id: string, title: string, duration: string} | null;
+  onGameClose?: () => void;
+  onVideoClose?: () => void;
+}
+
+const ResourceHub = ({ recommendedGame, recommendedVideo, onGameClose, onVideoClose }: ResourceHubProps = {}) => {
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -400,6 +407,33 @@ const ResourceHub = () => {
   const [currentAudio, setCurrentAudio] = useState<Resource | null>(null); // NEW State for Audio Item
   const [currentVideo, setCurrentVideo] = useState<Resource | null>(null);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+
+  // Auto-launch recommended game
+  useEffect(() => {
+    if (recommendedGame) {
+      setCurrentGame(recommendedGame);
+      setShowGame(true);
+    }
+  }, [recommendedGame]);
+
+  // Auto-launch recommended video
+  useEffect(() => {
+    if (recommendedVideo) {
+      const videoResource: Resource = {
+        id: recommendedVideo.id,
+        title: recommendedVideo.title,
+        description: 'Recommended wellness video',
+        type: 'video',
+        category: 'mindfulness',
+        duration: recommendedVideo.duration,
+        rating: 5.0,
+        downloads: 0,
+        url: `https://www.youtube.com/watch?v=${recommendedVideo.id}`
+      };
+      setCurrentVideo(videoResource);
+      setIsVideoModalOpen(true);
+    }
+  }, [recommendedVideo]);
 
   // Data
   const resources: Resource[] = [
@@ -942,12 +976,12 @@ const ResourceHub = () => {
       {/* 1. GAME MODALS (Wrapped in FullScreenModalWrapper) */}
       {showGame && (
         <FullScreenModalWrapper>
-          {currentGame === 'breathing-ball' && <BreathingBall onClose={() => setShowGame(false)} />}
-          {currentGame === 'calm-circle' && <CalmCircle onClose={() => setShowGame(false)} />}
-          {currentGame === 'box-breathing' && <BoxBreathing onClose={() => setShowGame(false)} />}
-          {currentGame === 'zen-water-ripple' && <ZenWaterRipple onClose={() => setShowGame(false)} />}
-          {currentGame === 'mandala-color-picker' && <MandalaColorPicker onClose={() => setShowGame(false)} />}
-          {currentGame === 'falling-leaves' && <FallingLeavesGrounding onClose={() => setShowGame(false)} />}
+          {currentGame === 'breathing-ball' && <BreathingBall onClose={() => { setShowGame(false); onGameClose?.(); }} />}
+          {currentGame === 'calm-circle' && <CalmCircle onClose={() => { setShowGame(false); onGameClose?.(); }} />}
+          {currentGame === 'box-breathing' && <BoxBreathing onClose={() => { setShowGame(false); onGameClose?.(); }} />}
+          {currentGame === 'zen-water-ripple' && <ZenWaterRipple onClose={() => { setShowGame(false); onGameClose?.(); }} />}
+          {currentGame === 'mandala-coloring' && <MandalaColorPicker onClose={() => { setShowGame(false); onGameClose?.(); }} />}
+          {currentGame === 'falling-leaves' && <FallingLeavesGrounding onClose={() => { setShowGame(false); onGameClose?.(); }} />}
         </FullScreenModalWrapper>
       )}
 
@@ -978,7 +1012,10 @@ const ResourceHub = () => {
       {isVideoModalOpen && currentVideo && (
         <VideoResourceModal
           resource={currentVideo}
-          onClose={() => setIsVideoModalOpen(false)}
+          onClose={() => {
+            setIsVideoModalOpen(false);
+            onVideoClose?.();
+          }}
         />
       )}
     </div>

@@ -263,7 +263,7 @@ export default function WellnessScoreWidget({
                     <Brain className="w-6 h-6 text-blue-600" />
                   </div>
                 </div>
-                <p className="text-xs font-semibold text-gray-800 text-center mb-1">Depression</p>
+                <p className="text-xs font-semibold text-gray-800 text-center mb-1">PHQ-9 Score</p>
                 <p className="text-lg font-bold text-blue-700">
                   {wellnessData.breakdown.phq9Contribution.toFixed(0)}<span className="text-xs text-gray-500">/25</span>
                 </p>
@@ -297,7 +297,7 @@ export default function WellnessScoreWidget({
                     <Brain className="w-6 h-6 text-purple-600" />
                   </div>
                 </div>
-                <p className="text-xs font-semibold text-gray-800 text-center mb-1">Anxiety</p>
+                <p className="text-xs font-semibold text-gray-800 text-center mb-1">GAD-7 Score</p>
                 <p className="text-lg font-bold text-purple-700">
                   {wellnessData.breakdown.gad7Contribution.toFixed(0)}<span className="text-xs text-gray-500">/25</span>
                 </p>
