@@ -199,80 +199,143 @@ export default function WellnessScoreWidget({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Mood Contribution */}
-            <div className="space-y-2 p-3 rounded-xl bg-pink-50 border border-pink-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-pink-500 flex items-center justify-center">
-                    <Heart className="w-4 h-4 text-white" />
+            {/* Grid Layout for Breakdown Circles */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
+              {/* Mood Contribution */}
+              <div className="flex flex-col items-center p-4 rounded-xl bg-pink-50 border border-pink-100">
+                <div className="relative w-20 h-20 mb-3">
+                  <svg className="w-20 h-20 transform -rotate-90">
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="36"
+                      stroke="#fecdd3"
+                      strokeWidth="8"
+                      fill="none"
+                    />
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="36"
+                      stroke="#ec4899"
+                      strokeWidth="8"
+                      fill="none"
+                      strokeDasharray={`${2 * Math.PI * 36}`}
+                      strokeDashoffset={`${2 * Math.PI * 36 * (1 - wellnessData.breakdown.moodContribution / 30)}`}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Heart className="w-6 h-6 text-pink-600" />
                   </div>
-                  <span className="text-sm font-semibold text-gray-800">Daily Mood</span>
                 </div>
-                <span className="text-sm font-bold text-pink-700">
-                  {wellnessData.breakdown.moodContribution.toFixed(0)}/30
-                </span>
+                <p className="text-xs font-semibold text-gray-800 text-center mb-1">Daily Mood</p>
+                <p className="text-lg font-bold text-pink-700">
+                  {wellnessData.breakdown.moodContribution.toFixed(0)}<span className="text-xs text-gray-500">/30</span>
+                </p>
               </div>
-              <Progress 
-                value={(wellnessData.breakdown.moodContribution / 30) * 100} 
-                className="h-2 bg-pink-200"
-              />
-            </div>
 
-            {/* PHQ-9 Contribution */}
-            <div className="space-y-2 p-3 rounded-xl bg-blue-50 border border-blue-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
-                    <Brain className="w-4 h-4 text-white" />
+              {/* PHQ-9 Contribution */}
+              <div className="flex flex-col items-center p-4 rounded-xl bg-blue-50 border border-blue-100">
+                <div className="relative w-20 h-20 mb-3">
+                  <svg className="w-20 h-20 transform -rotate-90">
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="36"
+                      stroke="#bfdbfe"
+                      strokeWidth="8"
+                      fill="none"
+                    />
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="36"
+                      stroke="#3b82f6"
+                      strokeWidth="8"
+                      fill="none"
+                      strokeDasharray={`${2 * Math.PI * 36}`}
+                      strokeDashoffset={`${2 * Math.PI * 36 * (1 - wellnessData.breakdown.phq9Contribution / 25)}`}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Brain className="w-6 h-6 text-blue-600" />
                   </div>
-                  <span className="text-sm font-semibold text-gray-800">Depression Screen</span>
                 </div>
-                <span className="text-sm font-bold text-blue-700">
-                  {wellnessData.breakdown.phq9Contribution.toFixed(0)}/25
-                </span>
+                <p className="text-xs font-semibold text-gray-800 text-center mb-1">Depression</p>
+                <p className="text-lg font-bold text-blue-700">
+                  {wellnessData.breakdown.phq9Contribution.toFixed(0)}<span className="text-xs text-gray-500">/25</span>
+                </p>
               </div>
-              <Progress 
-                value={(wellnessData.breakdown.phq9Contribution / 25) * 100} 
-                className="h-2 bg-blue-200"
-              />
-            </div>
 
-            {/* GAD-7 Contribution */}
-            <div className="space-y-2 p-3 rounded-xl bg-purple-50 border border-purple-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-purple-500 flex items-center justify-center">
-                    <Brain className="w-4 h-4 text-white" />
+              {/* GAD-7 Contribution */}
+              <div className="flex flex-col items-center p-4 rounded-xl bg-purple-50 border border-purple-100">
+                <div className="relative w-20 h-20 mb-3">
+                  <svg className="w-20 h-20 transform -rotate-90">
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="36"
+                      stroke="#e9d5ff"
+                      strokeWidth="8"
+                      fill="none"
+                    />
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="36"
+                      stroke="#a855f7"
+                      strokeWidth="8"
+                      fill="none"
+                      strokeDasharray={`${2 * Math.PI * 36}`}
+                      strokeDashoffset={`${2 * Math.PI * 36 * (1 - wellnessData.breakdown.gad7Contribution / 25)}`}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Brain className="w-6 h-6 text-purple-600" />
                   </div>
-                  <span className="text-sm font-semibold text-gray-800">Anxiety Screen</span>
                 </div>
-                <span className="text-sm font-bold text-purple-700">
-                  {wellnessData.breakdown.gad7Contribution.toFixed(0)}/25
-                </span>
+                <p className="text-xs font-semibold text-gray-800 text-center mb-1">Anxiety</p>
+                <p className="text-lg font-bold text-purple-700">
+                  {wellnessData.breakdown.gad7Contribution.toFixed(0)}<span className="text-xs text-gray-500">/25</span>
+                </p>
               </div>
-              <Progress 
-                value={(wellnessData.breakdown.gad7Contribution / 25) * 100} 
-                className="h-2 bg-purple-200"
-              />
-            </div>
 
-            {/* Chatbot Contribution */}
-            <div className="space-y-2 p-3 rounded-xl bg-green-50 border border-green-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center">
-                    <MessageSquare className="w-4 h-4 text-white" />
+              {/* Chatbot Contribution */}
+              <div className="flex flex-col items-center p-4 rounded-xl bg-green-50 border border-green-100">
+                <div className="relative w-20 h-20 mb-3">
+                  <svg className="w-20 h-20 transform -rotate-90">
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="36"
+                      stroke="#bbf7d0"
+                      strokeWidth="8"
+                      fill="none"
+                    />
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="36"
+                      stroke="#22c55e"
+                      strokeWidth="8"
+                      fill="none"
+                      strokeDasharray={`${2 * Math.PI * 36}`}
+                      strokeDashoffset={`${2 * Math.PI * 36 * (1 - wellnessData.breakdown.chatbotContribution / 20)}`}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <MessageSquare className="w-6 h-6 text-green-600" />
                   </div>
-                  <span className="text-sm font-semibold text-gray-800">AI Chat Analysis</span>
                 </div>
-                <span className="text-sm font-bold text-green-700">
-                  {wellnessData.breakdown.chatbotContribution.toFixed(0)}/20
-                </span>
+                <p className="text-xs font-semibold text-gray-800 text-center mb-1">AI Chat</p>
+                <p className="text-lg font-bold text-green-700">
+                  {wellnessData.breakdown.chatbotContribution.toFixed(0)}<span className="text-xs text-gray-500">/20</span>
+                </p>
               </div>
-              <Progress 
-                value={(wellnessData.breakdown.chatbotContribution / 20) * 100} 
-                className="h-2 bg-green-200"
-              />
             </div>
 
             {/* Info Note */}
