@@ -114,11 +114,8 @@ export default function FacultyDashboardNew() {
   const loadAnalytics = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('auth-token');
       const response = await fetch('/api/faculty/analytics', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
 
       const data = await response.json();
@@ -148,15 +145,12 @@ export default function FacultyDashboardNew() {
 
   const loadStudents = async () => {
     try {
-      const token = localStorage.getItem('auth-token');
       const params = new URLSearchParams();
       if (searchTerm) params.append('search', searchTerm);
       if (selectedDepartment && selectedDepartment !== 'all') params.append('departmentId', selectedDepartment);
 
       const response = await fetch(`/api/faculty/students?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
 
       const data = await response.json();

@@ -222,10 +222,8 @@ export async function PATCH(
           if (meetResponse.success && meetResponse.meetLink) {
             meetLink = meetResponse.meetLink;
             googleEventId = meetResponse.eventId || '';
-            console.log('Google Meet link generated:', meetLink);
           } else {
-            // Fallback to simple meet link if Google Calendar API fails
-            console.warn('Google Meet generation failed, using fallback:', meetResponse.error);
+            // Fallback to simple meet link if Google Calendar API is not configured
             meetLink = generateSimpleMeetLink();
           }
         } catch (error) {

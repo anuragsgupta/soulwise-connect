@@ -93,12 +93,9 @@ export default function ManageSessions({ onSessionUpdate }: ManageSessionsProps 
   const loadSessions = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('auth-token');
       
       const response = await fetch('/api/sessions', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
       const data = await response.json();
       
@@ -119,14 +116,13 @@ export default function ManageSessions({ onSessionUpdate }: ManageSessionsProps 
 
   const handleCompleteSession = async (session: SessionBooking) => {
     try {
-      const token = localStorage.getItem('auth-token');
 
       const response = await fetch(`/api/sessions/${session.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
           action: 'complete',
         }),
@@ -163,7 +159,6 @@ export default function ManageSessions({ onSessionUpdate }: ManageSessionsProps 
 
     try {
       setSubmitting(true);
-      const token = localStorage.getItem('auth-token');
 
       const payload: any = {
         action: actionType,
@@ -202,8 +197,8 @@ export default function ManageSessions({ onSessionUpdate }: ManageSessionsProps 
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify(payload),
       });
 

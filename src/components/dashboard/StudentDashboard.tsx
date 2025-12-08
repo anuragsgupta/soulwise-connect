@@ -68,6 +68,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       name: string;
     };
   }>>([]);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const currentSemester = (user as { currentSemester?: string } | null)?.currentSemester;
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
@@ -130,17 +131,39 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   // Fetch upcoming sessions
   useEffect(() => {
     const fetchUpcomingSessions = async () => {
-      if (!user?.id || user.userType !== 'STUDENT') return;
+      if (!user?.id || user.userType !== 'STUDENT') {
+        setIsLoadingSessions(false);
+        return;
+      }
 
+      setIsLoadingSessions(true);
       try {
-        const response = await fetch(`/api/sessions/upcoming?studentId=${user.id}`);
+        const response = await fetch('/api/sessions', {
+          credentials: 'include',
+        });
         const data = await response.json();
 
-        if (data.success && data.sessions) {
-          setUpcomingSessions(data.sessions);
+        if (data.success && data.data?.sessions) {
+          // Filter for upcoming approved sessions only
+          const now = new Date();
+          const upcoming = data.data.sessions
+            .filter((session: any) => {
+              const sessionDate = new Date(session.scheduledDate);
+              return session.status === 'APPROVED' && sessionDate >= now;
+            })
+            .sort((a: any, b: any) => {
+              const dateA = new Date(a.scheduledDate);
+              const dateB = new Date(b.scheduledDate);
+              return dateA.getTime() - dateB.getTime();
+            })
+            .slice(0, 3); // Get next 3 upcoming sessions
+          
+          setUpcomingSessions(upcoming);
         }
       } catch (error) {
         console.error('Error fetching upcoming sessions:', error);
+      } finally {
+        setIsLoadingSessions(false);
       }
     };
 
@@ -637,7 +660,11 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {upcomingSessions.length > 0 ? (
+                {isLoadingSessions ? (
+                  <div className="flex items-center justify-center p-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </div>
+                ) : upcomingSessions.length > 0 ? (
                   upcomingSessions.map((session) => {
                     const sessionDate = new Date(session.scheduledDate);
                     const today = new Date();

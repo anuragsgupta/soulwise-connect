@@ -17,14 +17,26 @@ interface GoogleMeetResponse {
   error?: string;
 }
 
+// Check if Google OAuth is properly configured
+const isGoogleOAuthConfigured = (): boolean => {
+  const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN } = process.env;
+  
+  // Check if credentials are set and not placeholder values
+  const hasClientId = GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID !== 'your-client-id.apps.googleusercontent.com';
+  const hasClientSecret = GOOGLE_CLIENT_SECRET && GOOGLE_CLIENT_SECRET !== 'your-client-secret';
+  const hasRefreshToken = GOOGLE_REFRESH_TOKEN && GOOGLE_REFRESH_TOKEN !== 'your-refresh-token';
+  
+  return !!(hasClientId && hasClientSecret && hasRefreshToken);
+};
+
 // Create OAuth2 client
 const createOAuth2Client = (): OAuth2Client | null => {
-  const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN } = process.env;
-
-  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REFRESH_TOKEN) {
-    console.warn('Google OAuth not configured. Missing environment variables.');
+  if (!isGoogleOAuthConfigured()) {
+    // Silently return null - this is expected if Google Meet is not configured
     return null;
   }
+
+  const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN } = process.env;
 
   const oauth2Client = new google.auth.OAuth2(
     GOOGLE_CLIENT_ID,
@@ -45,7 +57,7 @@ export async function generateGoogleMeetLink(details: MeetingDetails): Promise<G
     const oauth2Client = createOAuth2Client();
 
     if (!oauth2Client) {
-      console.error('Google OAuth client not configured');
+      // Google Meet not configured - return success=false without error logging
       return {
         success: false,
         error: 'Google Calendar API not configured',
@@ -108,7 +120,10 @@ export async function generateGoogleMeetLink(details: MeetingDetails): Promise<G
       eventId: response.data.id || undefined,
     };
   } catch (error: any) {
-    console.error('Error generating Google Meet link:', error);
+    // Only log actual errors, not configuration issues
+    if (error.code !== 401 && error.message !== 'invalid_client') {
+      console.error('Error generating Google Meet link:', error);
+    }
     return {
       success: false,
       error: error.message || 'Failed to create Google Meet event',

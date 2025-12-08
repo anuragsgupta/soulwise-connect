@@ -247,7 +247,7 @@ async function main() {
     console.log(`\n  University: ${university.name}`);
     
     // Get the institutes for this university
-    const instituteTemplates = universityInstitutes[university.domain];
+    const instituteTemplates = universityInstitutes[university.domain as keyof typeof universityInstitutes];
     
     for (let i = 0; i < instituteTemplates.length; i++) {
       const template = instituteTemplates[i];
