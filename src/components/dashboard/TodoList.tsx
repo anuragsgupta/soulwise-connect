@@ -66,6 +66,11 @@ const TodoList = () => {
     dueDate: ""
   });
 
+  // Debug: Log state changes
+  useEffect(() => {
+    console.log('TodoList state - isCreating:', isCreating, 'editingId:', editingId);
+  }, [isCreating, editingId]);
+
   // Request notification permission
   useEffect(() => {
     if ('Notification' in window && Notification.permission === 'granted') {
@@ -380,6 +385,7 @@ const TodoList = () => {
                   </Button>
                 )}
                 <Button 
+                  type="button"
                   onClick={() => setIsCreating(true)}
                   className="bg-blue-600 hover:bg-blue-700 flex-1 sm:flex-none"
                   size="sm"

@@ -72,6 +72,11 @@ const Diary = () => {
     currentTag: ""
   });
 
+  // Debug: Log state changes
+  useEffect(() => {
+    console.log('Diary state - isCreating:', isCreating, 'editingId:', editingId);
+  }, [isCreating, editingId]);
+
   // Load entries on mount
   useEffect(() => {
     const saved = localStorage.getItem(`diary_${user?.id}`);
@@ -379,7 +384,11 @@ const Diary = () => {
                     <span className="hidden sm:inline">Export</span>
                   </Button>
                   <Button 
-                    onClick={() => setIsCreating(true)}
+                    type="button"
+                    onClick={() => {
+                      console.log('New Entry button clicked');
+                      setIsCreating(true);
+                    }}
                     className="bg-purple-600 hover:bg-purple-700 flex-1 sm:flex-none"
                     size="sm"
                   >

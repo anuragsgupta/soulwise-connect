@@ -678,29 +678,38 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             )}
 
             {/* Main Actions Grid - PhonePe Style */}
-            <Card className="rounded-2xl shadow-md border-gray-100">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold text-gray-800">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-3">
+              <h2 className="text-lg font-semibold text-gray-800 px-1 flex items-center gap-2">
+                <span className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></span>
+                Quick Actions
+              </h2>
+              <div className="grid grid-cols-3 gap-4">
                   {quickActions.map((action, index) => (
                     <button
                       key={index}
                       onClick={action.action}
-                      className="flex flex-col items-center p-4 rounded-xl hover:bg-gray-50 transition-all duration-200 active:scale-95 group"
+                      className="flex flex-col items-center p-4 rounded-xl hover:bg-gradient-to-br hover:from-purple-50/30 hover:to-pink-50/30 transition-all duration-300 active:scale-95 group hover:-translate-y-1 hover:shadow-lg relative overflow-hidden"
+                      style={{
+                        animationDelay: `${index * 50}ms`,
+                        animation: 'fadeInUp 0.4s ease-out forwards'
+                      }}
                     >
-                      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${action.color} flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow mb-2`}>
-                        <action.icon className="w-7 h-7 text-white" />
+                      {/* Hover Glow Effect */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-100/0 to-pink-100/0 group-hover:from-purple-100/30 group-hover:to-pink-100/30 transition-all duration-500 rounded-xl" />
+                      
+                      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${action.color} flex items-center justify-center shadow-md group-hover:shadow-2xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 mb-2 relative z-10`}>
+                        <action.icon className="w-7 h-7 text-white group-hover:scale-110 transition-transform duration-300" />
+                        
+                        {/* Ripple Effect on Hover */}
+                        <div className="absolute inset-0 rounded-2xl bg-white/30 scale-0 group-hover:scale-150 opacity-0 group-hover:opacity-100 transition-all duration-700" />
                       </div>
-                      <span className="text-xs font-medium text-gray-700 text-center leading-tight">
+                      <span className="text-xs font-medium text-gray-700 group-hover:text-purple-700 text-center leading-tight transition-colors duration-300 relative z-10">
                         {action.title}
                       </span>
                     </button>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+            </div>
 
             {/* Wellness Recommendations */}
             {user?.id && wellnessScore !== null && (
@@ -753,20 +762,19 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             )}
 
             {/* Upcoming Sessions */}
-            <Card className="rounded-2xl shadow-md border-gray-100">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-blue-600" />
-                  Upcoming Sessions
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
+            <div className="space-y-3">
+              <h2 className="text-lg font-semibold text-gray-800 px-1 flex items-center gap-2">
+                <span className="w-1 h-6 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></span>
+                <Calendar className="w-5 h-5 text-blue-600" />
+                Upcoming Sessions
+              </h2>
+              <div className="space-y-2">
                 {isLoadingSessions ? (
                   <div className="flex items-center justify-center p-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                   </div>
                 ) : upcomingSessions.length > 0 ? (
-                  upcomingSessions.map((session) => {
+                  upcomingSessions.map((session, index) => {
                     const sessionDate = new Date(session.scheduledDate);
                     const today = new Date();
                     const tomorrow = new Date(today);
@@ -786,10 +794,17 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                     }
 
                     return (
-                      <div key={session.id} className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
-                        <div className="text-2xl">📅</div>
+                      <div 
+                        key={session.id} 
+                        className="flex items-center gap-3 p-4 bg-gradient-to-br from-blue-50/60 to-cyan-50/60 backdrop-blur-sm rounded-2xl border border-white/80 hover:border-blue-300 hover:bg-blue-50/80 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 group"
+                        style={{
+                          animationDelay: `${index * 100}ms`,
+                          animation: 'fadeInUp 0.4s ease-out forwards'
+                        }}
+                      >
+                        <div className="text-2xl transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">📅</div>
                         <div className="flex-1">
-                          <p className="font-semibold text-sm text-blue-900">
+                          <p className="font-semibold text-sm text-blue-900 group-hover:text-blue-700 transition-colors">
                             {session.title}
                           </p>
                           <p className="text-xs text-blue-700 font-medium">
@@ -803,12 +818,12 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                     );
                   })
                 ) : (
-                  <div className="flex items-center justify-center p-6 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="flex items-center justify-center p-6 bg-gray-50/60 backdrop-blur-sm rounded-2xl border border-white/80">
                     <p className="text-sm text-gray-500">No upcoming sessions</p>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         );
     }
@@ -818,8 +833,8 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50/40 via-purple-50/30 to-pink-50/40 relative overflow-hidden">
       {/* Animated Background Pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.03),rgba(255,255,255,0))] pointer-events-none" />
-      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-purple-300/10 to-pink-300/10 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-blue-300/10 to-cyan-300/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-purple-300/10 to-pink-300/10 rounded-full blur-3xl animate-pulse pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-blue-300/10 to-cyan-300/10 rounded-full blur-3xl animate-pulse pointer-events-none" style={{ animationDelay: '1s' }} />
       
       {/* Navigation */}
       <nav className="bg-white/90 backdrop-blur-2xl border-b border-gray-200/60 shadow-xl sticky top-0 z-50">

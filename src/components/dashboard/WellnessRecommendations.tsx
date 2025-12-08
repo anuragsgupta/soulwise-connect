@@ -376,19 +376,16 @@ export default function WellnessRecommendations({
 
   if (loading) {
     return (
-      <Card className="rounded-2xl shadow-md border-gray-100">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-purple-600" />
-            Wellness Recommendations
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold text-gray-800 px-1 flex items-center gap-2">
+          <span className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></span>
+          <Sparkles className="w-5 h-5 text-purple-600 animate-pulse" />
+          Wellness Recommendations
+        </h2>
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+        </div>
+      </div>
     );
   }
 
@@ -400,62 +397,84 @@ export default function WellnessRecommendations({
   console.log('Rendering recommendations:', recommendations);
 
   return (
-    <Card className="rounded-2xl shadow-md border-gray-100 bg-gradient-to-br from-purple-50/50 to-pink-50/50">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-purple-600" />
-            Recommended For You
-          </CardTitle>
-          <Badge variant="outline" className="bg-white text-xs">
-            {recommendations.length}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {recommendations.map((rec) => {
-            const IconComponent = rec.icon;
-            return (
-              <div
-                key={rec.id}
-                className="flex flex-col items-center p-3 rounded-xl bg-white border border-gray-200 hover:border-purple-300 hover:shadow-lg transition-all duration-200 cursor-pointer group relative"
-                onClick={() => onResourceClick?.(rec)}
-              >
-                {/* Priority Badge */}
-                {rec.priority === 'high' && (
-                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-[10px] font-bold">!</span>
-                  </div>
-                )}
-                
-                {/* Icon Circle */}
-                <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${
-                  rec.priority === 'high' ? 'from-red-500 to-orange-500' :
-                  rec.priority === 'medium' ? 'from-yellow-500 to-amber-500' :
-                  'from-green-500 to-emerald-500'
-                } flex items-center justify-center mb-2 group-hover:scale-110 transition-transform shadow-md`}>
-                  <IconComponent className="w-7 h-7 text-white" />
+    <div className="space-y-3">
+      <div className="flex items-center justify-between px-1">
+        <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+          <span className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></span>
+          <Sparkles className="w-5 h-5 text-purple-600 animate-pulse" />
+          Recommended For You
+        </h2>
+        <Badge variant="outline" className="bg-white text-xs transition-all duration-300 hover:scale-110 hover:bg-purple-50 border-purple-200">
+          {recommendations.length}
+        </Badge>
+      </div>
+      
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {recommendations.map((rec, index) => {
+          const IconComponent = rec.icon;
+          return (
+            <div
+              key={rec.id}
+              className="flex flex-col items-center p-4 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/80 hover:border-purple-300 hover:bg-white/80 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group relative overflow-hidden"
+              onClick={() => onResourceClick?.(rec)}
+              style={{
+                animationDelay: `${index * 100}ms`,
+                animation: 'fadeInUp 0.5s ease-out forwards'
+              }}
+            >
+              {/* Hover Glow Effect */}
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-100/0 to-pink-100/0 group-hover:from-purple-100/50 group-hover:to-pink-100/50 transition-all duration-500 rounded-2xl" />
+              
+              {/* Priority Badge with Pulse */}
+              {rec.priority === 'high' && (
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center animate-bounce z-10">
+                  <span className="text-white text-[10px] font-bold">!</span>
                 </div>
+              )}
+              
+              {/* Icon Circle with Enhanced Animation */}
+              <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${
+                rec.priority === 'high' ? 'from-red-500 to-orange-500' :
+                rec.priority === 'medium' ? 'from-yellow-500 to-amber-500' :
+                'from-green-500 to-emerald-500'
+              } flex items-center justify-center mb-2 group-hover:scale-125 group-hover:rotate-6 transition-all duration-500 shadow-md group-hover:shadow-2xl relative z-10`}>
+                <IconComponent className="w-7 h-7 text-white group-hover:scale-110 transition-transform duration-300" />
                 
-                {/* Title */}
-                <h4 className="font-semibold text-xs text-center text-gray-800 group-hover:text-purple-700 transition-colors line-clamp-2 leading-tight">
-                  {rec.title}
-                </h4>
-                
-                {/* Type Badge */}
-                <Badge 
-                  variant="secondary" 
-                  className="mt-2 text-[10px] px-2 py-0 h-5"
-                >
-                  {rec.type === 'game' ? '🎮' : rec.type === 'video' ? '📹' : rec.type === 'article' ? '📄' : '✨'}
-                </Badge>
+                {/* Ripple Effect on Hover */}
+                <div className="absolute inset-0 rounded-full bg-white/30 scale-0 group-hover:scale-150 opacity-0 group-hover:opacity-100 transition-all duration-700" />
               </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+              
+              {/* Title with Smooth Color Transition */}
+              <h4 className="font-semibold text-xs text-center text-gray-800 group-hover:text-purple-700 transition-colors duration-300 line-clamp-2 leading-tight relative z-10">
+                {rec.title}
+              </h4>
+              
+              {/* Type Badge with Hover Effect */}
+              <Badge 
+                variant="secondary" 
+                className="mt-2 text-[10px] px-2 py-0 h-5 group-hover:scale-110 transition-transform duration-300 relative z-10"
+              >
+                {rec.type === 'game' ? '🎮' : rec.type === 'video' ? '📹' : rec.type === 'article' ? '📄' : '✨'}
+              </Badge>
+            </div>
+          );
+        })}
+      </div>
+      
+      {/* Add Keyframes for Fade In Animation */}
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
+    </div>
   );
 }
 
