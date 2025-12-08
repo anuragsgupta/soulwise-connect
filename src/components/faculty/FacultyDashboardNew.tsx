@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import ManageSessions from "@/components/sessions/ManageSessions";
 import NotificationsPage from "@/components/notifications/NotificationsPage";
+import StudentWellnessInsights from "./StudentWellnessInsights";
 
 interface Analytics {
   totalStudents: number;
@@ -285,8 +286,9 @@ export default function FacultyDashboardNew() {
 
       {/* Tabbed Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="wellness">Wellness Insights</TabsTrigger>
           <TabsTrigger value="students">Students</TabsTrigger>
           <TabsTrigger value="sessions">Sessions</TabsTrigger>
         </TabsList>
@@ -422,6 +424,10 @@ export default function FacultyDashboardNew() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="wellness" className="space-y-4">
+          <StudentWellnessInsights />
         </TabsContent>
 
         <TabsContent value="sessions">

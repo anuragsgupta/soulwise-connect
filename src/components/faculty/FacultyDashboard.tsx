@@ -23,28 +23,18 @@ import {
   UserCheck,
   Heart,
   MessageSquare,
-  CalendarClock
+  CalendarClock,
+  Brain
 } from "lucide-react";
 
 const FacultyDashboard = () => {
   const router = useRouter();
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [loading, setLoading] = useState(true);
+  const [showWellnessInsights, setShowWellnessInsights] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    // Simulate data loading
-    const loadData = async () => {
-      setLoading(true);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setLoading(false);
-    };
-    loadData();
   }, []);
 
   const formatTime = (date: Date) => {
@@ -76,10 +66,10 @@ const FacultyDashboard = () => {
       action: () => router.push('/faculty/sessions')
     },
     { 
-      label: 'Schedule Meeting', 
-      icon: Calendar, 
-      color: 'bg-orange-600 hover:bg-orange-700', 
-      action: () => console.log('Schedule meeting') 
+      label: 'Wellness Insights', 
+      icon: Brain, 
+      color: 'bg-purple-600 hover:bg-purple-700', 
+      action: () => setShowWellnessInsights(!showWellnessInsights)
     },
     { 
       label: 'View Alerts', 
@@ -217,23 +207,6 @@ const FacultyDashboard = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="relative">
-            <div className="w-20 h-20 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto"></div>
-            <Heart className="w-8 h-8 text-purple-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse" />
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-xl font-semibold text-gray-800">Loading Faculty Dashboard</h2>
-            <p className="text-gray-600">Fetching student wellness data...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* Faculty Header */}
@@ -304,7 +277,7 @@ const FacultyDashboard = () => {
               <Button
                 key={index}
                 onClick={action.action}
-                className={`h-20 flex-col space-y-2 ${action.color} text-white transition-all duration-300 hover:scale-105 hover:shadow-lg`}
+                className={`h-20 flex-col space-y-2 ${action.color} text-white`}
               >
                 <Icon className="h-5 w-5" />
                 <span className="text-sm">{action.label}</span>
@@ -314,8 +287,10 @@ const FacultyDashboard = () => {
         </div>
       </div>
 
-      {/* Wellness Insights Section - Always Visible */}
-      <StudentWellnessInsights facultyId="faculty-123" />
+      {/* Wellness Insights Section */}
+      {showWellnessInsights && (
+        <StudentWellnessInsights />
+      )}
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
