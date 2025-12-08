@@ -677,40 +677,6 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
               </div>
             )}
 
-            {/* Main Actions Grid - PhonePe Style */}
-            <div className="space-y-3">
-              <h2 className="text-lg font-semibold text-gray-800 px-1 flex items-center gap-2">
-                <span className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></span>
-                Quick Actions
-              </h2>
-              <div className="grid grid-cols-3 gap-4">
-                  {quickActions.map((action, index) => (
-                    <button
-                      key={index}
-                      onClick={action.action}
-                      className="flex flex-col items-center p-4 rounded-xl hover:bg-gradient-to-br hover:from-purple-50/30 hover:to-pink-50/30 transition-all duration-300 active:scale-95 group hover:-translate-y-1 hover:shadow-lg relative overflow-hidden"
-                      style={{
-                        animationDelay: `${index * 50}ms`,
-                        animation: 'fadeInUp 0.4s ease-out forwards'
-                      }}
-                    >
-                      {/* Hover Glow Effect */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-purple-100/0 to-pink-100/0 group-hover:from-purple-100/30 group-hover:to-pink-100/30 transition-all duration-500 rounded-xl" />
-                      
-                      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${action.color} flex items-center justify-center shadow-md group-hover:shadow-2xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 mb-2 relative z-10`}>
-                        <action.icon className="w-7 h-7 text-white group-hover:scale-110 transition-transform duration-300" />
-                        
-                        {/* Ripple Effect on Hover */}
-                        <div className="absolute inset-0 rounded-2xl bg-white/30 scale-0 group-hover:scale-150 opacity-0 group-hover:opacity-100 transition-all duration-700" />
-                      </div>
-                      <span className="text-xs font-medium text-gray-700 group-hover:text-purple-700 text-center leading-tight transition-colors duration-300 relative z-10">
-                        {action.title}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-            </div>
-
             {/* Wellness Recommendations */}
             {user?.id && wellnessScore !== null && (
               <WellnessRecommendations
@@ -760,6 +726,40 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                 }}
               />
             )}
+
+            {/* Main Actions Grid - PhonePe Style */}
+            <div className="space-y-3">
+              <h2 className="text-lg font-semibold text-gray-800 px-1 flex items-center gap-2">
+                <span className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></span>
+                Quick Actions
+              </h2>
+              <div className="grid grid-cols-3 gap-4">
+                  {quickActions.map((action, index) => (
+                    <button
+                      key={index}
+                      onClick={action.action}
+                      className="flex flex-col items-center p-4 rounded-xl hover:bg-gradient-to-br hover:from-purple-50/30 hover:to-pink-50/30 transition-all duration-300 active:scale-95 group hover:-translate-y-1 hover:shadow-lg relative overflow-hidden"
+                      style={{
+                        animationDelay: `${index * 50}ms`,
+                        animation: 'fadeInUp 0.4s ease-out forwards'
+                      }}
+                    >
+                      {/* Hover Glow Effect */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-100/0 to-pink-100/0 group-hover:from-purple-100/30 group-hover:to-pink-100/30 transition-all duration-500 rounded-xl" />
+                      
+                      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${action.color} flex items-center justify-center shadow-md group-hover:shadow-2xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 mb-2 relative z-10`}>
+                        <action.icon className="w-7 h-7 text-white group-hover:scale-110 transition-transform duration-300" />
+                        
+                        {/* Ripple Effect on Hover */}
+                        <div className="absolute inset-0 rounded-2xl bg-white/30 scale-0 group-hover:scale-150 opacity-0 group-hover:opacity-100 transition-all duration-700" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-700 group-hover:text-purple-700 text-center leading-tight transition-colors duration-300 relative z-10">
+                        {action.title}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+            </div>
 
             {/* Upcoming Sessions */}
             <div className="space-y-3">

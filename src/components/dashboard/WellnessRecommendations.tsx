@@ -398,16 +398,11 @@ export default function WellnessRecommendations({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between px-1">
-        <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-          <span className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></span>
-          <Sparkles className="w-5 h-5 text-purple-600 animate-pulse" />
-          Recommended For You
-        </h2>
-        <Badge variant="outline" className="bg-white text-xs transition-all duration-300 hover:scale-110 hover:bg-purple-50 border-purple-200">
-          {recommendations.length}
-        </Badge>
-      </div>
+      <h2 className="text-lg font-semibold text-gray-800 px-1 flex items-center gap-2">
+        <span className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></span>
+        <Sparkles className="w-5 h-5 text-purple-600 animate-pulse" />
+        Recommended For You
+      </h2>
       
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {recommendations.map((rec, index) => {
@@ -424,13 +419,6 @@ export default function WellnessRecommendations({
             >
               {/* Hover Glow Effect */}
               <div className="absolute inset-0 bg-gradient-to-br from-purple-100/0 to-pink-100/0 group-hover:from-purple-100/50 group-hover:to-pink-100/50 transition-all duration-500 rounded-2xl" />
-              
-              {/* Priority Badge with Pulse */}
-              {rec.priority === 'high' && (
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center animate-bounce z-10">
-                  <span className="text-white text-[10px] font-bold">!</span>
-                </div>
-              )}
               
               {/* Icon Circle with Enhanced Animation */}
               <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${
