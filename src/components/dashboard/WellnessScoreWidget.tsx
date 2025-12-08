@@ -183,94 +183,105 @@ export default function WellnessScoreWidget({
 
       {/* Score Breakdown */}
       {showBreakdown && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg font-heading flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              Score Breakdown
-            </CardTitle>
-            <CardDescription className="font-body">
-              How different factors contribute to your overall wellness
+        <Card className="rounded-2xl shadow-md border-gray-100">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-blue-600" />
+                Wellness Score Breakdown
+              </CardTitle>
+              <Badge variant="outline" className="text-xs">
+                Score: {wellnessData.overallScore}/100
+              </Badge>
+            </div>
+            <CardDescription className="text-sm text-gray-600">
+              Understanding your mental wellness components
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Mood Contribution */}
-            <div className="space-y-2">
+            <div className="space-y-2 p-3 rounded-xl bg-pink-50 border border-pink-100">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Heart className="w-4 h-4 text-pink-500" />
-                  <span className="text-sm font-medium font-heading">Daily Mood</span>
+                  <div className="w-8 h-8 rounded-lg bg-pink-500 flex items-center justify-center">
+                    <Heart className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-gray-800">Daily Mood</span>
                 </div>
-                <span className="text-sm font-bold">
-                  {wellnessData.breakdown.moodContribution.toFixed(1)} / 30
+                <span className="text-sm font-bold text-pink-700">
+                  {wellnessData.breakdown.moodContribution.toFixed(0)}/30
                 </span>
               </div>
               <Progress 
                 value={(wellnessData.breakdown.moodContribution / 30) * 100} 
-                className="h-2"
+                className="h-2 bg-pink-200"
               />
-              <p className="text-xs text-muted-foreground">
-                Weight: 30% • Based on 14-day weighted average
-              </p>
             </div>
 
             {/* PHQ-9 Contribution */}
-            <div className="space-y-2">
+            <div className="space-y-2 p-3 rounded-xl bg-blue-50 border border-blue-100">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Brain className="w-4 h-4 text-blue-500" />
-                  <span className="text-sm font-medium font-heading">PHQ-9 (Depression)</span>
+                  <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                    <Brain className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-gray-800">Depression Screen</span>
                 </div>
-                <span className="text-sm font-bold">
-                  {wellnessData.breakdown.phq9Contribution.toFixed(1)} / 25
+                <span className="text-sm font-bold text-blue-700">
+                  {wellnessData.breakdown.phq9Contribution.toFixed(0)}/25
                 </span>
               </div>
               <Progress 
                 value={(wellnessData.breakdown.phq9Contribution / 25) * 100} 
-                className="h-2"
+                className="h-2 bg-blue-200"
               />
-              <p className="text-xs text-muted-foreground">
-                Weight: 25% • Clinical assessment
-              </p>
             </div>
 
             {/* GAD-7 Contribution */}
-            <div className="space-y-2">
+            <div className="space-y-2 p-3 rounded-xl bg-purple-50 border border-purple-100">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Brain className="w-4 h-4 text-purple-500" />
-                  <span className="text-sm font-medium font-heading">GAD-7 (Anxiety)</span>
+                  <div className="w-8 h-8 rounded-lg bg-purple-500 flex items-center justify-center">
+                    <Brain className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-gray-800">Anxiety Screen</span>
                 </div>
-                <span className="text-sm font-bold">
-                  {wellnessData.breakdown.gad7Contribution.toFixed(1)} / 25
+                <span className="text-sm font-bold text-purple-700">
+                  {wellnessData.breakdown.gad7Contribution.toFixed(0)}/25
                 </span>
               </div>
               <Progress 
                 value={(wellnessData.breakdown.gad7Contribution / 25) * 100} 
-                className="h-2"
+                className="h-2 bg-purple-200"
               />
-              <p className="text-xs text-muted-foreground">
-                Weight: 25% • Clinical assessment
-              </p>
             </div>
 
             {/* Chatbot Contribution */}
-            <div className="space-y-2">
+            <div className="space-y-2 p-3 rounded-xl bg-green-50 border border-green-100">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-green-500" />
-                  <span className="text-sm font-medium font-heading">AI Conversation Analysis</span>
+                  <div className="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center">
+                    <MessageSquare className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-gray-800">AI Chat Analysis</span>
                 </div>
-                <span className="text-sm font-bold">
-                  {wellnessData.breakdown.chatbotContribution.toFixed(1)} / 20
+                <span className="text-sm font-bold text-green-700">
+                  {wellnessData.breakdown.chatbotContribution.toFixed(0)}/20
                 </span>
               </div>
               <Progress 
                 value={(wellnessData.breakdown.chatbotContribution / 20) * 100} 
-                className="h-2"
+                className="h-2 bg-green-200"
               />
-              <p className="text-xs text-muted-foreground">
-                Weight: 20% • Sentiment analysis from chat sessions
+            </div>
+
+            {/* Info Note */}
+            <div className="mt-4 p-3 bg-gray-50 rounded-xl border border-gray-200">
+              <p className="text-xs text-gray-600 flex items-start gap-2">
+                <Info className="w-4 h-4 mt-0.5 text-gray-500 flex-shrink-0" />
+                <span>
+                  Your wellness score combines multiple factors to provide a comprehensive view of your mental health. Regular check-ins help track your progress over time.
+                </span>
               </p>
             </div>
           </CardContent>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,10 @@ import {
   HelpCircle,
   User,
   Plus,
-  X
+  X,
+  TrendingUp,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import mannMitraLogo from "@/assets/mann-mitra-logo.png";
 import MoodTracker from "./MoodTracker";
@@ -58,6 +61,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   const [activeTab, setActiveTab] = useState<DashboardTab>('dashboard');
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [wellnessScore, setWellnessScore] = useState<number | null>(null);
+  const [isLoadingWellness, setIsLoadingWellness] = useState(true);
   const [hasTodayMoodCheckIn, setHasTodayMoodCheckIn] = useState<boolean | null>(null);
   const [upcomingSessions, setUpcomingSessions] = useState<Array<{
     id: string;
@@ -69,6 +73,8 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
     };
   }>>([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
+  const [showBreakdown, setShowBreakdown] = useState(false);
+  const breakdownRef = useRef<HTMLDivElement>(null);
   const currentSemester = (user as { currentSemester?: string } | null)?.currentSemester;
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
@@ -111,8 +117,12 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   // Fetch wellness score
   useEffect(() => {
     const fetchWellnessScore = async () => {
-      if (!user?.id || user.userType !== 'STUDENT') return;
+      if (!user?.id || user.userType !== 'STUDENT') {
+        setIsLoadingWellness(false);
+        return;
+      }
 
+      setIsLoadingWellness(true);
       try {
         const response = await fetch(`/api/wellness-score?studentId=${user.id}`);
         const data = await response.json();
@@ -122,6 +132,8 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
         }
       } catch (error) {
         console.error('Error fetching wellness score:', error);
+      } finally {
+        setIsLoadingWellness(false);
       }
     };
 
@@ -611,15 +623,56 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                       How are you feeling today?
                     </CardDescription>
                   </div>
-                  {wellnessScore !== null && (
+                  {isLoadingWellness ? (
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white mb-1"></div>
+                      <div className="text-xs text-white/80 font-medium">Loading...</div>
+                    </div>
+                  ) : wellnessScore !== null ? (
                     <div className="text-right">
                       <div className="text-3xl font-extrabold text-white">{wellnessScore}</div>
                       <div className="text-xs text-white/80 font-medium">Wellness Score</div>
                     </div>
-                  )}
+                  ) : null}
                 </div>
+                
+                {/* Toggle Breakdown Button */}
+                {!isLoadingWellness && wellnessScore !== null && user?.id && (
+                  <div className="mt-4">
+                    <Button
+                      onClick={() => {
+                        setShowBreakdown(!showBreakdown);
+                        if (!showBreakdown) {
+                          setTimeout(() => {
+                            breakdownRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }, 100);
+                        }
+                      }}
+                      className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-semibold py-2.5 rounded-xl border border-white/30 transition-all duration-200 hover:shadow-lg"
+                    >
+                      {showBreakdown ? (
+                        <>
+                          <ChevronUp className="w-4 h-4 mr-2" />
+                          Hide Wellness Breakdown
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="w-4 h-4 mr-2" />
+                          View Wellness Breakdown
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
               </CardHeader>
             </Card>
+
+            {/* Wellness Score Breakdown */}
+            {user?.id && showBreakdown && (
+              <div ref={breakdownRef}>
+                <WellnessScoreWidget studentId={user.id} showBreakdown={true} hideOverallScore={true} />
+              </div>
+            )}
 
             {/* Main Actions Grid - PhonePe Style */}
             <Card className="rounded-2xl shadow-md border-gray-100">
@@ -645,11 +698,6 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Wellness Score Breakdown */}
-            {user?.id && (
-              <WellnessScoreWidget studentId={user.id} showBreakdown={true} hideOverallScore={true} />
-            )}
 
             {/* Upcoming Sessions */}
             <Card className="rounded-2xl shadow-md border-gray-100">

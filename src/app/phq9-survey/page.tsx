@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Brain, CheckCircle2, Clock, AlertCircle, TrendingUp } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWellnessScore } from "@/contexts/WellnessScoreContext";
 
 // Define interfaces for type safety
 interface Survey {
@@ -26,6 +27,7 @@ interface SurveyData {
 
 function PHQ9SurveyContent() {
   const { user } = useAuth();
+  const { refreshWellnessScore } = useWellnessScore();
   const searchParams = useSearchParams();
   const [studentId, setStudentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -60,11 +62,13 @@ function PHQ9SurveyContent() {
     }
   };
 
-  const handleSurveyComplete = () => {
+  const handleSurveyComplete = async () => {
     // Refresh survey data
     if (studentId) {
-      fetchSurveyStatus(studentId);
+      await fetchSurveyStatus(studentId);
     }
+    // Refresh wellness score
+    await refreshWellnessScore();
     setShowForm(false);
   };
 
