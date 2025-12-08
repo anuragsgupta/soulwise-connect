@@ -135,9 +135,9 @@ export default function WellnessScoreWidget({
                 {wellnessCategory.category}
               </Badge>
             </div>
-            <CardDescription className="font-body">
+            {/* <CardDescription className="font-body">
               Comprehensive mental health assessment based on multiple factors
-            </CardDescription>
+            </CardDescription> */}
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Score Display */}
@@ -188,15 +188,15 @@ export default function WellnessScoreWidget({
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-blue-600" />
-                Wellness Score Breakdown
+                Score Breakdown
               </CardTitle>
               <Badge variant="outline" className="text-xs">
                 Score: {wellnessData.overallScore}/100
               </Badge>
             </div>
-            <CardDescription className="text-sm text-gray-600">
+            {/* <CardDescription className="text-sm text-gray-600">
               Understanding your mental wellness components
-            </CardDescription>
+            </CardDescription> */}
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Grid Layout for Breakdown Circles */}
