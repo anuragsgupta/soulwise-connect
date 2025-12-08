@@ -7,7 +7,7 @@ async function main() {
   console.log('🌱 Starting database seed...');
 
   // Create default Super Admin
-  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'superadmin@soulwise.connect';
+  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'superadmin@mannmitra.com';
   const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || 'SuperAdmin@2024';
   const superAdminName = process.env.SUPER_ADMIN_NAME || 'Super Administrator';
 
