@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -13,11 +13,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Clock, UserCircle, CheckCircle, XCircle } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
-import { formatDistanceToNow } from 'date-fns';
+} from "@/components/ui/dialog";
+import { Clock, UserCircle, CheckCircle, XCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
+import { formatDistanceToNow } from "date-fns";
 
 interface Request {
   id: string;
@@ -38,13 +38,13 @@ export default function AnonymousRequests() {
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [showAcceptDialog, setShowAcceptDialog] = useState(false);
   const [showDeclineDialog, setShowDeclineDialog] = useState(false);
-  const [responseMessage, setResponseMessage] = useState('');
-  const [declineReason, setDeclineReason] = useState('');
+  const [responseMessage, setResponseMessage] = useState("");
+  const [declineReason, setDeclineReason] = useState("");
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     fetchRequests();
-    
+
     // Poll for new requests every 10 seconds
     const interval = setInterval(fetchRequests, 10000);
     return () => clearInterval(interval);
@@ -52,9 +52,12 @@ export default function AnonymousRequests() {
 
   const fetchRequests = async () => {
     try {
-      const response = await fetch('/api/anonymous-mentoring/requests?status=PENDING', {
-        credentials: 'include'
-      });
+      const response = await fetch(
+        "/api/anonymous-mentoring/requests?status=PENDING",
+        {
+          credentials: "include",
+        }
+      );
 
       const result = await response.json();
 
@@ -62,7 +65,7 @@ export default function AnonymousRequests() {
         setRequests(result.data.requests);
       }
     } catch (error) {
-      console.error('Failed to fetch requests:', error);
+      console.error("Failed to fetch requests:", error);
     } finally {
       setLoading(false);
     }
@@ -77,14 +80,14 @@ export default function AnonymousRequests() {
       const response = await fetch(
         `/api/anonymous-mentoring/requests/${selectedRequest.id}/accept`,
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
           },
-          credentials: 'include',
+          credentials: "include",
           body: JSON.stringify({
-            responseMessage: responseMessage.trim() || 'Request accepted'
-          })
+            responseMessage: responseMessage.trim() || "Request accepted",
+          }),
         }
       );
 
@@ -92,27 +95,29 @@ export default function AnonymousRequests() {
 
       if (result.success) {
         toast({
-          title: 'Request Accepted',
-          description: 'Anonymous chat session has been created'
+          title: "Request Accepted",
+          description: "Anonymous chat session has been created",
         });
         setShowAcceptDialog(false);
-        setResponseMessage('');
+        setResponseMessage("");
         fetchRequests();
-        
+
         // Navigate to the new session
-        router.push(`/faculty/anonymous-mentoring/chat/${result.data.session.id}`);
+        router.push(
+          `/faculty/anonymous-mentoring/chat/${result.data.session.id}`
+        );
       } else {
         toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: result.message || 'Failed to accept request'
+          variant: "destructive",
+          title: "Error",
+          description: result.message || "Failed to accept request",
         });
       }
     } catch (error) {
       toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to accept request'
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to accept request",
       });
     } finally {
       setProcessing(false);
@@ -124,9 +129,9 @@ export default function AnonymousRequests() {
 
     if (!declineReason.trim()) {
       toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Please provide a reason for declining'
+        variant: "destructive",
+        title: "Error",
+        description: "Please provide a reason for declining",
       });
       return;
     }
@@ -137,14 +142,14 @@ export default function AnonymousRequests() {
       const response = await fetch(
         `/api/anonymous-mentoring/requests/${selectedRequest.id}/decline`,
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
           },
-          credentials: 'include',
+          credentials: "include",
           body: JSON.stringify({
-            reason: declineReason.trim()
-          })
+            reason: declineReason.trim(),
+          }),
         }
       );
 
@@ -152,24 +157,24 @@ export default function AnonymousRequests() {
 
       if (result.success) {
         toast({
-          title: 'Request Declined',
-          description: 'The student has been notified'
+          title: "Request Declined",
+          description: "The student has been notified",
         });
         setShowDeclineDialog(false);
-        setDeclineReason('');
+        setDeclineReason("");
         fetchRequests();
       } else {
         toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: result.message || 'Failed to decline request'
+          variant: "destructive",
+          title: "Error",
+          description: result.message || "Failed to decline request",
         });
       }
     } catch (error) {
       toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to decline request'
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to decline request",
       });
     } finally {
       setProcessing(false);
@@ -190,8 +195,12 @@ export default function AnonymousRequests() {
   return (
     <div className="space-y-6">
       <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 rounded-lg">
-        <h1 className="text-3xl font-bold mb-2">Anonymous Mentoring Requests</h1>
-        <p className="text-purple-100">Review and respond to anonymous chat requests from students</p>
+        <h1 className="text-3xl font-bold mb-2">
+          Anonymous Mentoring Requests
+        </h1>
+        <p className="text-purple-100">
+          Review and respond to anonymous chat requests from students
+        </p>
       </div>
 
       {requests.length === 0 ? (
@@ -207,17 +216,24 @@ export default function AnonymousRequests() {
       ) : (
         <div className="grid grid-cols-1 gap-6">
           {requests.map((request) => (
-            <Card key={request.id} className="hover:shadow-lg transition-shadow">
+            <Card
+              key={request.id}
+              className="hover:shadow-lg transition-shadow"
+            >
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <UserCircle className="h-10 w-10 text-purple-600" />
                     <div>
-                      <CardTitle className="text-xl">{request.anonymous_name}</CardTitle>
+                      <CardTitle className="text-xl">
+                        {request.anonymous_name}
+                      </CardTitle>
                       <div className="flex items-center gap-2 mt-1">
                         <Clock className="h-4 w-4 text-gray-500" />
                         <span className="text-sm text-gray-500">
-                          {formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}
+                          {formatDistanceToNow(new Date(request.created_at), {
+                            addSuffix: true,
+                          })}
                         </span>
                       </div>
                     </div>
@@ -230,14 +246,18 @@ export default function AnonymousRequests() {
               <CardContent className="space-y-4">
                 {request.topic && (
                   <div>
-                    <Label className="text-sm font-medium text-gray-700">Topic</Label>
+                    <Label className="text-sm font-medium text-gray-700">
+                      Topic
+                    </Label>
                     <Badge variant="outline" className="mt-1">
                       {request.topic}
                     </Badge>
                   </div>
                 )}
                 <div>
-                  <Label className="text-sm font-medium text-gray-700">Message</Label>
+                  <Label className="text-sm font-medium text-gray-700">
+                    Message
+                  </Label>
                   <p className="text-sm text-gray-600 mt-1 p-3 bg-gray-50 rounded-lg">
                     {request.message}
                   </p>
@@ -277,8 +297,9 @@ export default function AnonymousRequests() {
           <DialogHeader>
             <DialogTitle>Accept Anonymous Request</DialogTitle>
             <DialogDescription>
-              Accept the anonymous chat request from {selectedRequest?.anonymous_name}.
-              You can add an optional welcome message.
+              Accept the anonymous chat request from{" "}
+              {selectedRequest?.anonymous_name}. You can add an optional welcome
+              message.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -291,7 +312,9 @@ export default function AnonymousRequests() {
               rows={3}
               maxLength={300}
             />
-            <p className="text-sm text-gray-500 mt-1">{responseMessage.length}/300 characters</p>
+            <p className="text-sm text-gray-500 mt-1">
+              {responseMessage.length}/300 characters
+            </p>
           </div>
           <DialogFooter>
             <Button
@@ -306,7 +329,7 @@ export default function AnonymousRequests() {
               disabled={processing}
               className="bg-green-600 hover:bg-green-700"
             >
-              {processing ? 'Accepting...' : 'Accept Request'}
+              {processing ? "Accepting..." : "Accept Request"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -318,8 +341,8 @@ export default function AnonymousRequests() {
           <DialogHeader>
             <DialogTitle>Decline Anonymous Request</DialogTitle>
             <DialogDescription>
-              Decline the request from {selectedRequest?.anonymous_name}.
-              Please provide a reason that will be shared with the student.
+              Decline the request from {selectedRequest?.anonymous_name}. Please
+              provide a reason that will be shared with the student.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -333,7 +356,9 @@ export default function AnonymousRequests() {
               maxLength={300}
               required
             />
-            <p className="text-sm text-gray-500 mt-1">{declineReason.length}/300 characters</p>
+            <p className="text-sm text-gray-500 mt-1">
+              {declineReason.length}/300 characters
+            </p>
           </div>
           <DialogFooter>
             <Button
@@ -348,7 +373,7 @@ export default function AnonymousRequests() {
               disabled={processing || !declineReason.trim()}
               variant="destructive"
             >
-              {processing ? 'Declining...' : 'Decline Request'}
+              {processing ? "Declining..." : "Decline Request"}
             </Button>
           </DialogFooter>
         </DialogContent>

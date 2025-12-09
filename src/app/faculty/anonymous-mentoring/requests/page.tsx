@@ -1,4 +1,4 @@
-import AnonymousRequests from '@/components/anonymous-mentoring/faculty/AnonymousRequests';
+import AnonymousRequests from "@/components/anonymous-mentoring/faculty/AnonymousRequests";
 
 export default function AnonymousMentoringRequestsPage() {
   return (
