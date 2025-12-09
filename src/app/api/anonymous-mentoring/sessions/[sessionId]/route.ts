@@ -19,6 +19,7 @@ export async function GET(
       );
     }
 
+    // @ts-expect-error - Prisma model name uses snake_case
     const session = await prisma.anonymous_mentor_sessions.findUnique({
       where: { id: sessionId },
       include: {

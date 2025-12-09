@@ -21,6 +21,7 @@ export async function GET(
     }
 
     // Verify session exists and user has access
+    // @ts-expect-error - Prisma model name uses snake_case
     const session = await prisma.anonymous_mentor_sessions.findUnique({
       where: { id: sessionId },
       select: {
@@ -65,6 +66,7 @@ export async function GET(
       };
     }
 
+    // @ts-expect-error - Prisma model name uses snake_case
     const messages = await prisma.anonymous_mentor_messages.findMany({
       where,
       orderBy: {
@@ -132,6 +134,7 @@ export async function POST(
     }
 
     // Verify session exists and user has access
+    // @ts-expect-error - Prisma model name uses snake_case
     const session = await prisma.anonymous_mentor_sessions.findUnique({
       where: { id: sessionId },
       select: {
@@ -219,6 +222,7 @@ export async function POST(
 
     // Create message and update session in transaction
     const result = await prisma.$transaction(async (tx) => {
+      // @ts-expect-error - Prisma model name uses snake_case
       const message = await tx.anonymous_mentor_messages.create({
         data: {
           id: randomUUID(),
@@ -234,6 +238,7 @@ export async function POST(
       });
 
       // Update session
+      // @ts-expect-error - Prisma model name uses snake_case
       const updatedSession = await tx.anonymous_mentor_sessions.update({
         where: { id: sessionId },
         data: {

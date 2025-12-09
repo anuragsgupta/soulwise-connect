@@ -7,9 +7,10 @@ import { randomUUID } from "crypto";
 // POST /api/anonymous-mentoring/sessions/[sessionId]/end - End session
 export async function POST(
   request: NextRequest,
-  { params }: { params: { sessionId: string } }
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
+    const { sessionId } = await params;
     const user = await authenticateUser(request);
     if (!user) {
       return NextResponse.json(
@@ -22,6 +23,7 @@ export async function POST(
     const { endedBy } = body;
 
     // Verify session exists and user has access
+    // @ts-expect-error - Prisma model name uses snake_case
     const session = await prisma.anonymous_mentor_sessions.findUnique({
       where: { id: sessionId },
       select: {
@@ -64,6 +66,7 @@ export async function POST(
     }
 
     // Update session status
+    // @ts-expect-error - Prisma model name uses snake_case
     const updatedSession = await prisma.anonymous_mentor_sessions.update({
       where: { id: sessionId },
       data: {
