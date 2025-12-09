@@ -1,4 +1,4 @@
-import MyAnonymousSessions from '@/components/anonymous-mentoring/student/MyAnonymousSessions';
+import MyAnonymousSessions from "@/components/anonymous-mentoring/student/MyAnonymousSessions";
 
 export default function SessionsPage() {
   return (

@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, Clock, UserCircle } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
-import { formatDistanceToNow } from 'date-fns';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MessageSquare, Clock, UserCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
+import { formatDistanceToNow } from "date-fns";
 
 interface Session {
   id: string;
@@ -35,8 +35,8 @@ export default function AnonymousSessionHistory() {
 
   const fetchSessions = async () => {
     try {
-      const response = await fetch('/api/anonymous-mentoring/sessions', {
-        credentials: 'include'
+      const response = await fetch("/api/anonymous-mentoring/sessions", {
+        credentials: "include",
       });
 
       const result = await response.json();
@@ -45,16 +45,16 @@ export default function AnonymousSessionHistory() {
         setSessions(result.data.sessions);
       } else {
         toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: result.message || 'Failed to load sessions'
+          variant: "destructive",
+          title: "Error",
+          description: result.message || "Failed to load sessions",
         });
       }
     } catch (error) {
       toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to load sessions'
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load sessions",
       });
     } finally {
       setLoading(false);
@@ -63,27 +63,27 @@ export default function AnonymousSessionHistory() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'ACTIVE':
-        return 'bg-blue-100 text-blue-800';
-      case 'ENDED':
-        return 'bg-gray-100 text-gray-800';
+      case "ACTIVE":
+        return "bg-blue-100 text-blue-800";
+      case "ENDED":
+        return "bg-gray-100 text-gray-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const getRiskLevelColor = (level: string) => {
     switch (level) {
-      case 'NORMAL':
-        return 'bg-green-100 text-green-800';
-      case 'MODERATE':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'HIGH':
-        return 'bg-orange-100 text-orange-800';
-      case 'CRISIS':
-        return 'bg-red-100 text-red-800';
+      case "NORMAL":
+        return "bg-green-100 text-green-800";
+      case "MODERATE":
+        return "bg-yellow-100 text-yellow-800";
+      case "HIGH":
+        return "bg-orange-100 text-orange-800";
+      case "CRISIS":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -98,14 +98,18 @@ export default function AnonymousSessionHistory() {
     );
   }
 
-  const activeSessions = sessions.filter(s => s.status === 'ACTIVE');
-  const endedSessions = sessions.filter(s => s.status === 'ENDED');
+  const activeSessions = sessions.filter((s) => s.status === "ACTIVE");
+  const endedSessions = sessions.filter((s) => s.status === "ENDED");
 
   return (
     <div className="space-y-6">
       <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 rounded-lg">
-        <h1 className="text-3xl font-bold mb-2">Anonymous Mentoring Sessions</h1>
-        <p className="text-purple-100">Manage your anonymous chat sessions with students</p>
+        <h1 className="text-3xl font-bold mb-2">
+          Anonymous Mentoring Sessions
+        </h1>
+        <p className="text-purple-100">
+          Manage your anonymous chat sessions with students
+        </p>
       </div>
 
       <Tabs defaultValue="active" className="space-y-4">
@@ -113,7 +117,9 @@ export default function AnonymousSessionHistory() {
           <TabsTrigger value="active">
             Active Sessions
             {activeSessions.length > 0 && (
-              <Badge className="ml-2 bg-purple-600">{activeSessions.length}</Badge>
+              <Badge className="ml-2 bg-purple-600">
+                {activeSessions.length}
+              </Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="ended">
@@ -137,15 +143,23 @@ export default function AnonymousSessionHistory() {
             </Card>
           ) : (
             activeSessions.map((session) => (
-              <Card key={session.id} className="hover:shadow-lg transition-shadow">
+              <Card
+                key={session.id}
+                className="hover:shadow-lg transition-shadow"
+              >
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <UserCircle className="h-10 w-10 text-purple-600" />
                       <div>
-                        <CardTitle className="text-lg">{session.student_alias}</CardTitle>
+                        <CardTitle className="text-lg">
+                          {session.student_alias}
+                        </CardTitle>
                         <p className="text-sm text-gray-500 mt-1">
-                          Started {formatDistanceToNow(new Date(session.created_at), { addSuffix: true })}
+                          Started{" "}
+                          {formatDistanceToNow(new Date(session.created_at), {
+                            addSuffix: true,
+                          })}
                         </p>
                       </div>
                     </div>
@@ -164,22 +178,31 @@ export default function AnonymousSessionHistory() {
                     <div className="flex items-center gap-4 text-sm text-gray-600">
                       <div className="flex items-center gap-1">
                         <MessageSquare className="h-4 w-4" />
-                        <span>{session._count.anonymous_mentor_messages} messages</span>
+                        <span>
+                          {session._count.anonymous_mentor_messages} messages
+                        </span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="h-4 w-4" />
                         <span>
-                          Last message{' '}
+                          Last message{" "}
                           {session.last_message_at
-                            ? formatDistanceToNow(new Date(session.last_message_at), {
-                                addSuffix: true
-                              })
-                            : 'N/A'}
+                            ? formatDistanceToNow(
+                                new Date(session.last_message_at),
+                                {
+                                  addSuffix: true,
+                                }
+                              )
+                            : "N/A"}
                         </span>
                       </div>
                     </div>
                     <Button
-                      onClick={() => router.push(`/faculty/anonymous-mentoring/chat/${session.id}`)}
+                      onClick={() =>
+                        router.push(
+                          `/faculty/anonymous-mentoring/chat/${session.id}`
+                        )
+                      }
                       className="bg-purple-600 hover:bg-purple-700"
                     >
                       Open Chat
@@ -207,11 +230,17 @@ export default function AnonymousSessionHistory() {
                     <div className="flex items-center gap-3">
                       <UserCircle className="h-10 w-10 text-gray-400" />
                       <div>
-                        <CardTitle className="text-lg">{session.student_alias}</CardTitle>
+                        <CardTitle className="text-lg">
+                          {session.student_alias}
+                        </CardTitle>
                         <p className="text-sm text-gray-500 mt-1">
-                          Ended {formatDistanceToNow(new Date(session.ended_at || session.created_at), {
-                            addSuffix: true
-                          })}
+                          Ended{" "}
+                          {formatDistanceToNow(
+                            new Date(session.ended_at || session.created_at),
+                            {
+                              addSuffix: true,
+                            }
+                          )}
                         </p>
                       </div>
                     </div>
@@ -230,19 +259,26 @@ export default function AnonymousSessionHistory() {
                     <div className="flex items-center gap-4 text-sm text-gray-600">
                       <div className="flex items-center gap-1">
                         <MessageSquare className="h-4 w-4" />
-                        <span>{session._count.anonymous_mentor_messages} messages</span>
+                        <span>
+                          {session._count.anonymous_mentor_messages} messages
+                        </span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="h-4 w-4" />
                         <span>
-                          Duration: {formatDistanceToNow(new Date(session.created_at), {
-                            addSuffix: false
+                          Duration:{" "}
+                          {formatDistanceToNow(new Date(session.created_at), {
+                            addSuffix: false,
                           })}
                         </span>
                       </div>
                     </div>
                     <Button
-                      onClick={() => router.push(`/faculty/anonymous-mentoring/chat/${session.id}`)}
+                      onClick={() =>
+                        router.push(
+                          `/faculty/anonymous-mentoring/chat/${session.id}`
+                        )
+                      }
                       variant="outline"
                     >
                       View History

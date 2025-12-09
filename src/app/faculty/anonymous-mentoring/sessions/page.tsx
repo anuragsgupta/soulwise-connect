@@ -1,4 +1,4 @@
-import AnonymousSessionHistory from '@/components/anonymous-mentoring/faculty/AnonymousSessionHistory';
+import AnonymousSessionHistory from "@/components/anonymous-mentoring/faculty/AnonymousSessionHistory";
 
 export default function SessionsPage() {
   return (

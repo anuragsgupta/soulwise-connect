@@ -1,4 +1,4 @@
-import FacultySelector from '@/components/anonymous-mentoring/student/FacultySelector';
+import FacultySelector from "@/components/anonymous-mentoring/student/FacultySelector";
 
 export default function AnonymousMentoringPage() {
   return (
