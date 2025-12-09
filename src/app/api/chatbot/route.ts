@@ -13,12 +13,13 @@ import type { ChatMemoryItem } from '@/lib/dynamodb/schema';
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, sessionId, userId } = await request.json();
+    const { message, sessionId, userId, language = 'en' } = await request.json();
     
     console.log('=== CHATBOT API REQUEST ===');
     console.log('Message received:', message);
     console.log('Session ID:', sessionId);
     console.log('User ID:', userId);
+    console.log('Language:', language);
     console.log('Timestamp:', new Date().toISOString());
 
     if (!message || typeof message !== 'string') {
@@ -186,7 +187,7 @@ export async function POST(request: NextRequest) {
           {
             parts: [
               {
-                text: buildGeminiPromptToon(message, contextSummary)
+                text: buildGeminiPromptToon(message, contextSummary, language)
               }
             ]
           }

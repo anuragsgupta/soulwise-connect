@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { SupportedLanguage } from "@/contexts/LanguageContext";
 import ChatMessages, { Message, QuickReply, ResourceAction } from "./ChatMessages";
 import ChatInput from "./ChatInput";
 import AnonymousMentorChat from "./AnonymousMentorChat";
@@ -21,7 +22,6 @@ import {
   Navigation,
   UserCircle,
   Square, // Added for Stop button
-  CheckCheck, // Added for context
   Plus // Added for new chat button
 } from "lucide-react";
 
@@ -335,7 +335,7 @@ interface ProcessMessageOptions {
   origin?: ProcessMessageOrigin;
 }
 
-const ChatBot = () => {
+const ChatBot = ({ language = 'en' }: { language?: SupportedLanguage }) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [chatMode, setChatMode] = useState<'ai' | 'mentor'>('ai');
@@ -724,7 +724,7 @@ const ChatBot = () => {
 
   const generateBotResponse = async (userMessage: string, signal?: AbortSignal): Promise<Message[]> => {
     try {
-      // Call our enhanced chatbot API route with crisis detection
+      // Call our enhanced chatbot API route with crisis detection and language support
       const response = await fetch('/api/chatbot', {
         method: 'POST',
         headers: {
@@ -733,7 +733,8 @@ const ChatBot = () => {
         body: JSON.stringify({ 
           message: userMessage,
           sessionId: sessionId,
-          userId: sessionId // Pass userId for DynamoDB tracking
+          userId: sessionId, // Pass userId for DynamoDB tracking
+          language: language // Pass preferred language
         }),
         signal: signal, // Pass abort signal
       });
@@ -774,8 +775,8 @@ const ChatBot = () => {
           );
         }
       }
-    } catch (error: any) {
-        if (error.name === 'AbortError') {
+    } catch (error: unknown) {
+        if (error instanceof Error && error.name === 'AbortError') {
             console.log('Fetch aborted by user');
             return []; // Return empty if aborted
         }
@@ -930,7 +931,9 @@ const ChatBot = () => {
     );
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const processUserMessage = async (messageContent: string, options: ProcessMessageOptions = {}) => {
+    // Options parameter reserved for future use (showSendToast, showResponseToast, origin)
     const trimmedMessage = messageContent.trim();
     if (!trimmedMessage) return;
 

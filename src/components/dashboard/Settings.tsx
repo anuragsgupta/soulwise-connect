@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  Key, 
   Eye, 
   EyeOff, 
   Save, 
@@ -18,10 +17,13 @@ import {
   Shield,
   Sparkles,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Languages
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface SettingsProps {
   studentId: string;
@@ -29,6 +31,7 @@ interface SettingsProps {
 
 export default function Settings({ studentId }: SettingsProps) {
   const { toast } = useToast();
+  const { language, setLanguage, languages, t } = useLanguage();
   const [apiKey, setApiKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -37,7 +40,7 @@ export default function Settings({ studentId }: SettingsProps) {
   const [isValidating, setIsValidating] = useState(false);
   const [keyStatus, setKeyStatus] = useState<'valid' | 'invalid' | 'unknown'>('unknown');
 
-  // Load API key from database on mount
+  // Load API key on component mount
   useEffect(() => {
     const loadStoredKey = async () => {
       try {
@@ -79,7 +82,7 @@ export default function Settings({ studentId }: SettingsProps) {
             // Consider this acceptable for storage; the app can still use the key in eligible calls.
             return true;
           }
-        } catch (_) {
+        } catch {
           return true; // Conservative: accept 403 without body as likely valid
         }
       }
@@ -229,18 +232,84 @@ export default function Settings({ studentId }: SettingsProps) {
     <div className="w-full min-h-screen p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="space-y-1">
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Settings</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          {t('settings', 'Settings')}
+        </h2>
         <p className="text-sm sm:text-base text-gray-600">
           Configure your Mann Mitra experience
         </p>
       </div>
 
+      {/* Language Settings */}
+      <Card className="border-2 w-full">
+        <CardHeader>
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
+              <Languages className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-lg sm:text-xl">
+                {t('language', 'Language')}
+              </CardTitle>
+              <CardDescription className="mt-1 text-sm">
+                Choose your preferred language for the interface
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="language" className="text-sm font-medium">
+              {t('preferences', 'Preferences')}
+            </Label>
+            <Select 
+              value={language} 
+              onValueChange={(value) => {
+                const newLang = value as 'en' | 'hi' | 'mr' | 'bn' | 'te' | 'ta' | 'gu' | 'kn' | 'ml' | 'pa' | 'or';
+                setLanguage(newLang);
+                const langInfo = languages.find(l => l.code === newLang);
+                toast({
+                  title: "Language Updated",
+                  description: `Interface language changed to ${langInfo?.nativeName || newLang}`,
+                  duration: 2000,
+                });
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                {languages.map((lang) => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    <div className="flex items-center gap-2">
+                      <span>{lang.flag}</span>
+                      <span>{lang.nativeName}</span>
+                      <span className="text-xs text-muted-foreground">({lang.name})</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <Alert className="bg-blue-50 border-blue-200">
+            <Info className="h-4 w-4 text-blue-600" />
+            <AlertTitle className="text-blue-900">
+              Language Support
+            </AlertTitle>
+            <AlertDescription className="text-blue-800 text-sm">
+              UI elements are translated to your selected language. Dynamic content from AI and user inputs will be shown in their original language.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+
       {/* API Key Configuration */}
       <Card className="border-2 w-full">
         <CardHeader>
           <div className="flex items-start sm:items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
-              <Key className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+            <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
+              <Languages className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
             </div>
             <div className="flex-1 min-w-0">
               <CardTitle className="text-lg sm:text-xl">Google Gemini API Key</CardTitle>

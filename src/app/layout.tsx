@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import { Toaster } from "@/components/ui/toaster";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import AuthLoadingWrapper from "@/components/AuthLoadingWrapper";
@@ -51,11 +52,13 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="antialiased font-body">
-        <AuthProvider>
-          <AuthLoadingWrapper>
-            {children}
-          </AuthLoadingWrapper>
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <AuthLoadingWrapper>
+              {children}
+            </AuthLoadingWrapper>
+          </AuthProvider>
+        </LanguageProvider>
         <Toaster />
         <PWAInstallPrompt />
       </body>

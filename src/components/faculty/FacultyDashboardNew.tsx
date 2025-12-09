@@ -1,18 +1,37 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Users, 
-  Calendar, 
-  TrendingUp, 
+import ActiveAnonymousSessions from "../dashboard/ActiveAnonymousSessions";
+import {
+  Users,
+  Calendar,
+  TrendingUp,
   Heart,
   Building2,
   Search,
@@ -24,7 +43,9 @@ import {
   Activity,
   Clock,
   CheckCircle,
-  XCircle
+  XCircle,
+  MessageSquare,
+  UserCircle,
 } from "lucide-react";
 import ManageSessions from "@/components/sessions/ManageSessions";
 import NotificationsPage from "@/components/notifications/NotificationsPage";
@@ -116,8 +137,8 @@ export default function FacultyDashboardNew() {
   const loadAnalytics = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/faculty/analytics', {
-        credentials: 'include',
+      const response = await fetch("/api/faculty/analytics", {
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -134,7 +155,7 @@ export default function FacultyDashboardNew() {
         });
       }
     } catch (error) {
-      console.error('Error loading analytics:', error);
+      console.error("Error loading analytics:", error);
       toast({
         title: "Error",
         description: "Failed to load dashboard data",
@@ -149,11 +170,12 @@ export default function FacultyDashboardNew() {
     try {
       setStudentsLoading(true);
       const params = new URLSearchParams();
-      if (searchTerm) params.append('search', searchTerm);
-      if (selectedDepartment && selectedDepartment !== 'all') params.append('departmentId', selectedDepartment);
+      if (searchTerm) params.append("search", searchTerm);
+      if (selectedDepartment && selectedDepartment !== "all")
+        params.append("departmentId", selectedDepartment);
 
       const response = await fetch(`/api/faculty/students?${params}`, {
-        credentials: 'include',
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -163,7 +185,7 @@ export default function FacultyDashboardNew() {
         setDepartments(data.data.departments);
       }
     } catch (error) {
-      console.error('Error loading students:', error);
+      console.error("Error loading students:", error);
     } finally {
       setStudentsLoading(false);
     }
@@ -178,13 +200,13 @@ export default function FacultyDashboardNew() {
 
   const getMoodEmoji = (label: string) => {
     const emojiMap: { [key: string]: string } = {
-      'Excellent': '😊',
-      'Good': '🙂',
-      'Okay': '😐',
-      'Low': '😔',
-      'Very Low': '😢'
+      Excellent: "😊",
+      Good: "🙂",
+      Okay: "😐",
+      Low: "😔",
+      "Very Low": "😢",
     };
-    return emojiMap[label] || '😐';
+    return emojiMap[label] || "😐";
   };
 
   const getStatusBadge = (status: string) => {
@@ -210,8 +232,12 @@ export default function FacultyDashboardNew() {
       <div className="bg-white rounded-lg shadow-sm p-6 border">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{faculty?.name}</h1>
-            <p className="text-gray-600 mt-1">{faculty?.facultyType.replace(/_/g, ' ')}</p>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {faculty?.name}
+            </h1>
+            <p className="text-gray-600 mt-1">
+              {faculty?.facultyType.replace(/_/g, " ")}
+            </p>
             <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
               <span className="flex items-center gap-1">
                 <Building2 className="h-4 w-4" />
@@ -234,7 +260,9 @@ export default function FacultyDashboardNew() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Students
+            </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -245,33 +273,45 @@ export default function FacultyDashboardNew() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Meetings</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Pending Meetings
+            </CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics?.pendingMeetings}</div>
+            <div className="text-2xl font-bold">
+              {analytics?.pendingMeetings}
+            </div>
             <p className="text-xs text-muted-foreground">Awaiting response</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Weekly Activity</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Weekly Activity
+            </CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics?.avgWeeklyActivity}</div>
+            <div className="text-2xl font-bold">
+              {analytics?.avgWeeklyActivity}
+            </div>
             <p className="text-xs text-muted-foreground">Avg daily actions</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Mood Score</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Avg Mood Score
+            </CardTitle>
             <Heart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics?.avgWeeklyMood}/10</div>
+            <div className="text-2xl font-bold">
+              {analytics?.avgWeeklyMood}/10
+            </div>
             <p className="text-xs text-muted-foreground">This week</p>
           </CardContent>
         </Card>
@@ -282,9 +322,43 @@ export default function FacultyDashboardNew() {
             <AlertTriangle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{analytics?.recentCrisisAlerts}</div>
-            <p className="text-xs text-muted-foreground">High/Critical active</p>
+            <div className="text-2xl font-bold text-red-600">
+              {analytics?.recentCrisisAlerts}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              High/Critical active
+            </p>
           </CardContent>
+        </Card>
+      </div>
+
+      {/* Active Anonymous Sessions */}
+      <ActiveAnonymousSessions userType="FACULTY" />
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <Card
+          className="hover:shadow-lg transition-shadow cursor-pointer"
+          onClick={() =>
+            (window.location.href = "/faculty/anonymous-mentoring")
+          }
+        >
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-purple-100 rounded-lg">
+                  <UserCircle className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Anonymous Mentoring</CardTitle>
+                  <CardDescription>
+                    Manage sessions and new requests
+                  </CardDescription>
+                </div>
+              </div>
+              <MessageSquare className="h-5 w-5 text-gray-400" />
+            </div>
+          </CardHeader>
         </Card>
       </div>
 
@@ -302,20 +376,30 @@ export default function FacultyDashboardNew() {
           <Card>
             <CardHeader>
               <CardTitle>Recent Student Mood Logs</CardTitle>
-              <CardDescription>Latest mood check-ins from students in your institute</CardDescription>
+              <CardDescription>
+                Latest mood check-ins from students in your institute
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {recentMoodLogs.map((log) => (
-                  <div key={log.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div
+                    key={log.id}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
                     <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${getMoodColor(log.moodScore)}`}>
+                      <div
+                        className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${getMoodColor(
+                          log.moodScore
+                        )}`}
+                      >
                         {getMoodEmoji(log.moodLabel)}
                       </div>
                       <div>
                         <p className="font-medium">{log.student.name}</p>
                         <p className="text-sm text-gray-500">
-                          {log.student.department.name} • {log.student.rollNumber}
+                          {log.student.department.name} •{" "}
+                          {log.student.rollNumber}
                         </p>
                       </div>
                     </div>
@@ -329,7 +413,9 @@ export default function FacultyDashboardNew() {
                   </div>
                 ))}
                 {recentMoodLogs.length === 0 && (
-                  <p className="text-center py-8 text-gray-500">No recent mood logs</p>
+                  <p className="text-center py-8 text-gray-500">
+                    No recent mood logs
+                  </p>
                 )}
               </div>
             </CardContent>
@@ -354,7 +440,10 @@ export default function FacultyDashboardNew() {
                     className="pl-10"
                   />
                 </div>
-                <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                <Select
+                  value={selectedDepartment}
+                  onValueChange={setSelectedDepartment}
+                >
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="All Departments" />
                   </SelectTrigger>
@@ -384,12 +473,24 @@ export default function FacultyDashboardNew() {
                       <table className="w-full">
                         <thead className="bg-gray-50">
                           <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Semester</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Activity</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                              Student
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                              Department
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                              Semester
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                              Status
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                              Activity
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                              Actions
+                            </th>
                           </tr>
                         </thead>
                         <tbody className="divide-y">
@@ -398,14 +499,18 @@ export default function FacultyDashboardNew() {
                               <td className="px-4 py-3">
                                 <div>
                                   <p className="font-medium">{student.name}</p>
-                                  <p className="text-sm text-gray-500">{student.rollNumber || student.enrollmentId}</p>
+                                  <p className="text-sm text-gray-500">
+                                    {student.rollNumber || student.enrollmentId}
+                                  </p>
                                 </div>
                               </td>
                               <td className="px-4 py-3">
                                 <p className="text-sm">{student.department.name}</p>
                               </td>
                               <td className="px-4 py-3">
-                                <p className="text-sm">Sem {student.currentSemester}</p>
+                                <p className="text-sm">
+                                  Sem {student.currentSemester}
+                                </p>
                               </td>
                               <td className="px-4 py-3">
                                 {getStatusBadge(student.status)}
@@ -414,7 +519,9 @@ export default function FacultyDashboardNew() {
                                 <div className="flex gap-2 text-xs text-gray-500">
                                   <span>{student._count.moodCheckIns} moods</span>
                                   <span>•</span>
-                                  <span>{student._count.sessionBookings} sessions</span>
+                                  <span>
+                                    {student._count.sessionBookings} sessions
+                                  </span>
                                 </div>
                               </td>
                               <td className="px-4 py-3">
@@ -432,7 +539,9 @@ export default function FacultyDashboardNew() {
                       </table>
                     </div>
                     {students.length === 0 && !studentsLoading && (
-                      <p className="text-center py-8 text-gray-500">No students found</p>
+                      <p className="text-center py-8 text-gray-500">
+                        No students found
+                      </p>
                     )}
                   </>
                 )}
@@ -451,11 +560,16 @@ export default function FacultyDashboardNew() {
       </Tabs>
 
       {/* Student Details Modal */}
-      <Dialog open={!!selectedStudent} onOpenChange={() => setSelectedStudent(null)}>
+      <Dialog
+        open={!!selectedStudent}
+        onOpenChange={() => setSelectedStudent(null)}
+      >
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Student Details</DialogTitle>
-            <DialogDescription>Complete profile and activity information</DialogDescription>
+            <DialogDescription>
+              Complete profile and activity information
+            </DialogDescription>
           </DialogHeader>
           {selectedStudent && (
             <div className="space-y-6">
@@ -469,15 +583,21 @@ export default function FacultyDashboardNew() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Roll Number</p>
-                    <p className="font-medium">{selectedStudent.rollNumber || 'N/A'}</p>
+                    <p className="font-medium">
+                      {selectedStudent.rollNumber || "N/A"}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Email</p>
-                    <p className="font-medium text-sm">{selectedStudent.email}</p>
+                    <p className="font-medium text-sm">
+                      {selectedStudent.email}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Phone</p>
-                    <p className="font-medium">{selectedStudent.phone || 'N/A'}</p>
+                    <p className="font-medium">
+                      {selectedStudent.phone || "N/A"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -488,7 +608,9 @@ export default function FacultyDashboardNew() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-gray-500">Department</p>
-                    <p className="font-medium">{selectedStudent.department.name}</p>
+                    <p className="font-medium">
+                      {selectedStudent.department.name}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Batch</p>
@@ -496,19 +618,27 @@ export default function FacultyDashboardNew() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Current Semester</p>
-                    <p className="font-medium">{selectedStudent.currentSemester}</p>
+                    <p className="font-medium">
+                      {selectedStudent.currentSemester}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">CGPA</p>
-                    <p className="font-medium">{selectedStudent.cgpa || 'N/A'}</p>
+                    <p className="font-medium">
+                      {selectedStudent.cgpa || "N/A"}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Admission Year</p>
-                    <p className="font-medium">{selectedStudent.admissionYear}</p>
+                    <p className="font-medium">
+                      {selectedStudent.admissionYear}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Mentor</p>
-                    <p className="font-medium">{selectedStudent.mentor?.name || 'Not Assigned'}</p>
+                    <p className="font-medium">
+                      {selectedStudent.mentor?.name || "Not Assigned"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -520,7 +650,9 @@ export default function FacultyDashboardNew() {
                   <Card>
                     <CardContent className="pt-6">
                       <div className="text-center">
-                        <p className="text-2xl font-bold">{selectedStudent._count.moodCheckIns}</p>
+                        <p className="text-2xl font-bold">
+                          {selectedStudent._count.moodCheckIns}
+                        </p>
                         <p className="text-sm text-gray-500">Mood Check-ins</p>
                       </div>
                     </CardContent>
@@ -528,7 +660,9 @@ export default function FacultyDashboardNew() {
                   <Card>
                     <CardContent className="pt-6">
                       <div className="text-center">
-                        <p className="text-2xl font-bold">{selectedStudent._count.sessionBookings}</p>
+                        <p className="text-2xl font-bold">
+                          {selectedStudent._count.sessionBookings}
+                        </p>
                         <p className="text-sm text-gray-500">Sessions Booked</p>
                       </div>
                     </CardContent>
@@ -536,7 +670,9 @@ export default function FacultyDashboardNew() {
                   <Card>
                     <CardContent className="pt-6">
                       <div className="text-center">
-                        <p className="text-2xl font-bold text-red-600">{selectedStudent._count.crisisAlerts}</p>
+                        <p className="text-2xl font-bold text-red-600">
+                          {selectedStudent._count.crisisAlerts}
+                        </p>
                         <p className="text-sm text-gray-500">Crisis Alerts</p>
                       </div>
                     </CardContent>
@@ -555,9 +691,9 @@ export default function FacultyDashboardNew() {
                   <div>
                     <p className="text-sm text-gray-500">Last Login</p>
                     <p className="font-medium">
-                      {selectedStudent.lastLogin 
+                      {selectedStudent.lastLogin
                         ? new Date(selectedStudent.lastLogin).toLocaleString()
-                        : 'Never'}
+                        : "Never"}
                     </p>
                   </div>
                 </div>
