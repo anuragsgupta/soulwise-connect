@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   Heart,
   MessageCircle,
@@ -76,6 +77,7 @@ type DashboardTab =
 const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<DashboardTab>('dashboard');
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [wellnessScore, setWellnessScore] = useState<number | null>(null);
@@ -719,17 +721,17 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <CardTitle className="text-2xl font-bold text-white flex items-center gap-2">
-                      Hi, {user?.name?.split(" ")[0] || "Student"}! 👋
+                      {t('welcome', 'Hi')}, {user?.name?.split(" ")[0] || t('profile', 'Student')}! 👋
                     </CardTitle>
                     <CardDescription className="text-white/90 text-sm mt-1">
-                      How are you feeling today?
+                      {t('mood_today', 'How are you feeling today?')}
                     </CardDescription>
                   </div>
                   {isLoadingWellness ? (
                     <div className="flex flex-col items-center justify-center">
                       <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white mb-1"></div>
                       <div className="text-xs text-white/80 font-medium">
-                        Loading...
+                        {t('loading', 'Loading...')}
                       </div>
                     </div>
                   ) : wellnessScore !== null ? (
@@ -738,7 +740,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                         {wellnessScore}
                       </div>
                       <div className="text-xs text-white/80 font-medium">
-                        Wellness Score
+                        {t('wellness_score', 'Wellness Score')}
                       </div>
                     </div>
                   ) : null}
@@ -1106,11 +1108,11 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-200 shadow-2xl z-50 md:hidden safe-area-inset-bottom">
         <div className="flex items-center justify-around px-2 py-2">
           {[
-            { id: "dashboard", label: "Home", icon: Heart },
-            { id: "mood", label: "Mood", icon: Smile },
-            { id: "chat", label: "Chat", icon: MessageCircle },
+            { id: "dashboard", label: t('home', 'Home'), icon: Heart },
+            { id: "mood", label: t('mood_tracker', 'Mood'), icon: Smile },
+            { id: "chat", label: t('chat', 'Chat'), icon: MessageCircle },
             { id: "mentor", label: "Anonymous", icon: UserCircle },
-            { id: "settings", label: "Settings", icon: SettingsIcon },
+            { id: "settings", label: t('settings', 'Settings'), icon: SettingsIcon },
           ].map((item) => (
             <button
               key={item.id}

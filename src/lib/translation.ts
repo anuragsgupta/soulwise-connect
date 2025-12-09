@@ -1,5 +1,6 @@
 // Translation utility for dynamic content translation
-// Uses Google Translate API or similar service for real-time translation
+// Uses LibreTranslate API - a free and open-source alternative to Google Translate
+// Multiple public instances are available for redundancy
 
 export interface TranslationRequest {
   text: string;
@@ -12,8 +13,30 @@ export interface TranslationResponse {
   detectedSourceLanguage?: string;
 }
 
+// Language code mapping for LibreTranslate API
+export const TRANSLATION_LANGUAGE_MAP: Record<string, string> = {
+  en: "en",
+  hi: "hi",
+  mr: "mr",
+  bn: "bn",
+  te: "te",
+  ta: "ta",
+  gu: "gu",
+  kn: "kn",
+  ml: "ml",
+  pa: "pa",
+  or: "or",
+};
+
+// List of public LibreTranslate instances (fallback chain)
+const LIBRETRANSLATE_INSTANCES = [
+  "https://libretranslate.com/translate",
+  "https://translate.argosopentech.com/translate",
+  "https://translate.terraprint.co/translate",
+];
+
 /**
- * Translates text to target language using Google Translate API
+ * Translates text to target language using LibreTranslate API (free)
  * Falls back to original text if translation fails
  */
 export async function translateText(
@@ -26,44 +49,50 @@ export async function translateText(
     return text;
   }
 
-  try {
-    // Check if we have Google Cloud Translation API key
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_TRANSLATE_API_KEY;
-    
-    if (!apiKey) {
-      console.warn('Translation API key not configured, returning original text');
-      return text;
+  // Map language codes
+  const sourceCode = TRANSLATION_LANGUAGE_MAP[sourceLanguage] || sourceLanguage;
+  const targetCode = TRANSLATION_LANGUAGE_MAP[targetLanguage] || targetLanguage;
+
+  // Try each instance until one succeeds
+  for (const instance of LIBRETRANSLATE_INSTANCES) {
+    try {
+      const response = await fetch(instance, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          q: text,
+          source: sourceCode,
+          target: targetCode,
+          format: 'text',
+        }),
+      });
+
+      if (!response.ok) {
+        console.warn(`Translation failed with ${instance}: ${response.status}`);
+        continue; // Try next instance
+      }
+
+      const data = await response.json();
+      
+      if (data.translatedText) {
+        return data.translatedText;
+      }
+    } catch (error) {
+      console.warn(`Translation error with ${instance}:`, error);
+      continue; // Try next instance
     }
-
-    const url = `https://translation.googleapis.com/language/translate/v2?key=${apiKey}`;
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        q: text,
-        target: targetLanguage,
-        source: sourceLanguage,
-        format: 'text',
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Translation API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.data.translations[0].translatedText || text;
-  } catch (error) {
-    console.error('Translation error:', error);
-    return text; // Fallback to original text
   }
+
+  // If all instances fail, return original text
+  console.error('All translation instances failed, returning original text');
+  return text;
 }
 
 /**
- * Translates multiple texts in a batch
+ * Translates multiple texts in a batch using LibreTranslate
+ * Processes in smaller batches to avoid overwhelming the API
  */
 export async function translateBatch(
   texts: string[],
@@ -74,73 +103,56 @@ export async function translateBatch(
     return texts;
   }
 
-  try {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_TRANSLATE_API_KEY;
-    
-    if (!apiKey) {
-      return texts;
-    }
+  const results: string[] = [];
+  const batchSize = 5; // Process 5 at a time to avoid rate limits
 
-    const url = `https://translation.googleapis.com/language/translate/v2?key=${apiKey}`;
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        q: texts,
-        target: targetLanguage,
-        source: sourceLanguage,
-        format: 'text',
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Translation API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.data.translations.map((t: { translatedText: string }) => t.translatedText);
-  } catch (error) {
-    console.error('Batch translation error:', error);
-    return texts;
+  for (let i = 0; i < texts.length; i += batchSize) {
+    const batch = texts.slice(i, i + batchSize);
+    const promises = batch.map(text => translateText(text, targetLanguage, sourceLanguage));
+    const batchResults = await Promise.all(promises);
+    results.push(...batchResults);
   }
+
+  return results;
 }
 
 /**
- * Detects the language of given text
+ * Detects the language of given text using LibreTranslate
+ * Falls back to English if detection fails
  */
 export async function detectLanguage(text: string): Promise<string> {
-  try {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_TRANSLATE_API_KEY;
-    
-    if (!apiKey) {
-      return 'en'; // Default to English
+  // Try LibreTranslate instances for language detection
+  for (const instance of LIBRETRANSLATE_INSTANCES) {
+    try {
+      const detectUrl = instance.replace('/translate', '/detect');
+      
+      const response = await fetch(detectUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          q: text,
+        }),
+      });
+
+      if (!response.ok) {
+        continue;
+      }
+
+      const data = await response.json();
+      
+      if (data && data[0] && data[0].language) {
+        return data[0].language;
+      }
+    } catch (error) {
+      console.warn('Language detection error:', error);
+      continue;
     }
-
-    const url = `https://translation.googleapis.com/language/translate/v2/detect?key=${apiKey}`;
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        q: text,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Language detection error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.data.detections[0][0].language;
-  } catch (error) {
-    console.error('Language detection error:', error);
-    return 'en';
   }
+
+  // Default to English if detection fails
+  return 'en';
 }
 
 // Cache translations to avoid repeated API calls
