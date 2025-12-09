@@ -181,6 +181,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Update lastLogin timestamp
+    const loginTime = new Date();
+    if (userType === 'STUDENT') {
+      await prisma.student.update({
+        where: { id: userData.id },
+        data: { lastLogin: loginTime },
+      });
+    } else if (userType === 'FACULTY') {
+      await prisma.faculty.update({
+        where: { id: userData.id },
+        data: { lastLogin: loginTime },
+      });
+    } else if (userType === 'ADMIN') {
+      await prisma.admin.update({
+        where: { id: userData.id },
+        data: { lastLogin: loginTime },
+      });
+    }
+
     // Build token payload based on user type
     const tokenPayload: {
       id: string;
