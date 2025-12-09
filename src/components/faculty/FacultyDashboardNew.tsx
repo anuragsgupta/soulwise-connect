@@ -100,6 +100,7 @@ export default function FacultyDashboardNew() {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("all");
+  const [studentsLoading, setStudentsLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -146,6 +147,7 @@ export default function FacultyDashboardNew() {
 
   const loadStudents = async () => {
     try {
+      setStudentsLoading(true);
       const params = new URLSearchParams();
       if (searchTerm) params.append('search', searchTerm);
       if (selectedDepartment && selectedDepartment !== 'all') params.append('departmentId', selectedDepartment);
@@ -162,6 +164,8 @@ export default function FacultyDashboardNew() {
       }
     } catch (error) {
       console.error('Error loading students:', error);
+    } finally {
+      setStudentsLoading(false);
     }
   };
 
@@ -367,59 +371,70 @@ export default function FacultyDashboardNew() {
 
               {/* Students Table */}
               <div className="border rounded-lg">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Semester</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Activity</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {students.map((student) => (
-                        <tr key={student.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3">
-                            <div>
-                              <p className="font-medium">{student.name}</p>
-                              <p className="text-sm text-gray-500">{student.rollNumber || student.enrollmentId}</p>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <p className="text-sm">{student.department.name}</p>
-                          </td>
-                          <td className="px-4 py-3">
-                            <p className="text-sm">Sem {student.currentSemester}</p>
-                          </td>
-                          <td className="px-4 py-3">
-                            {getStatusBadge(student.status)}
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex gap-2 text-xs text-gray-500">
-                              <span>{student._count.moodCheckIns} moods</span>
-                              <span>•</span>
-                              <span>{student._count.sessionBookings} sessions</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setSelectedStudent(student)}
-                            >
-                              View Details
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                {students.length === 0 && (
-                  <p className="text-center py-8 text-gray-500">No students found</p>
+                {studentsLoading ? (
+                  <div className="flex items-center justify-center py-16">
+                    <div className="text-center space-y-3">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+                      <p className="text-gray-600">Loading students...</p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Semester</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Activity</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {students.map((student) => (
+                            <tr key={student.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3">
+                                <div>
+                                  <p className="font-medium">{student.name}</p>
+                                  <p className="text-sm text-gray-500">{student.rollNumber || student.enrollmentId}</p>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <p className="text-sm">{student.department.name}</p>
+                              </td>
+                              <td className="px-4 py-3">
+                                <p className="text-sm">Sem {student.currentSemester}</p>
+                              </td>
+                              <td className="px-4 py-3">
+                                {getStatusBadge(student.status)}
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex gap-2 text-xs text-gray-500">
+                                  <span>{student._count.moodCheckIns} moods</span>
+                                  <span>•</span>
+                                  <span>{student._count.sessionBookings} sessions</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setSelectedStudent(student)}
+                                >
+                                  View Details
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {students.length === 0 && !studentsLoading && (
+                      <p className="text-center py-8 text-gray-500">No students found</p>
+                    )}
+                  </>
                 )}
               </div>
             </CardContent>

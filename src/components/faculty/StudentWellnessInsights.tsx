@@ -3,7 +3,10 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { 
   Brain, 
   Heart, 
@@ -14,7 +17,14 @@ import {
   Activity,
   Smile,
   Meh,
-  Frown
+  Frown,
+  FileText,
+  X,
+  Mail,
+  Phone,
+  Calendar,
+  BookOpen,
+  Award
 } from "lucide-react";
 
 interface WellnessData {
@@ -29,6 +39,9 @@ const StudentWellnessInsights = () => {
   const [studentsData, setStudentsData] = useState<WellnessData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
+  const [studentProfile, setStudentProfile] = useState<any>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   // Fetch real data from API
   useEffect(() => {
@@ -95,6 +108,32 @@ const StudentWellnessInsights = () => {
     if (score >= 75) return <Smile className="w-5 h-5 text-green-600" />;
     if (score >= 40) return <Meh className="w-5 h-5 text-yellow-600" />;
     return <Frown className="w-5 h-5 text-red-600" />;
+  };
+
+  const handleViewProfile = async (studentId: string) => {
+    setSelectedStudent(studentId);
+    setProfileLoading(true);
+    try {
+      const response = await fetch(`/api/faculty/students/${studentId}`);
+      const data = await response.json();
+      if (data.success) {
+        // Set the complete data including student, assessments, and moodTrend
+        setStudentProfile({
+          ...data.data.student,
+          assessments: data.data.assessments,
+          moodTrend: data.data.moodTrend
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching student profile:', error);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const closeProfile = () => {
+    setSelectedStudent(null);
+    setStudentProfile(null);
   };
 
   if (loading) {
@@ -377,6 +416,15 @@ const StudentWellnessInsights = () => {
                   </div>
                   
                   <div className="flex items-center gap-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewProfile(student.studentId)}
+                      className="flex items-center gap-2"
+                    >
+                      <FileText className="w-4 h-4" />
+                      View Report
+                    </Button>
                     <Badge className={getRiskColor(student.riskLevel)}>
                       {student.riskLevel.toUpperCase()}
                     </Badge>
@@ -393,6 +441,362 @@ const StudentWellnessInsights = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Student Profile Modal */}
+      <Dialog open={selectedStudent !== null} onOpenChange={closeProfile}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-purple-600" />
+              Student Wellness Report
+            </DialogTitle>
+            <DialogDescription>
+              Comprehensive wellness analysis and student information
+            </DialogDescription>
+          </DialogHeader>
+
+          {profileLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+            </div>
+          ) : studentProfile ? (
+            <div className="space-y-6">
+              {/* Assessment Charts */}
+              {(studentProfile.assessments?.phq9?.length > 0 || studentProfile.assessments?.gad7?.length > 0 || studentProfile.moodTrend?.length > 0) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-purple-600" />
+                      Mental Health Assessment Trends
+                    </CardTitle>
+                    <CardDescription>
+                      Historical data from PHQ-9, GAD-7, and mood check-ins
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* PHQ-9 Depression Assessment Chart */}
+                    {studentProfile.assessments?.phq9?.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                          <Brain className="w-4 h-4 text-blue-600" />
+                          PHQ-9 Depression Assessment (0-27 scale)
+                        </h4>
+                        <ResponsiveContainer width="100%" height={250}>
+                          <LineChart data={studentProfile.assessments.phq9.map((a: any) => ({
+                            date: new Date(a.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                            score: a.totalScore,
+                            severity: a.severity,
+                          }))}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="date" />
+                            <YAxis domain={[0, 27]} />
+                            <Tooltip 
+                              content={({ active, payload }) => {
+                                if (active && payload && payload[0]) {
+                                  return (
+                                    <div className="bg-white p-3 rounded-lg shadow-lg border">
+                                      <p className="font-semibold">{payload[0].payload.date}</p>
+                                      <p className="text-blue-600">Score: {payload[0].value}/27</p>
+                                      <p className="text-sm text-gray-600">{payload[0].payload.severity}</p>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                            <Line 
+                              type="monotone" 
+                              dataKey="score" 
+                              stroke="#3b82f6" 
+                              strokeWidth={2}
+                              dot={{ fill: '#3b82f6', r: 4 }}
+                              name="PHQ-9 Score"
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                        <div className="flex gap-4 mt-3 text-xs">
+                          <div className="flex items-center gap-1">
+                            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                            <span>0-4: Minimal</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <span>5-9: Mild</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+                            <span>10-14: Moderate</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                            <span>15-27: Severe</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* GAD-7 Anxiety Assessment Chart */}
+                    {studentProfile.assessments?.gad7?.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                          <Heart className="w-4 h-4 text-purple-600" />
+                          GAD-7 Anxiety Assessment (0-21 scale)
+                        </h4>
+                        <ResponsiveContainer width="100%" height={250}>
+                          <LineChart data={studentProfile.assessments.gad7.map((a: any) => ({
+                            date: new Date(a.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                            score: a.totalScore,
+                            severity: a.severity,
+                          }))}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="date" />
+                            <YAxis domain={[0, 21]} />
+                            <Tooltip 
+                              content={({ active, payload }) => {
+                                if (active && payload && payload[0]) {
+                                  return (
+                                    <div className="bg-white p-3 rounded-lg shadow-lg border">
+                                      <p className="font-semibold">{payload[0].payload.date}</p>
+                                      <p className="text-purple-600">Score: {payload[0].value}/21</p>
+                                      <p className="text-sm text-gray-600">{payload[0].payload.severity}</p>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                            <Line 
+                              type="monotone" 
+                              dataKey="score" 
+                              stroke="#8b5cf6" 
+                              strokeWidth={2}
+                              dot={{ fill: '#8b5cf6', r: 4 }}
+                              name="GAD-7 Score"
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                        <div className="flex gap-4 mt-3 text-xs">
+                          <div className="flex items-center gap-1">
+                            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                            <span>0-4: Minimal</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <span>5-9: Mild</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+                            <span>10-14: Moderate</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                            <span>15-21: Severe</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Mood Check-in Trend */}
+                    {studentProfile.moodTrend?.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                          <Smile className="w-4 h-4 text-green-600" />
+                          Daily Mood Trend (1-7 scale, Last 30 days)
+                        </h4>
+                        <ResponsiveContainer width="100%" height={250}>
+                          <LineChart data={studentProfile.moodTrend.map((m: any) => ({
+                            date: new Date(m.checkInDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                            score: m.moodScore,
+                            label: m.moodLabel,
+                          }))}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="date" />
+                            <YAxis domain={[1, 7]} ticks={[1, 2, 3, 4, 5, 6, 7]} />
+                            <Tooltip 
+                              content={({ active, payload }) => {
+                                if (active && payload && payload[0]) {
+                                  return (
+                                    <div className="bg-white p-3 rounded-lg shadow-lg border">
+                                      <p className="font-semibold">{payload[0].payload.date}</p>
+                                      <p className="text-green-600">{payload[0].payload.label}</p>
+                                      <p className="text-sm text-gray-600">Score: {payload[0].value}/7</p>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                            <Line 
+                              type="monotone" 
+                              dataKey="score" 
+                              stroke="#10b981" 
+                              strokeWidth={2}
+                              dot={{ fill: '#10b981', r: 4 }}
+                              name="Mood Score"
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+
+                    {studentProfile.assessments?.phq9?.length === 0 && 
+                     studentProfile.assessments?.gad7?.length === 0 && 
+                     studentProfile.moodTrend?.length === 0 && (
+                      <p className="text-center py-8 text-gray-500">
+                        No assessment data available yet
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Basic Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Basic Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Full Name</p>
+                      <p className="font-semibold">{studentProfile.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Roll Number</p>
+                      <p className="font-semibold">{studentProfile.rollNumber || 'N/A'}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-gray-600" />
+                      <div>
+                        <p className="text-sm text-gray-600">Email</p>
+                        <p className="font-semibold text-sm">{studentProfile.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-gray-600" />
+                      <div>
+                        <p className="text-sm text-gray-600">Phone</p>
+                        <p className="font-semibold">{studentProfile.phone || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Academic Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <BookOpen className="w-5 h-5" />
+                    Academic Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Department</p>
+                      <p className="font-semibold">{studentProfile.department?.name || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Batch</p>
+                      <p className="font-semibold">{studentProfile.batch?.name || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Current Semester</p>
+                      <p className="font-semibold">{studentProfile.currentSemester || 'N/A'}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Award className="w-4 h-4 text-gray-600" />
+                      <div>
+                        <p className="text-sm text-gray-600">CGPA</p>
+                        <p className="font-semibold">{studentProfile.cgpa || 'N/A'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-gray-600" />
+                      <div>
+                        <p className="text-sm text-gray-600">Admission Year</p>
+                        <p className="font-semibold">{studentProfile.admissionYear || 'N/A'}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Enrollment ID</p>
+                      <p className="font-semibold">{studentProfile.enrollmentId || 'N/A'}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Wellness Statistics */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Activity className="w-5 h-5" />
+                    Wellness Activity
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center p-3 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-gray-600">Mood Check-ins</p>
+                      <p className="text-2xl font-bold text-blue-600">{studentProfile._count?.moodCheckIns || 0}</p>
+                    </div>
+                    <div className="text-center p-3 bg-green-50 rounded-lg">
+                      <p className="text-sm text-gray-600">Sessions Booked</p>
+                      <p className="text-2xl font-bold text-green-600">{studentProfile._count?.sessionBookings || 0}</p>
+                    </div>
+                    <div className="text-center p-3 bg-red-50 rounded-lg">
+                      <p className="text-sm text-gray-600">Crisis Alerts</p>
+                      <p className="text-2xl font-bold text-red-600">{studentProfile._count?.crisisAlerts || 0}</p>
+                    </div>
+                  </div>
+                  {studentProfile.mentor && (
+                    <div className="mt-4 p-3 bg-purple-50 rounded-lg">
+                      <p className="text-sm text-gray-600">Assigned Mentor</p>
+                      <p className="font-semibold text-purple-900">{studentProfile.mentor.name}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Account Status */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Account Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Status</p>
+                      <Badge className={studentProfile.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                        {studentProfile.status}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Last Login</p>
+                      <p className="font-semibold">
+                        {studentProfile.lastLogin 
+                          ? new Date(studentProfile.lastLogin).toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'short', 
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })
+                          : 'Never'}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-600">
+              Failed to load student profile
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
