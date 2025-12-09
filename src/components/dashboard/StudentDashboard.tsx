@@ -12,7 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { useLanguage } from "@/contexts/LanguageContext";
 import {
   Heart,
   MessageCircle,
@@ -78,11 +77,7 @@ type DashboardTab =
 const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
-<<<<<<< HEAD
   const { t } = useLanguage();
-=======
-  const { t, language } = useLanguage();
->>>>>>> 9a476c4 (feat: Add Language Context and Translation Utilities)
   const [activeTab, setActiveTab] = useState<DashboardTab>('dashboard');
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [wellnessScore, setWellnessScore] = useState<number | null>(null);
@@ -219,20 +214,11 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
     fetchUpcomingSessions();
   }, [user]);
 
-  // Location access on component mount (student login)
+  // Location access - only check permission, don't auto-prompt
   useEffect(() => {
     const initializeLocation = async () => {
       await checkLocationPermission();
-
-      // Show location prompt after brief delay to allow UI to settle
-      setTimeout(() => {
-        if (
-          locationPermission !== "granted" &&
-          locationPermission !== "denied"
-        ) {
-          setShowLocationPrompt(true);
-        }
-      }, 2000);
+      // Don't show prompt automatically - only when SOS/Help is needed
     };
 
     initializeLocation();
@@ -583,9 +569,9 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   const renderContent = () => {
     switch (activeTab) {
       case 'mood':
-        return <MoodTracker onScoreUpdate={setWellnessScore} language={language} />;
+        return <MoodTracker onScoreUpdate={setWellnessScore} />;
       case 'chat':
-        return <ChatBot language={language} />;
+        return <ChatBot />;
       case 'mentor':
         return <AnonymousMentorChat />;
       case "diary":
@@ -599,20 +585,9 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       case "notifications":
         return <NotificationsPage />;
       case 'resources':
-<<<<<<< HEAD
-        return (
-          <ResourceHub
-            recommendedGame={recommendedGame}
-            recommendedVideo={recommendedVideo}
-            onGameClose={() => setRecommendedGame(null)}
-            onVideoClose={() => setRecommendedVideo(null)}
-          />
-        );
-=======
-        return <ResourceHub recommendedGame={recommendedGame} recommendedVideo={recommendedVideo} onGameClose={() => setRecommendedGame(null)} onVideoClose={() => setRecommendedVideo(null)} language={language} />;
->>>>>>> 9a476c4 (feat: Add Language Context and Translation Utilities)
+        return <ResourceHub recommendedGame={recommendedGame} recommendedVideo={recommendedVideo} onGameClose={() => setRecommendedGame(null)} onVideoClose={() => setRecommendedVideo(null)} />;
       case 'forum':
-        return <PeerForum language={language} />;
+        return <PeerForum />;
       case 'profile':
         return (
           <div className="space-y-6">
@@ -718,12 +693,12 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             <Card
               className={`border-0 shadow-lg rounded-2xl overflow-hidden ${
                 wellnessScore === null
-                  ? "bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600"
+                  ? "bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-500"
                   : wellnessScore >= 70
-                  ? "bg-gradient-to-br from-green-500 via-emerald-500 to-teal-600"
+                  ? "bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500"
                   : wellnessScore >= 40
-                  ? "bg-gradient-to-br from-yellow-500 via-amber-500 to-orange-500"
-                  : "bg-gradient-to-br from-red-500 via-rose-500 to-pink-600"
+                  ? "bg-gradient-to-br from-blue-400 via-cyan-500 to-teal-400"
+                  : "bg-gradient-to-br from-teal-600 via-cyan-600 to-blue-600"
               }`}
             >
               <CardHeader className="pb-4 pt-6">
@@ -746,10 +721,10 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                   ) : wellnessScore !== null ? (
                     <div className="text-right">
                       <div className="text-3xl font-extrabold text-white">
-                        {wellnessScore}
+                        {Math.round(wellnessScore)}
                       </div>
                       <div className="text-xs text-white/80 font-medium">
-                        {t('wellness_score', 'Wellness Score')}
+                        Energy Level
                       </div>
                     </div>
                   ) : null}

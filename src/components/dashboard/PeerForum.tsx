@@ -36,7 +36,6 @@ import {
   Mic,
   X,
   Loader2,
-  Play,
   Pause,
   Volume2,
 } from "lucide-react";
@@ -141,6 +140,7 @@ const PeerForum = () => {
   const [editingReply, setEditingReply] = useState<string | null>(null);
   const [editContent, setEditContent] = useState({ title: "", content: "", category: "" });
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'post' | 'reply' | null, id: string | null, postId?: string }>({ type: null, id: null });
+  const [selectedCategory, setSelectedCategory] = useState<string>("All");
 
   const [newPost, setNewPost] = useState({
     title: "",
@@ -900,12 +900,16 @@ const PeerForum = () => {
   // Helpers
   // ─────────────────────────────────────────
 
-  const filteredPosts = posts.filter(
-    (post) =>
+  const filteredPosts = posts.filter((post) => {
+    const matchesSearch = 
       post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+      post.category.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesCategory = selectedCategory === "All" || post.category === selectedCategory;
+    
+    return matchesSearch && matchesCategory;
+  });
 
   const getTimeAgo = (timestamp: Date) => {
     const now = new Date();
@@ -1036,9 +1040,9 @@ const PeerForum = () => {
   // ─────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-pink-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-teal-50/30 via-cyan-50/20 to-blue-50/30">
       {/* Header Section */}
-      <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 shadow-sm">
+      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-xl border-b border-gray-200/50 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -1070,8 +1074,27 @@ const PeerForum = () => {
               placeholder="Search discussions by title, content, or category..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 h-12 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm focus:ring-2 focus:ring-primary/20"
+              className="pl-12 h-12 bg-white border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-primary/20"
             />
+          </div>
+
+          {/* Category Filter */}
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {["All", "General", "Anxiety", "Depression", "Study Tips", "Social Connection", "Academic Stress", "Sleep Issues", "Relationships"].map((category) => (
+              <Button
+                key={category}
+                variant={selectedCategory === category ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedCategory(category)}
+                className={`flex-shrink-0 rounded-full ${
+                  selectedCategory === category 
+                    ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white" 
+                    : "hover:bg-teal-50"
+                }`}
+              >
+                {category}
+              </Button>
+            ))}
           </div>
         </div>
       </div>
@@ -1079,7 +1102,7 @@ const PeerForum = () => {
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         {/* Community Guidelines Banner */}
-        <Card className="bg-gradient-to-br from-wellness/5 via-blue-50/30 to-purple-50/20 dark:from-wellness/10 dark:via-blue-900/20 dark:to-purple-900/10 border-wellness/20 shadow-sm hover:shadow-md transition-shadow duration-300">
+        <Card className="bg-gradient-to-br from-teal-50/30 via-cyan-50/20 to-blue-50/30 border-teal-200 shadow-sm hover:shadow-md transition-shadow duration-300">
           <CardContent className="pt-6">
             <div className="flex items-start space-x-4">
               <div className="p-3 bg-wellness/10 rounded-xl">
@@ -1230,10 +1253,10 @@ const PeerForum = () => {
 
                     {/* Voice Note Preview */}
                     {postVoiceNote && (
-                      <div className="flex items-center gap-2 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-3 rounded-xl border-2 border-green-200 dark:border-green-700">
-                        <Volume2 className="w-5 h-5 text-green-600 dark:text-green-400 animate-pulse" />
+                      <div className="flex items-center gap-2 bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-xl border-2 border-green-200">
+                        <Volume2 className="w-5 h-5 text-green-600 animate-pulse" />
                         <div className="flex-1">
-                          <span className="text-sm font-semibold text-green-800 dark:text-green-300 block mb-2">
+                          <span className="text-sm font-semibold text-green-800 block mb-2">
                             🎙️ Voice note recorded ({postVoiceNoteDuration}s)
                           </span>
                           <audio
@@ -1276,7 +1299,7 @@ const PeerForum = () => {
                       </select>
                     </div>
                     <div className="flex items-end">
-                      <label className="flex items-center space-x-3 cursor-pointer bg-gray-50 dark:bg-gray-800 px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                      <label className="flex items-center space-x-3 cursor-pointer bg-gray-50 px-4 py-3 rounded-xl hover:bg-gray-100 transition-colors">
                         <input
                           type="checkbox"
                           id="anonymous"
@@ -1361,7 +1384,7 @@ const PeerForum = () => {
                 return (
                   <Card
                     key={post.id}
-                    className="group hover:shadow-lg hover:border-primary/30 transition-all duration-300 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/50 dark:border-gray-700/50"
+                    className="group hover:shadow-lg hover:border-primary/30 transition-all duration-300 bg-white rounded-2xl border border-gray-200/50"
                   >
                     <CardContent className="p-6">
                       <div className="flex items-start space-x-4">
@@ -1375,7 +1398,7 @@ const PeerForum = () => {
                         <div className="flex-1 min-w-0">
                           {editingPost === post.id ? (
                             /* EDIT MODE: Show edit form */
-                            <div className="space-y-3 bg-gray-50 dark:bg-gray-900 p-4 rounded-xl">
+                            <div className="space-y-3 bg-gray-50 p-4 rounded-xl">
                               <Input
                                 placeholder="Post title..."
                                 value={editContent.title}
@@ -1467,7 +1490,7 @@ const PeerForum = () => {
                                   <span className="text-sm font-medium text-foreground">
                                     {post.author}
                                   </span>
-                                  <span className="text-gray-300 dark:text-gray-600">•</span>
+                                  <span className="text-gray-600">•</span>
                                   <span className="text-sm text-muted-foreground flex items-center">
                                     <Clock className="w-3.5 h-3.5 mr-1.5" />
                                     {getTimeAgo(post.timestamp)}
@@ -1481,7 +1504,7 @@ const PeerForum = () => {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                        className="h-8 w-8 p-0 hover:bg-gray-100 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
                                       >
                                         <MoreVertical className="h-4 w-4" />
                                       </Button>
@@ -1530,17 +1553,17 @@ const PeerForum = () => {
                               <img
                                 src={post.imageUrl}
                                 alt="Post attachment"
-                                className="max-h-64 w-auto rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer hover:opacity-90 transition-opacity"
+                                className="max-h-64 w-auto rounded-xl border border-gray-200 cursor-pointer hover:opacity-90 transition-opacity"
                                 onClick={() => window.open(post.imageUrl, '_blank')}
                               />
                             </div>
                           )}
 
                           {post.voiceNoteUrl && (
-                            <div className="mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-xl border border-blue-200 dark:border-blue-700">
+                            <div className="mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
                               <div className="flex items-center gap-2 mb-2">
-                                <Volume2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                                <span className="text-sm font-semibold text-blue-800 dark:text-blue-300">
+                                <Volume2 className="w-5 h-5 text-blue-600" />
+                                <span className="text-sm font-semibold text-blue-800">
                                   🎙️ Voice Note {post.voiceNoteDuration ? `(${post.voiceNoteDuration}s)` : ''}
                                 </span>
                               </div>
@@ -1555,7 +1578,7 @@ const PeerForum = () => {
                             </div>
                           )}
 
-                          <div className="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+                          <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
                             <Button
                               variant="ghost"
                               size="sm"
@@ -1582,14 +1605,14 @@ const PeerForum = () => {
 
                           {/* Reply form (sirf active post ke niche) */}
                           {activeReplyPostId === post.id && (
-                            <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-xl space-y-3">
+                            <div className="mt-6 p-4 bg-gray-50 rounded-xl space-y-3">
                               <Textarea
                                 placeholder="Share your thoughts..."
                                 value={replyContent}
                                 onChange={(e) =>
                                   setReplyContent(e.target.value)
                                 }
-                                className="min-h-[100px] resize-none rounded-xl border-gray-200 dark:border-gray-700"
+                                className="min-h-[100px] resize-none rounded-xl border-gray-200"
                               />
 
                               {/* Reply Media Upload Section */}
@@ -1669,7 +1692,7 @@ const PeerForum = () => {
 
                                 {/* Reply Voice Note Preview */}
                                 {replyVoiceNote && (
-                                  <div className="flex items-center gap-2 bg-white dark:bg-gray-800 p-2 rounded-xl border border-gray-200 dark:border-gray-700">
+                                  <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-gray-200">
                                     <Volume2 className="w-4 h-4 text-primary" />
                                     <div className="flex-1">
                                       <span className="text-xs block mb-1">
@@ -1744,11 +1767,11 @@ const PeerForum = () => {
 
                           {/* Replies List */}
                           {postReplies.length > 0 && (
-                            <div className="mt-6 space-y-4 border-t border-gray-100 dark:border-gray-700 pt-4">
+                            <div className="mt-6 space-y-4 border-t border-gray-100 pt-4">
                               {postReplies.map((reply) => (
                                 <div
                                   key={reply.id}
-                                  className="flex items-start space-x-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+                                  className="flex items-start space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
                                 >
                                   <Avatar className="w-9 h-9 ring-2 ring-wellness/10">
                                     <AvatarFallback className="bg-gradient-to-br from-wellness/20 to-primary/20 text-primary text-xs font-semibold">
@@ -1866,17 +1889,17 @@ const PeerForum = () => {
                                         <img
                                           src={reply.imageUrl}
                                           alt="Reply attachment"
-                                          className="max-h-48 w-auto rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:opacity-90 transition-opacity"
+                                          className="max-h-48 w-auto rounded-lg border border-gray-200 cursor-pointer hover:opacity-90 transition-opacity"
                                           onClick={() => window.open(reply.imageUrl, '_blank')}
                                         />
                                       </div>
                                     )}
 
                                     {reply.voiceNoteUrl && (
-                                      <div className="mb-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-3 rounded-lg border border-purple-200 dark:border-purple-700">
+                                      <div className="mb-3 bg-gradient-to-r from-purple-50 to-pink-50 p-3 rounded-lg border border-purple-200">
                                         <div className="flex items-center gap-2 mb-2">
-                                          <Volume2 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                                          <span className="text-xs font-semibold text-purple-800 dark:text-purple-300">
+                                          <Volume2 className="w-4 h-4 text-purple-600" />
+                                          <span className="text-xs font-semibold text-purple-800">
                                             🎙️ Voice Reply {reply.voiceNoteDuration ? `(${reply.voiceNoteDuration}s)` : ''}
                                           </span>
                                         </div>
