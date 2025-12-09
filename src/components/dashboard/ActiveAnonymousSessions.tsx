@@ -42,10 +42,18 @@ export default function ActiveAnonymousSessions({
       const response = await fetch("/api/anonymous-mentoring/active", {
         credentials: "include",
       });
+      
+      if (!response.ok) {
+        console.error("Failed to fetch active sessions:", response.status);
+        return;
+      }
+      
       const result = await response.json();
 
-      if (result.success) {
-        setSessions(result.data.sessions);
+      if (result.success && result.data) {
+        setSessions(result.data.sessions || []);
+      } else {
+        console.error("Invalid response format:", result);
       }
     } catch (error) {
       console.error("Failed to fetch active sessions:", error);

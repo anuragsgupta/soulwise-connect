@@ -1,27 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { authenticateUser } from "@/middleware/auth";
+import { createResponse } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
-    const token = req.cookies.get("auth-token")?.value;
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = verifyToken(token);
-    if (!decoded) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const user = await authenticateUser(req);
+    if (!user) {
+      return NextResponse.json(
+        createResponse(false, "Authentication required"),
+        { status: 401 }
+      );
     }
 
     let activeSessions;
 
-    if (decoded.role === "STUDENT") {
+    if (user.userType === "STUDENT") {
       // Get active sessions for student
       // @ts-expect-error - Prisma model name uses snake_case
       activeSessions = await prisma.anonymous_mentor_sessions.findMany({
         where: {
-          student_id: decoded.id,
+          student_id: user.userId,
           status: "ACTIVE",
         },
         include: {
@@ -43,12 +42,12 @@ export async function GET(req: NextRequest) {
         },
         take: 5,
       });
-    } else if (decoded.role === "FACULTY") {
+    } else if (user.userType === "FACULTY") {
       // Get active sessions for faculty
       // @ts-expect-error - Prisma model name uses snake_case
       activeSessions = await prisma.anonymous_mentor_sessions.findMany({
         where: {
-          mentor_id: decoded.id,
+          mentor_id: user.userId,
           status: "ACTIVE",
         },
         orderBy: {
@@ -57,20 +56,22 @@ export async function GET(req: NextRequest) {
         take: 5,
       });
     } else {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        createResponse(false, "Unauthorized access"),
+        { status: 401 }
+      );
     }
 
-    return NextResponse.json({
-      success: true,
-      data: {
+    return NextResponse.json(
+      createResponse(true, "Active sessions retrieved", {
         sessions: activeSessions,
         count: activeSessions.length,
-      },
-    });
+      })
+    );
   } catch (error) {
     console.error("Active sessions check error:", error);
     return NextResponse.json(
-      { error: "Failed to check active sessions" },
+      createResponse(false, "Failed to check active sessions"),
       { status: 500 }
     );
   }
