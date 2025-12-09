@@ -130,7 +130,11 @@ export const SENTIMENT_ANALYSIS_PROMPT_TOON = encode({
 /**
  * Response generation prompt in Toon format for Gemini
  */
-export function buildGeminiPromptToon(message: string, contextSummary?: string): string {
+export function buildGeminiPromptToon(message: string, contextSummary?: string, language: string = 'en'): string {
+  const languageInstruction = language !== 'en' 
+    ? `\n\nIMPORTANT: User's preferred language is "${language}". Please respond in ${getLanguageName(language)} language. If you cannot fully respond in that language, use English but try to include key phrases in ${getLanguageName(language)}.`
+    : '';
+
   const contextBlock = contextSummary
     ? encode({
         recent_ctx: contextSummary,
@@ -143,9 +147,28 @@ export function buildGeminiPromptToon(message: string, contextSummary?: string):
     MANN_MITRA_SYSTEM_PROMPT_TOON,
     contextBlock,
     formatUserMessageToon(message),
+    languageInstruction
   ]
     .filter(Boolean)
     .join('\n\n');
+}
+
+// Helper function to get language name
+function getLanguageName(code: string): string {
+  const names: Record<string, string> = {
+    hi: 'Hindi (हिन्दी)',
+    mr: 'Marathi (मराठी)',
+    bn: 'Bengali (বাংলা)',
+    te: 'Telugu (తెలుగు)',
+    ta: 'Tamil (தமிழ்)',
+    gu: 'Gujarati (ગુજરાતી)',
+    kn: 'Kannada (ಕನ್ನಡ)',
+    ml: 'Malayalam (മലയാളം)',
+    pa: 'Punjabi (ਪੰਜਾਬੀ)',
+    or: 'Odia (ଓଡ଼ିଆ)',
+    en: 'English'
+  };
+  return names[code] || 'English';
 }
 
 /**

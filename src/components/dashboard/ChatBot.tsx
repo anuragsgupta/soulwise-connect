@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { SupportedLanguage } from "@/contexts/LanguageContext";
 import ChatMessages, { Message, QuickReply, ResourceAction } from "./ChatMessages";
 import ChatInput from "./ChatInput";
 import AnonymousMentorChat from "./AnonymousMentorChat";
@@ -335,7 +336,7 @@ interface ProcessMessageOptions {
   origin?: ProcessMessageOrigin;
 }
 
-const ChatBot = () => {
+const ChatBot = ({ language = 'en' }: { language?: SupportedLanguage }) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [chatMode, setChatMode] = useState<'ai' | 'mentor'>('ai');
@@ -724,7 +725,7 @@ const ChatBot = () => {
 
   const generateBotResponse = async (userMessage: string, signal?: AbortSignal): Promise<Message[]> => {
     try {
-      // Call our enhanced chatbot API route with crisis detection
+      // Call our enhanced chatbot API route with crisis detection and language support
       const response = await fetch('/api/chatbot', {
         method: 'POST',
         headers: {
@@ -733,7 +734,8 @@ const ChatBot = () => {
         body: JSON.stringify({ 
           message: userMessage,
           sessionId: sessionId,
-          userId: sessionId // Pass userId for DynamoDB tracking
+          userId: sessionId, // Pass userId for DynamoDB tracking
+          language: language // Pass preferred language
         }),
         signal: signal, // Pass abort signal
       });
