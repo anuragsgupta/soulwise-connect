@@ -988,13 +988,12 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-2">
               {[
-                { id: "dashboard", label: "Dashboard", icon: Heart },
-                { id: "mood", label: "Mood", icon: Smile },
-                { id: "chat", label: "Chat", icon: MessageCircle },
-                { id: "mentor", label: "Anonymous", icon: UserCircle },
-                { id: "appointments", label: "Appointments", icon: Calendar },
-                { id: "resources", label: "Resources", icon: BookOpen },
-                { id: "forum", label: "Community", icon: Users },
+                { id: 'dashboard', label: 'Screening', icon: Heart },
+                { id: 'mood', label: 'Mood', icon: Smile },
+                { id: 'chat', label: 'Chat', icon: MessageCircle },
+                { id: 'appointments', label: 'Institution First-aid', icon: Calendar },
+                { id: 'resources', label: 'Resources', icon: BookOpen },
+                { id: 'forum', label: 'Community', icon: Users }
               ].map((item) => (
                 <Button
                   key={item.id}
