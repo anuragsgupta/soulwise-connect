@@ -137,6 +137,7 @@ const PeerForum = () => {
   
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [replies, setReplies] = useState<Reply[]>([]);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   const [editingPost, setEditingPost] = useState<string | null>(null);
   const [editingReply, setEditingReply] = useState<string | null>(null);
   const [editContent, setEditContent] = useState({ title: "", content: "", category: "" });
@@ -951,6 +952,7 @@ const PeerForum = () => {
     const loadCommunityData = async () => {
       if (!user?.instituteId) return; // Wait for user data
       
+      setIsLoadingPosts(true);
       try {
         const res = await fetch(`/api/community-memory?instituteId=${user.instituteId}&limit=50`);
 
@@ -1005,7 +1007,9 @@ const PeerForum = () => {
       } catch (err) {
         // Network level error only
         console.warn("Error loading community data", err);
-        // toast({ title: "Network error", description: "Unable to load community data.", variant: "destructive" });
+        toast({ title: "Error loading posts", description: "Could not fetch community posts. Please try again.", variant: "destructive" });
+      } finally {
+        setIsLoadingPosts(false);
       }
     };
 
@@ -1036,17 +1040,17 @@ const PeerForum = () => {
   // ─────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-pink-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-iceBlue dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header Section */}
       <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gradient-to-br from-primary/10 to-wellness/10 rounded-xl">
+              <div className="p-2 bg-glacier/30 rounded-xl">
                 <Users className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary via-wellness to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-2xl font-bold text-medicalBlue">
                   Community
                 </h1>
                 <p className="text-sm text-muted-foreground">Connect, share, and support</p>
@@ -1055,7 +1059,7 @@ const PeerForum = () => {
             <Button
               onClick={() => setShowNewPostForm(!showNewPostForm)}
               size="lg"
-              className="bg-gradient-to-r from-primary to-wellness hover:from-primary/90 hover:to-wellness/90 shadow-lg hover:shadow-xl transition-all duration-300"
+              className="bg-medicalBlue hover:bg-medicalBlue-dark shadow-lg hover:shadow-xl transition-all duration-300"
             >
               <Plus className="w-5 h-5 mr-2" />
               <span className="hidden sm:inline">New Post</span>
@@ -1079,7 +1083,7 @@ const PeerForum = () => {
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         {/* Community Guidelines Banner */}
-        <Card className="bg-gradient-to-br from-wellness/5 via-blue-50/30 to-purple-50/20 dark:from-wellness/10 dark:via-blue-900/20 dark:to-purple-900/10 border-wellness/20 shadow-sm hover:shadow-md transition-shadow duration-300">
+        <Card className="bg-glacier/20 shadow-sm hover:shadow-md transition-shadow duration-300">
           <CardContent className="pt-6">
             <div className="flex items-start space-x-4">
               <div className="p-3 bg-wellness/10 rounded-xl">
@@ -1116,7 +1120,7 @@ const PeerForum = () => {
         {/* New Post Form */}
         {showNewPostForm && (
           <Card className="border-2 border-primary/20 shadow-xl animate-in slide-in-from-top duration-300">
-            <CardHeader className="bg-gradient-to-br from-primary/5 to-wellness/5">
+            <CardHeader className="bg-glacier/20">
               <CardTitle className="text-xl flex items-center">
                 <div className="p-2 bg-primary/10 rounded-lg mr-3">
                   <Plus className="w-5 h-5 text-primary" />
@@ -1230,7 +1234,7 @@ const PeerForum = () => {
 
                     {/* Voice Note Preview */}
                     {postVoiceNote && (
-                      <div className="flex items-center gap-2 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-3 rounded-xl border-2 border-green-200 dark:border-green-700">
+                      <div className="flex items-center gap-2 bg-glacier/40 dark:from-emerald-900/20 dark:to-teal-900/20 p-3 rounded-xl">
                         <Volume2 className="w-5 h-5 text-green-600 dark:text-green-400 animate-pulse" />
                         <div className="flex-1">
                           <span className="text-sm font-semibold text-green-800 dark:text-green-300 block mb-2">
@@ -1299,7 +1303,7 @@ const PeerForum = () => {
                     onClick={handleCreatePost}
                     size="lg"
                     disabled={isUploadingMedia}
-                    className="flex-1 bg-gradient-to-r from-primary to-wellness hover:from-primary/90 hover:to-wellness/90 h-12 rounded-xl shadow-md hover:shadow-lg transition-all duration-300"
+                    className="flex-1 bg-medicalBlue hover:bg-medicalBlue-dark h-12 rounded-xl shadow-md hover:shadow-lg transition-all duration-300"
                   >
                     {isUploadingMedia ? (
                       <>
@@ -1329,11 +1333,41 @@ const PeerForum = () => {
 
           {/* Posts List */}
           <div className="space-y-5">
-            {filteredPosts.length === 0 ? (
+            {isLoadingPosts ? (
+              // Loading skeleton animation
+              <>
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="rounded-2xl animate-pulse">
+                    <CardContent className="p-6">
+                      <div className="flex items-start space-x-4">
+                        <div className="w-12 h-12 rounded-full bg-healthGreen/20"></div>
+                        <div className="flex-1 space-y-3">
+                          <div className="flex items-center gap-2">
+                            <div className="h-4 w-24 bg-platinum rounded"></div>
+                            <div className="h-3 w-16 bg-iceBlue rounded"></div>
+                          </div>
+                          <div className="h-6 w-3/4 bg-medicalBlue/10 rounded"></div>
+                          <div className="space-y-2">
+                            <div className="h-4 w-full bg-platinum rounded"></div>
+                            <div className="h-4 w-5/6 bg-iceBlue rounded"></div>
+                            <div className="h-4 w-4/6 bg-glacier rounded"></div>
+                          </div>
+                          <div className="flex items-center gap-4 pt-2">
+                            <div className="h-8 w-16 bg-medicalBlue/20 rounded"></div>
+                            <div className="h-8 w-16 bg-healthGreen/20 rounded"></div>
+                            <div className="h-8 w-16 bg-calmPurple/20 rounded"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </>
+            ) : filteredPosts.length === 0 ? (
               <Card className="border-dashed border-2">
                 <CardContent className="py-16">
                   <div className="text-center">
-                    <div className="inline-flex p-4 bg-gradient-to-br from-primary/10 to-wellness/10 rounded-2xl mb-4">
+                    <div className="inline-flex p-4 bg-glacier/30 rounded-2xl mb-4">
                       <Users className="w-12 h-12 text-primary" />
                     </div>
                     <h3 className="text-xl font-semibold mb-2">
@@ -1344,7 +1378,7 @@ const PeerForum = () => {
                     </p>
                     <Button 
                       onClick={() => setShowNewPostForm(true)}
-                      className="bg-gradient-to-r from-primary to-wellness"
+                      className="bg-medicalBlue"
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       Create First Post
@@ -1361,12 +1395,12 @@ const PeerForum = () => {
                 return (
                   <Card
                     key={post.id}
-                    className="group hover:shadow-lg hover:border-primary/30 transition-all duration-300 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/50 dark:border-gray-700/50"
+                    className="group hover:shadow-lg transition-all duration-300 bg-white dark:bg-gray-800 rounded-2xl"
                   >
                     <CardContent className="p-6">
                       <div className="flex items-start space-x-4">
                         <Avatar className="w-12 h-12 ring-2 ring-primary/10 group-hover:ring-primary/30 transition-all">
-                          <AvatarFallback className="bg-gradient-to-br from-primary/20 to-wellness/20 text-primary font-semibold text-lg">
+                          <AvatarFallback className="bg-healthGreen/20 text-healthGreen-dark font-semibold text-lg">
                             {post.isAnonymous
                               ? "?"
                               : getAuthorInitials(post.author)}
@@ -1537,7 +1571,7 @@ const PeerForum = () => {
                           )}
 
                           {post.voiceNoteUrl && (
-                            <div className="mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-xl border border-blue-200 dark:border-blue-700">
+                            <div className="mb-4 bg-iceBlue dark:from-sky-900/20 dark:to-slate-900/20 p-4 rounded-xl">
                               <div className="flex items-center gap-2 mb-2">
                                 <Volume2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                                 <span className="text-sm font-semibold text-blue-800 dark:text-blue-300">
@@ -1717,7 +1751,7 @@ const PeerForum = () => {
                                     size="sm"
                                     onClick={() => handleCreateReply(post.id)}
                                     disabled={isUploadingMedia}
-                                    className="bg-gradient-to-r from-primary to-wellness hover:from-primary/90 hover:to-wellness/90 rounded-lg"
+                                    className="bg-medicalBlue hover:bg-medicalBlue-dark rounded-lg"
                                   >
                                     {isUploadingMedia ? (
                                       <>
@@ -1751,7 +1785,7 @@ const PeerForum = () => {
                                   className="flex items-start space-x-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
                                 >
                                   <Avatar className="w-9 h-9 ring-2 ring-wellness/10">
-                                    <AvatarFallback className="bg-gradient-to-br from-wellness/20 to-primary/20 text-primary text-xs font-semibold">
+                                    <AvatarFallback className="bg-calmPurple/20 text-calmPurple-dark text-xs font-semibold">
                                       {reply.isAnonymous
                                         ? "?"
                                         : getAuthorInitials(reply.author)}
@@ -1873,7 +1907,7 @@ const PeerForum = () => {
                                     )}
 
                                     {reply.voiceNoteUrl && (
-                                      <div className="mb-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-3 rounded-lg border border-purple-200 dark:border-purple-700">
+                                      <div className="mb-3 bg-platinum dark:from-slate-900/20 dark:to-cyan-900/20 p-3 rounded-lg">
                                         <div className="flex items-center gap-2 mb-2">
                                           <Volume2 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                                           <span className="text-xs font-semibold text-purple-800 dark:text-purple-300">

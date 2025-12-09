@@ -35,7 +35,7 @@ export default function MoodSliderScreen({
   const currentMood = moodLabels.find(m => m.level === moodLevel) || moodLabels[3];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-sky-100 via-sky-50 to-blue-100 p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-iceBlue p-4 overflow-y-auto">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 space-y-8">
         {/* Header */}
         <div className="space-y-3">
@@ -95,7 +95,7 @@ export default function MoodSliderScreen({
         {/* Next Button */}
         <Button
           onClick={handleNext}
-          className="w-full bg-gradient-to-r from-teal-500 to-sky-500 hover:from-teal-600 hover:to-sky-600 text-white py-6 text-lg font-semibold rounded-xl shadow-lg"
+          className="w-full bg-medicalBlue hover:bg-medicalBlue-dark text-white py-6 text-lg font-semibold rounded-xl shadow-lg"
         >
           Next
         </Button>

@@ -75,7 +75,7 @@ const ZenWaterRipple = ({ onClose }: ZenWaterRippleProps) => {
         </div>
 
         {/* Game Canvas */}
-        <div className="flex-1 min-h-[50vh] relative overflow-hidden bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50">
+        <div className="flex-1 min-h-[50vh] relative overflow-hidden bg-iceBlue">
           <div
             ref={containerRef}
             className="absolute inset-0 cursor-pointer"
@@ -94,7 +94,7 @@ const ZenWaterRipple = ({ onClose }: ZenWaterRippleProps) => {
                   marginLeft: '-10px',
                   marginTop: '-10px',
                   borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(0, 150, 255, 0.6), rgba(0, 200, 255, 0.4), transparent)',
+                  background: 'radial-gradient(circle, rgba(91, 155, 213, 0.5), rgba(200, 230, 232, 0.3), transparent)',
                   animation: 'rippleExpand 3s ease-out forwards',
                   pointerEvents: 'none',
                 }}

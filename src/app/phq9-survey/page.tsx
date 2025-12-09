@@ -123,7 +123,7 @@ function PHQ9SurveyContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky/10 to-primary/10 flex items-center justify-center p-4">
       <Card className="w-full max-w-4xl">
-        <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5">
+        <CardHeader className="bg-glacier/20">
           <div className="flex items-center gap-3">
             <Brain className="w-10 h-10 text-primary" />
             <div>
@@ -159,7 +159,7 @@ function PHQ9SurveyContent() {
           <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
             <Button
               onClick={() => setShowForm(true)}
-              className="flex-1 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 font-accent"
+              className="flex-1 bg-medicalBlue hover:bg-medicalBlue-dark font-accent"
               size="lg"
             >
               {completedSurveys > 0 ? 'Take New Assessment' : 'Start Assessment'}
@@ -248,7 +248,7 @@ export default function PHQ9SurveyPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gradient-to-br from-sky/10 to-primary/10 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-iceBlue flex items-center justify-center p-4">
           <Card className="w-full max-w-md">
             <CardContent className="pt-6">
               <div className="flex flex-col items-center gap-4">

@@ -349,7 +349,7 @@ const Diary = () => {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <Card className="border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
+      <Card className="bg-platinum">
         <CardHeader>
           <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
             <div className="flex-1">

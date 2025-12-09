@@ -346,7 +346,7 @@ const TodoList = () => {
   return (
     <div className="space-y-4">
       {/* Header with Statistics */}
-      <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+      <Card className="bg-iceBlue">
         <CardHeader>
           <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
             <div className="flex-1">

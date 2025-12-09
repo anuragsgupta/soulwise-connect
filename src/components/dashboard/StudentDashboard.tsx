@@ -487,7 +487,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       action: () => setActiveTab('chat')
     },
     {
-      title: "Book Appointment",
+      title: "Institutional First-aid",
       description: "Schedule session with faculty/counsellor",
       icon: Calendar,
       color: "from-blue-500 to-blue-600",
@@ -527,14 +527,14 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       case 'profile':
         return (
           <div className="space-y-6">
-            <Card className="bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 border-0 shadow-xl rounded-2xl">
+            <Card className="bg-glacier/30 shadow-xl rounded-2xl">
               <CardHeader className="pb-6">
                 <div className="flex items-center space-x-4">
-                  <div className="w-20 h-20 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg">
+                  <div className="w-20 h-20 bg-medicalBlue rounded-full flex items-center justify-center shadow-lg">
                     <User className="w-10 h-10 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{user?.name || 'Student'}</CardTitle>
+                    <CardTitle className="text-3xl font-bold text-slateBlue-dark">{user?.name || 'Student'}</CardTitle>
                     <CardDescription className="text-gray-600 mt-1">{user?.email}</CardDescription>
                   </div>
                 </div>
@@ -611,10 +611,10 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
           <div className="space-y-4 pb-6">
             {/* Compact Welcome Header with Wellness Score */}
             <Card className={`border-0 shadow-lg rounded-2xl overflow-hidden ${
-              wellnessScore === null ? 'bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600' :
-              wellnessScore >= 70 ? 'bg-gradient-to-br from-green-500 via-emerald-500 to-teal-600' :
-              wellnessScore >= 40 ? 'bg-gradient-to-br from-yellow-500 via-amber-500 to-orange-500' :
-              'bg-gradient-to-br from-red-500 via-rose-500 to-pink-600'
+              wellnessScore === null ? 'bg-medicalBlue' :
+              wellnessScore >= 70 ? 'bg-healthGreen' :
+              wellnessScore >= 40 ? 'bg-amber-200' :
+              'bg-rose-200'
             }`}>
               <CardHeader className="pb-4 pt-6">
                 <div className="flex items-start justify-between">
@@ -730,7 +730,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             {/* Main Actions Grid - PhonePe Style */}
             <div className="space-y-3">
               <h2 className="text-lg font-semibold text-gray-800 px-1 flex items-center gap-2">
-                <span className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></span>
+                <span className="w-1 h-6 bg-turquoise rounded-full"></span>
                 Quick Actions
               </h2>
               <div className="grid grid-cols-3 gap-4">
@@ -738,14 +738,14 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                     <button
                       key={index}
                       onClick={action.action}
-                      className="flex flex-col items-center p-4 rounded-xl hover:bg-gradient-to-br hover:from-purple-50/30 hover:to-pink-50/30 transition-all duration-300 active:scale-95 group hover:-translate-y-1 hover:shadow-lg relative overflow-hidden"
+                      className="flex flex-col items-center p-4 rounded-xl hover:bg-glacier/30 transition-all duration-300 active:scale-95 group hover:-translate-y-1 hover:shadow-lg relative overflow-hidden"
                       style={{
                         animationDelay: `${index * 50}ms`,
                         animation: 'fadeInUp 0.4s ease-out forwards'
                       }}
                     >
                       {/* Hover Glow Effect */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-purple-100/0 to-pink-100/0 group-hover:from-purple-100/30 group-hover:to-pink-100/30 transition-all duration-500 rounded-xl" />
+                      <div className="absolute inset-0 bg-transparent group-hover:bg-glacier/20 transition-all duration-500 rounded-xl" />
                       
                       <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${action.color} flex items-center justify-center shadow-md group-hover:shadow-2xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 mb-2 relative z-10`}>
                         <action.icon className="w-7 h-7 text-white group-hover:scale-110 transition-transform duration-300" />
@@ -764,7 +764,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             {/* Upcoming Sessions */}
             <div className="space-y-3">
               <h2 className="text-lg font-semibold text-gray-800 px-1 flex items-center gap-2">
-                <span className="w-1 h-6 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></span>
+                <span className="w-1 h-6 bg-turquoise rounded-full"></span>
                 <Calendar className="w-5 h-5 text-blue-600" />
                 Upcoming Sessions
               </h2>
@@ -796,7 +796,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                     return (
                       <div 
                         key={session.id} 
-                        className="flex items-center gap-3 p-4 bg-gradient-to-br from-blue-50/60 to-cyan-50/60 backdrop-blur-sm rounded-2xl border border-white/80 hover:border-blue-300 hover:bg-blue-50/80 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 group"
+                        className="flex items-center gap-3 p-4 bg-glacier/40 rounded-2xl hover:bg-glacier/60 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 group"
                         style={{
                           animationDelay: `${index * 100}ms`,
                           animation: 'fadeInUp 0.4s ease-out forwards'
@@ -830,11 +830,11 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50/40 via-purple-50/30 to-pink-50/40 relative overflow-hidden">
+    <div className="min-h-screen bg-iceBlue relative overflow-hidden">
       {/* Animated Background Pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.03),rgba(255,255,255,0))] pointer-events-none" />
-      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-purple-300/10 to-pink-300/10 rounded-full blur-3xl animate-pulse pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-blue-300/10 to-cyan-300/10 rounded-full blur-3xl animate-pulse pointer-events-none" style={{ animationDelay: '1s' }} />
+      <div className="absolute top-0 right-0 w-96 h-96 bg-medicalBlue/10 rounded-full blur-3xl animate-pulse pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-healthGreen/10 rounded-full blur-3xl animate-pulse pointer-events-none" style={{ animationDelay: '1s' }} />
       
       {/* Navigation */}
       <nav className="bg-white/90 backdrop-blur-2xl border-b border-gray-200/60 shadow-xl sticky top-0 z-50">
@@ -851,7 +851,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                     className="object-contain drop-shadow-lg"
                   />
                 </div>
-                <span className="text-xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent tracking-tight">
+                <span className="text-xl font-extrabold text-medicalBlue tracking-tight">
                   MANN MITRA
                 </span>
               </div>
@@ -874,8 +874,8 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                   onClick={() => handleTabChange(item.id as DashboardTab)}
                   className={`flex items-center space-x-2 rounded-xl transition-all duration-300 font-semibold ${
                     activeTab === item.id 
-                      ? 'bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white shadow-lg scale-105' 
-                      : 'hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-600 hover:scale-105'
+                      ? 'bg-medicalBlue text-white shadow-lg scale-105' 
+                      : 'hover:bg-glacier/50 hover:text-medicalBlue hover:scale-105'
                   }`}
                 >
                   <item.icon className="w-4 h-4" />
@@ -913,7 +913,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                 variant="outline" 
                 size="sm" 
                 onClick={handleLogout}
-                className="flex items-center space-x-2 border-red-200 text-red-600 hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-500 hover:text-white hover:border-transparent transition-all duration-300 rounded-xl font-semibold shadow-sm hover:shadow-lg"
+                className="flex items-center space-x-2 border-red-200 text-red-600 hover:bg-rose-300 hover:text-white hover:border-transparent transition-all duration-300 rounded-xl font-semibold shadow-sm hover:shadow-lg"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Logout</span>
@@ -976,7 +976,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             >
               {/* Active indicator */}
               {activeTab === item.id && (
-                <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-8 h-1 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-full" />
+                <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-8 h-1 bg-medicalBlue rounded-full" />
               )}
               <item.icon 
                 className={`w-6 h-6 mb-1 transition-all duration-300 ${
@@ -1001,7 +1001,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
           <Card className="w-full max-w-md rounded-3xl border-0 shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-4 duration-500 bg-white/95 backdrop-blur-xl">
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center text-2xl font-bold">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-100 to-purple-100 mr-3 animate-pulse" style={{ animationDuration: '2s' }}>
+                <div className="p-3 rounded-2xl bg-glacier/50 mr-3 animate-pulse" style={{ animationDuration: '2s' }}>
                   <MapPin className="w-7 h-7 text-blue-600" />
                 </div>
                 Enable Location Access
@@ -1011,7 +1011,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-2xl p-5 hover:shadow-md transition-shadow">
+              <div className="bg-iceBlue rounded-2xl p-5 hover:shadow-md transition-shadow">
                 <h4 className="font-bold text-blue-800 mb-3 flex items-center">
                   <span className="w-2 h-2 bg-blue-600 rounded-full mr-2 animate-pulse"></span>
                   Why we need your location:
@@ -1036,7 +1036,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                 </ul>
               </div>
               
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-4 hover:shadow-md transition-shadow">
+              <div className="bg-glacier/40 rounded-2xl p-4 hover:shadow-md transition-shadow">
                 <div className="flex items-center text-green-800 mb-2">
                   <div className="p-1.5 rounded-lg bg-green-100 mr-2">
                     <Heart className="w-4 h-4 text-green-600" />
@@ -1051,7 +1051,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
               <div className="flex space-x-3 mt-6">
                 <Button 
                   onClick={requestLocationAccess}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white h-12 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="flex-1 bg-medicalBlue hover:bg-medicalBlue-dark text-white h-12 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
                 >
                   <Navigation className="w-5 h-5 mr-2" />
                   Allow Location
@@ -1119,8 +1119,8 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
           onClick={() => setIsFabOpen(!isFabOpen)}
           className={`w-16 h-16 rounded-2xl shadow-2xl flex items-center justify-center text-white transition-all duration-500 hover:scale-110 relative overflow-hidden ${
             isFabOpen 
-              ? 'bg-gradient-to-r from-red-500 to-pink-500 hover:shadow-3xl rotate-45' 
-              : 'bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 hover:shadow-3xl'
+              ? 'bg-rose-400 hover:shadow-3xl rotate-45' 
+              : 'bg-medicalBlue hover:shadow-3xl'
           }`}
         >
           {/* Animated ring */}

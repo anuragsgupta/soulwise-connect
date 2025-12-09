@@ -2,11 +2,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Heart, Phone, AlertTriangle, Brain, Calendar } from "lucide-react";
 
 const CrisisSupportCard = () => (
-  <Card className="border-primary/20 bg-gradient-to-br from-blue-50/80 to-green-50/80 backdrop-blur-sm shadow-md">
+  <Card className="bg-glacier/50 backdrop-blur-sm shadow-md">
     <CardContent className="pt-6">
       <div className="flex items-start space-x-4">
         <div className="flex-shrink-0">
-          <div className="w-10 h-10 bg-gradient-to-r from-primary to-wellness rounded-full flex items-center justify-center">
+          <div className="w-10 h-10 bg-medicalBlue rounded-full flex items-center justify-center">
             <Phone className="w-5 h-5 text-white" />
           </div>
         </div>

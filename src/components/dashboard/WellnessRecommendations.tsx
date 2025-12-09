@@ -378,7 +378,7 @@ export default function WellnessRecommendations({
     return (
       <div className="space-y-3">
         <h2 className="text-lg font-semibold text-gray-800 px-1 flex items-center gap-2">
-          <span className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></span>
+          <span className="w-1 h-6 bg-gradient-to-b from-slate-300 to-cyan-300 rounded-full"></span>
           <Sparkles className="w-5 h-5 text-purple-600 animate-pulse" />
           Wellness Recommendations
         </h2>
@@ -399,18 +399,18 @@ export default function WellnessRecommendations({
   return (
     <div className="space-y-3">
       <h2 className="text-lg font-semibold text-gray-800 px-1 flex items-center gap-2">
-        <span className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></span>
-        <Sparkles className="w-5 h-5 text-purple-600 animate-pulse" />
+        <span className="w-1 h-6 bg-medicalBlue rounded-full"></span>
+        <Sparkles className="w-5 h-5 text-medicalBlue animate-pulse" />
         Recommended For You
       </h2>
       
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
         {recommendations.map((rec, index) => {
           const IconComponent = rec.icon;
           return (
             <div
               key={rec.id}
-              className="flex flex-col items-center p-4 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/80 hover:border-purple-300 hover:bg-white/80 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group relative overflow-hidden"
+              className="flex flex-col items-center p-3 rounded-xl bg-white/60 backdrop-blur-sm hover:bg-white/80 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group relative overflow-hidden"
               onClick={() => onResourceClick?.(rec)}
               style={{
                 animationDelay: `${index * 100}ms`,
@@ -418,29 +418,29 @@ export default function WellnessRecommendations({
               }}
             >
               {/* Hover Glow Effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-100/0 to-pink-100/0 group-hover:from-purple-100/50 group-hover:to-pink-100/50 transition-all duration-500 rounded-2xl" />
+              <div className="absolute inset-0 bg-transparent group-hover:bg-glacier/30 transition-all duration-500 rounded-xl" />
               
               {/* Icon Circle with Enhanced Animation */}
-              <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${
+              <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${
                 rec.priority === 'high' ? 'from-red-500 to-orange-500' :
                 rec.priority === 'medium' ? 'from-yellow-500 to-amber-500' :
                 'from-green-500 to-emerald-500'
-              } flex items-center justify-center mb-2 group-hover:scale-125 group-hover:rotate-6 transition-all duration-500 shadow-md group-hover:shadow-2xl relative z-10`}>
-                <IconComponent className="w-7 h-7 text-white group-hover:scale-110 transition-transform duration-300" />
+              } flex items-center justify-center mb-1.5 group-hover:scale-125 group-hover:rotate-6 transition-all duration-500 shadow-md group-hover:shadow-2xl relative z-10`}>
+                <IconComponent className="w-5 h-5 text-white group-hover:scale-110 transition-transform duration-300" />
                 
                 {/* Ripple Effect on Hover */}
                 <div className="absolute inset-0 rounded-full bg-white/30 scale-0 group-hover:scale-150 opacity-0 group-hover:opacity-100 transition-all duration-700" />
               </div>
               
               {/* Title with Smooth Color Transition */}
-              <h4 className="font-semibold text-xs text-center text-gray-800 group-hover:text-purple-700 transition-colors duration-300 line-clamp-2 leading-tight relative z-10">
+              <h4 className="font-semibold text-[10px] text-center text-gray-800 group-hover:text-purple-700 transition-colors duration-300 line-clamp-2 leading-tight relative z-10">
                 {rec.title}
               </h4>
               
               {/* Type Badge with Hover Effect */}
               <Badge 
                 variant="secondary" 
-                className="mt-2 text-[10px] px-2 py-0 h-5 group-hover:scale-110 transition-transform duration-300 relative z-10"
+                className="mt-1.5 text-[9px] px-1.5 py-0 h-4 group-hover:scale-110 transition-transform duration-300 relative z-10"
               >
                 {rec.type === 'game' ? '🎮' : rec.type === 'video' ? '📹' : rec.type === 'article' ? '📄' : '✨'}
               </Badge>

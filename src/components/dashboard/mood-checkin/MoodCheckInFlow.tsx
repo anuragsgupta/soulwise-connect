@@ -150,7 +150,7 @@ export default function MoodCheckInFlow({ onComplete, onScoreUpdate, existingChe
   // Loading state
   if (isSubmitting) {
     return (
-      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-gradient-to-br from-sky-100 via-sky-50 to-blue-100">
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-iceBlue">
         <div className="text-center">
           <div className="text-6xl mb-4 animate-pulse">💭</div>
           <div className="text-xl font-semibold text-gray-700">Saving your mood...</div>

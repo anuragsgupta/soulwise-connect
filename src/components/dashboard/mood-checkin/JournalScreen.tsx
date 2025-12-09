@@ -15,7 +15,7 @@ export default function JournalScreen({ onDone, onBack, initialJournal = "" }: J
   const [journal, setJournal] = useState(initialJournal);
 
   return (
-    <div className="fixed inset-0 z-[60] bg-gradient-to-br from-sky-100 via-sky-50 to-blue-100 overflow-hidden">
+    <div className="fixed inset-0 z-[60] bg-iceBlue overflow-hidden">
       <div className="h-full flex flex-col p-4 sm:p-6">
       {/* Header */}
       <div className="flex items-center mb-4 sm:mb-6 flex-shrink-0">
@@ -68,7 +68,7 @@ export default function JournalScreen({ onDone, onBack, initialJournal = "" }: J
       <div className="w-full max-w-md mx-auto flex-shrink-0">
         <Button
           onClick={() => onDone(journal)}
-          className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white py-4 sm:py-6 rounded-2xl text-base sm:text-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
+          className="w-full bg-medicalBlue hover:bg-medicalBlue-dark text-white py-4 sm:py-6 rounded-2xl text-base sm:text-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
           size="lg"
         >
           Done

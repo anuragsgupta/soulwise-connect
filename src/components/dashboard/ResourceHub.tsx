@@ -270,7 +270,7 @@ const AudioResourceModal = ({ resource, onClose }: AudioModalProps) => {
   return (
     // Added 'fixed inset-0 z-50' to make it a full-screen overlay modal
     <div>
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 min-h-screen bg-gradient-to-br from-purple-200 via-pink-100 to-blue-200 backdrop-blur-lg animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 min-h-screen bg-platinum backdrop-blur-lg animate-in fade-in zoom-in-95 duration-200">
       
       {/* Close Button */}
       <button 
@@ -809,7 +809,7 @@ const ResourceHub = ({ recommendedGame, recommendedVideo, onGameClose, onVideoCl
                     <div className="flex gap-2">
                       <Button
                         size="sm"
-                        className="flex-1 bg-gradient-to-r from-primary to-primary-glow hover:from-primary/90 hover:to-primary-glow/90 text-xs sm:text-sm font-accent"
+                        className="flex-1 bg-gradient-to-r from-sky-400 to-teal-400 hover:from-sky-500 hover:to-teal-500 text-xs sm:text-sm font-accent"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleResourceClick(resource);
@@ -892,7 +892,7 @@ const ResourceHub = ({ recommendedGame, recommendedVideo, onGameClose, onVideoCl
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            <Card className="bg-gradient-to-br from-teal-50 to-teal-100 cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 border-teal-200">
+            <Card className="bg-glacier/50 cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-2">
                   <Wind className="w-8 h-8 text-teal-600" />
@@ -911,7 +911,7 @@ const ResourceHub = ({ recommendedGame, recommendedVideo, onGameClose, onVideoCl
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-orange-50 to-orange-100 cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 border-orange-200">
+            <Card className="bg-gradient-to-br from-amber-50 to-orange-100 cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 border-amber-200">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-2">
                   <Gamepad2 className="w-8 h-8 text-orange-600" />
@@ -930,7 +930,7 @@ const ResourceHub = ({ recommendedGame, recommendedVideo, onGameClose, onVideoCl
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-slate-100 to-slate-200 cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 border-slate-300">
+            <Card className="bg-platinum cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-2">
                   <FileText className="w-8 h-8 text-slate-600" />
@@ -949,7 +949,7 @@ const ResourceHub = ({ recommendedGame, recommendedVideo, onGameClose, onVideoCl
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 border-indigo-200 sm:col-span-2 lg:col-span-1">
+            <Card className="bg-iceBlue cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 sm:col-span-2 lg:col-span-1">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-2">
                   <Headphones className="w-8 h-8 text-indigo-600" />

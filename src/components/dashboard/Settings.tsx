@@ -361,7 +361,7 @@ export default function Settings({ studentId }: SettingsProps) {
           </Alert>
 
           {/* How to Get API Key */}
-          <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-3 sm:p-4 border border-blue-100">
+          <div className="bg-glacier/40 rounded-lg p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-3">
               <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" />
               <h3 className="text-sm sm:text-base font-semibold text-gray-900">How to Get Your API Key</h3>

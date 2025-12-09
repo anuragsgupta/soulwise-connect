@@ -169,8 +169,9 @@ export default function MoodDashboard({ onStartCheckIn, todayCheckIn }: MoodDash
 
   // Prepare mood chart data for StatisticsCharts component
   const prepareMoodChartData = () => {
+    type ChartDataItem = { date: string; moodScore: number; moodLabel: string };
     // Get actual mood check-ins and map them to chart data
-    const chartData = [];
+    const chartData: ChartDataItem[] = [];
     
     // Take the last 7 check-ins or all if less than 7
     const recentMoods = [...moodHistory].slice(0, 7).reverse();
@@ -203,7 +204,7 @@ export default function MoodDashboard({ onStartCheckIn, todayCheckIn }: MoodDash
         </div>
         <Button
           onClick={onStartCheckIn}
-          className="bg-gradient-to-r from-teal-500 to-sky-500 hover:from-teal-600 hover:to-sky-600"
+          className="bg-medicalBlue hover:bg-medicalBlue-dark"
         >
           <TrendingUp className="w-4 h-4 mr-2" />
           {todayCheckIn ? "Update Today's Mood" : "Check In Now"}

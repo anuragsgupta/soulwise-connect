@@ -53,8 +53,8 @@ const ChatMessages = ({ messages, isTyping, messagesEndRef, onQuickReply, onReso
         <div className={`flex items-end space-x-2 max-w-[75%] ${message.sender === 'user' ? 'flex-row-reverse space-x-reverse' : ''
           }`}>
           <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${message.sender === 'user'
-              ? 'bg-gradient-to-br from-teal-500 to-teal-600'
-              : 'bg-gradient-to-br from-orange-400 to-orange-500'
+              ? 'bg-medicalBlue'
+              : 'bg-softPeach'
             }`}>
             {message.sender === 'user' ? (
               <User className="w-3.5 h-3.5 text-white" />
@@ -141,9 +141,9 @@ const ChatMessages = ({ messages, isTyping, messagesEndRef, onQuickReply, onReso
             )}
 
             {message.sender === 'bot' && message.resourceCard && (
-              <div className="mt-3 rounded-xl border border-teal-100 bg-gradient-to-br from-teal-50/80 via-white to-emerald-50/90 p-4 shadow-sm">
+              <div className="mt-3 rounded-xl bg-glacier/50 p-4 shadow-sm">
                 <div className="flex items-start gap-3">
-                  <div className="mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-200 via-orange-100 to-teal-100">
+                  <div className="mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-platinum">
                     <Compass className="h-4 w-4 text-teal-700" />
                   </div>
                   <div className="flex-1 space-y-2">
@@ -202,7 +202,7 @@ const ChatMessages = ({ messages, isTyping, messagesEndRef, onQuickReply, onReso
     {isTyping && (
       <div className="flex justify-start animate-in slide-in-from-bottom-2 duration-300">
         <div className="flex items-end space-x-2">
-          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-orange-500">
+          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-softPeach">
             <Bot className="h-3.5 w-3.5 text-white" />
           </div>
           <div className="rounded-lg rounded-bl-none border border-gray-200 bg-white px-4 py-3 shadow-sm">

@@ -81,10 +81,10 @@ export default function BreathingBall({ onClose }: BreathingBallProps) {
   };
 
   const getPhaseColor = () => {
-    if (phase === 'inhale') return 'from-teal-400 to-cyan-500';
-    if (phase === 'hold') return 'from-blue-400 to-indigo-500';
-    if (phase === 'exhale') return 'from-purple-400 to-pink-500';
-    return 'from-gray-300 to-gray-400';
+    if (phase === 'inhale') return 'from-healthGreen to-healthGreen';
+    if (phase === 'hold') return 'from-medicalBlue to-medicalBlue';
+    if (phase === 'exhale') return 'from-calmPurple to-calmPurple';
+    return 'from-platinum to-platinum';
   };
 
   return (
@@ -164,7 +164,7 @@ export default function BreathingBall({ onClose }: BreathingBallProps) {
             <Button
               onClick={handleToggle}
               size="lg"
-              className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 font-accent"
+              className="w-full sm:w-auto bg-medicalBlue hover:bg-medicalBlue-dark font-accent"
             >
               {isPlaying ? (
                 <>

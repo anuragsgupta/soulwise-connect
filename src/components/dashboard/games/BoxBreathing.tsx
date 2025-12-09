@@ -227,7 +227,7 @@ export default function BoxBreathing({ onClose }: BoxBreathingProps) {
             <Button
               onClick={handleToggle}
               size="lg"
-              className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 font-accent"
+              className="w-full sm:w-auto bg-medicalBlue hover:bg-medicalBlue-dark font-accent"
             >
               {isPlaying ? (
                 <>

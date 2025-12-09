@@ -75,9 +75,9 @@ export default function CalmCircle({ onClose }: CalmCircleProps) {
   };
 
   const getCircleColor = () => {
-    if (phase === 'inhale') return 'from-teal-400 via-cyan-400 to-blue-400';
-    if (phase === 'hold') return 'from-blue-400 via-indigo-400 to-purple-400';
-    return 'from-purple-400 via-pink-400 to-rose-400';
+    if (phase === 'inhale') return 'from-healthGreen to-healthGreen';
+    if (phase === 'hold') return 'from-medicalBlue to-medicalBlue';
+    return 'from-calmPurple to-calmPurple';
   };
 
   const totalTime = cycles * (inhaleTime + holdTime + exhaleTime);
@@ -242,7 +242,7 @@ export default function CalmCircle({ onClose }: CalmCircleProps) {
             <Button
               onClick={handleToggle}
               size="lg"
-              className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 font-accent"
+              className="w-full sm:w-auto bg-medicalBlue hover:bg-medicalBlue-dark font-accent"
             >
               {isPlaying ? (
                 <>

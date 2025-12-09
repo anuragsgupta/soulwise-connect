@@ -174,7 +174,7 @@ export default function PHQ9SurveyForm({ studentId, onComplete }: PHQ9FormProps)
 
     return (
       <Card className="w-full max-w-4xl mx-auto">
-        <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5">
+        <CardHeader className="bg-gradient-to-r from-sky-400/10 to-slate-400/5">
           <div className="flex items-center gap-3">
             <CheckCircle2 className="w-8 h-8 text-green-600" />
             <div>
@@ -233,19 +233,6 @@ export default function PHQ9SurveyForm({ studentId, onComplete }: PHQ9FormProps)
             >
               Return to Dashboard
             </Button>
-            {surveyNumber < 3 && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSubmitted(false);
-                  setAnswers({});
-                  setResult(null);
-                }}
-                className="flex-1 font-accent"
-              >
-                Take Next Survey
-              </Button>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -254,7 +241,7 @@ export default function PHQ9SurveyForm({ studentId, onComplete }: PHQ9FormProps)
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5">
+      <CardHeader className="bg-gradient-to-r from-sky-400/10 to-slate-400/5">
         <CardTitle className="text-2xl font-heading">PHQ-9 Mental Health Survey</CardTitle>
         <CardDescription className="font-body">
           Over the last 2 weeks, how often have you been bothered by the following?
@@ -311,7 +298,7 @@ export default function PHQ9SurveyForm({ studentId, onComplete }: PHQ9FormProps)
             <Button
               type="submit"
               disabled={!isAllAnswered() || submitting}
-              className="flex-1 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 font-accent"
+              className="flex-1 bg-medicalBlue hover:bg-medicalBlue-dark font-accent"
             >
               {submitting ? "Submitting..." : "Submit Survey"}
             </Button>

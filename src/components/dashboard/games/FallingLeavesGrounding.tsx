@@ -263,14 +263,14 @@ const FallingLeavesGrounding = ({ onClose }: FallingLeavesProps) => {
         {/* Game Canvas */}
         <div 
           ref={containerRef}
-          className="flex-1 flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50"
+          className="flex-1 flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50"
           style={{ minHeight: '50vh' }}
         >
           <canvas
             ref={canvasRef}
             width={canvasSize.width}
             height={canvasSize.height}
-            className="border-2 border-gray-200 rounded-lg shadow-lg bg-gradient-to-b from-sky-100 to-sky-50 cursor-grab active:cursor-grabbing w-full h-full"
+            className="border-2 border-gray-200 rounded-lg shadow-lg bg-iceBlue cursor-grab active:cursor-grabbing w-full h-full"
             onMouseDown={handleCanvasMouseDown}
             onMouseMove={handleCanvasMouseMove}
             onMouseUp={handleCanvasMouseUp}

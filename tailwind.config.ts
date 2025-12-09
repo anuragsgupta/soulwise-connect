@@ -67,6 +67,53 @@ const config: Config = {
           500: "#f97316", // orange-500 equivalent
           600: "#ea580c", // orange-600 equivalent
         },
+        // Pastel color palette from reference
+        turquoise: {
+          DEFAULT: "#4A90A4", // Soft medical teal
+          light: "#6BA7B8",
+          dark: "#3A7080",
+        },
+        slateBlue: {
+          DEFAULT: "#7C9CB4", // Calm blue-gray
+          light: "#9DB5C9",
+          dark: "#5E7A8F",
+        },
+        platinum: {
+          DEFAULT: "#E8ECEF", // Soft gray
+          light: "#F5F7F9",
+          dark: "#D3D9DD",
+        },
+        glacier: {
+          DEFAULT: "#C8E6E8", // Pale mint
+          light: "#E0F2F3",
+          dark: "#A8CFD1",
+        },
+        iceBlue: {
+          DEFAULT: "#EBF5F7", // Very light blue
+          light: "#F5FAFB",
+          dark: "#D6E9EC",
+        },
+        // Healthcare-inspired calming colors
+        medicalBlue: {
+          DEFAULT: "#5B9BD5", // Professional medical blue
+          light: "#8BB8E8",
+          dark: "#4178B0",
+        },
+        healthGreen: {
+          DEFAULT: "#70AD47", // Healing green
+          light: "#93C572",
+          dark: "#5A8A38",
+        },
+        calmPurple: {
+          DEFAULT: "#9B8FC7", // Soft lavender
+          light: "#BDB4DB",
+          dark: "#7B6FA0",
+        },
+        softPeach: {
+          DEFAULT: "#F4C7AB", // Warm peach
+          light: "#F9DCC9",
+          dark: "#E5A97E",
+        },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",

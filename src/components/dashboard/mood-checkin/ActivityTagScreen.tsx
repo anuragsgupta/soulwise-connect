@@ -45,7 +45,7 @@ export default function ActivityTagScreen({ onNext, onBack, initialActivities = 
   };
 
   return (
-    <div className="fixed inset-0 z-[60] bg-gradient-to-br from-sky-100 via-sky-50 to-blue-100 overflow-hidden">
+    <div className="fixed inset-0 z-[60] bg-iceBlue overflow-hidden">
       <div className="h-full flex flex-col p-4 sm:p-6">
       {/* Header */}
       <div className="flex items-center mb-4 sm:mb-6 flex-shrink-0">
@@ -134,7 +134,7 @@ export default function ActivityTagScreen({ onNext, onBack, initialActivities = 
 
         {/* Decorative illustration - Beach scene */}
         <div className="flex-1 flex items-end justify-center relative mb-8">
-          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-blue-200/30 to-transparent rounded-t-3xl"></div>
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-glacier/20 rounded-t-3xl"></div>
           <div className="relative">
             {/* Palm trees */}
             <div className="absolute -left-20 bottom-0 text-6xl opacity-60">🌴</div>
