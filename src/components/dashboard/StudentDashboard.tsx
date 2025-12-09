@@ -30,7 +30,8 @@ import {
   X,
   TrendingUp,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  MoreHorizontal
 } from "lucide-react";
 import mannMitraLogo from "@/assets/mann-mitra-logo.png";
 import MoodTracker from "./MoodTracker";
@@ -426,6 +427,11 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
 
   // Handle tab change
   const handleTabChange = (tab: DashboardTab) => {
+    // Navigate to anonymous mentoring page if mentor tab is clicked
+    if (tab === 'mentor') {
+      window.location.href = '/student/anonymous-mentoring';
+      return;
+    }
     setActiveTab(tab);
   };
 
@@ -863,6 +869,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                 { id: 'dashboard', label: 'Dashboard', icon: Heart },
                 { id: 'mood', label: 'Mood', icon: Smile },
                 { id: 'chat', label: 'Chat', icon: MessageCircle },
+                { id: 'mentor', label: 'Anonymous', icon: UserCircle },
                 { id: 'appointments', label: 'Appointments', icon: Calendar },
                 { id: 'resources', label: 'Resources', icon: BookOpen },
                 { id: 'forum', label: 'Community', icon: Users }
@@ -962,8 +969,8 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             { id: 'dashboard', label: 'Home', icon: Heart },
             { id: 'mood', label: 'Mood', icon: Smile },
             { id: 'chat', label: 'Chat', icon: MessageCircle },
-            { id: 'forum', label: 'Community', icon: Users },
-            { id: 'profile', label: 'Profile', icon: User }
+            { id: 'mentor', label: 'Anonymous', icon: UserCircle },
+            { id: 'more', label: 'More', icon: MoreHorizontal }
           ].map((item) => (
             <button
               key={item.id}
