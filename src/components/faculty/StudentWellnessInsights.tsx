@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { 
   Brain, 
   Heart, 
@@ -24,7 +26,8 @@ import {
   Phone,
   Calendar,
   BookOpen,
-  Award
+  Award,
+  Download
 } from "lucide-react";
 
 interface WellnessData {
@@ -134,6 +137,237 @@ const StudentWellnessInsights = () => {
   const closeProfile = () => {
     setSelectedStudent(null);
     setStudentProfile(null);
+  };
+
+  const exportToPDF = () => {
+    if (!studentProfile) return;
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    let yPosition = 20;
+
+    // Header
+    doc.setFillColor(147, 51, 234); // Purple
+    doc.rect(0, 0, pageWidth, 35, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(22);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Student Wellness Report', pageWidth / 2, 15, { align: 'center' });
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, pageWidth / 2, 25, { align: 'center' });
+
+    // Reset text color
+    doc.setTextColor(0, 0, 0);
+    yPosition = 45;
+
+    // Basic Information Section
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(147, 51, 234);
+    doc.text('Basic Information', 14, yPosition);
+    yPosition += 8;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+    autoTable(doc, {
+      startY: yPosition,
+      head: [['Field', 'Details']],
+      body: [
+        ['Name', studentProfile.name || 'N/A'],
+        ['Email', studentProfile.email || 'N/A'],
+        ['Phone', studentProfile.phone || 'N/A'],
+        ['Roll Number', studentProfile.rollNumber || 'N/A'],
+        ['Enrollment ID', studentProfile.enrollmentId || 'N/A'],
+      ],
+      theme: 'striped',
+      headStyles: { fillColor: [147, 51, 234] },
+      margin: { left: 14, right: 14 },
+    });
+
+    yPosition = (doc as any).lastAutoTable.finalY + 10;
+
+    // Academic Information
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(147, 51, 234);
+    doc.text('Academic Information', 14, yPosition);
+    yPosition += 8;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+    autoTable(doc, {
+      startY: yPosition,
+      head: [['Field', 'Details']],
+      body: [
+        ['Department', studentProfile.department?.name || 'N/A'],
+        ['Batch', studentProfile.batch?.name || 'N/A'],
+        ['Current Semester', studentProfile.currentSemester?.toString() || 'N/A'],
+        ['CGPA', studentProfile.cgpa?.toString() || 'N/A'],
+        ['Admission Year', studentProfile.admissionYear?.toString() || 'N/A'],
+        ['Mentor', studentProfile.mentor?.name || 'Not Assigned'],
+      ],
+      theme: 'striped',
+      headStyles: { fillColor: [147, 51, 234] },
+      margin: { left: 14, right: 14 },
+    });
+
+    yPosition = (doc as any).lastAutoTable.finalY + 10;
+
+    // Check if we need a new page
+    if (yPosition > pageHeight - 60) {
+      doc.addPage();
+      yPosition = 20;
+    }
+
+    // Wellness Activity
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(147, 51, 234);
+    doc.text('Wellness Activity Summary', 14, yPosition);
+    yPosition += 8;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+    autoTable(doc, {
+      startY: yPosition,
+      head: [['Activity', 'Count']],
+      body: [
+        ['Total Mood Check-ins', studentProfile._count?.moodCheckIns?.toString() || '0'],
+        ['Counseling Sessions Booked', studentProfile._count?.sessionBookings?.toString() || '0'],
+        ['High/Critical Crisis Alerts', studentProfile._count?.crisisAlerts?.toString() || '0'],
+      ],
+      theme: 'striped',
+      headStyles: { fillColor: [147, 51, 234] },
+      margin: { left: 14, right: 14 },
+    });
+
+    yPosition = (doc as any).lastAutoTable.finalY + 10;
+
+    // PHQ-9 Assessment Data
+    if (studentProfile.assessments?.phq9?.length > 0) {
+      if (yPosition > pageHeight - 60) {
+        doc.addPage();
+        yPosition = 20;
+      }
+
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(59, 130, 246); // Blue
+      doc.text('PHQ-9 Depression Assessment History', 14, yPosition);
+      yPosition += 8;
+
+      const phq9Data = studentProfile.assessments.phq9.map((a: any) => [
+        new Date(a.completedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+        `${a.totalScore}/27`,
+        a.severity,
+      ]);
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Date', 'Score', 'Severity']],
+        body: phq9Data,
+        theme: 'striped',
+        headStyles: { fillColor: [59, 130, 246] },
+        margin: { left: 14, right: 14 },
+      });
+
+      yPosition = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    // GAD-7 Assessment Data
+    if (studentProfile.assessments?.gad7?.length > 0) {
+      if (yPosition > pageHeight - 60) {
+        doc.addPage();
+        yPosition = 20;
+      }
+
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(139, 92, 246); // Purple
+      doc.text('GAD-7 Anxiety Assessment History', 14, yPosition);
+      yPosition += 8;
+
+      const gad7Data = studentProfile.assessments.gad7.map((a: any) => [
+        new Date(a.completedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+        `${a.totalScore}/21`,
+        a.severity,
+      ]);
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Date', 'Score', 'Severity']],
+        body: gad7Data,
+        theme: 'striped',
+        headStyles: { fillColor: [139, 92, 246] },
+        margin: { left: 14, right: 14 },
+      });
+
+      yPosition = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    // Mood Trend Summary
+    if (studentProfile.moodTrend?.length > 0) {
+      if (yPosition > pageHeight - 80) {
+        doc.addPage();
+        yPosition = 20;
+      }
+
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(16, 185, 129); // Green
+      doc.text('Recent Mood Trend (Last 30 Days)', 14, yPosition);
+      yPosition += 8;
+
+      // Show only last 10 entries to fit in page
+      const recentMoods = studentProfile.moodTrend.slice(-10);
+      const moodData = recentMoods.map((m: any) => [
+        new Date(m.checkInDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        m.moodLabel,
+        `${m.moodScore}/7`,
+      ]);
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Date', 'Mood', 'Score']],
+        body: moodData,
+        theme: 'striped',
+        headStyles: { fillColor: [16, 185, 129] },
+        margin: { left: 14, right: 14 },
+      });
+
+      yPosition = (doc as any).lastAutoTable.finalY + 5;
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Showing last ${recentMoods.length} of ${studentProfile.moodTrend.length} total mood check-ins`, 14, yPosition);
+    }
+
+    // Footer on last page
+    const pageCount = doc.internal.pages.length - 1;
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150, 150, 150);
+      doc.text(
+        `Page ${i} of ${pageCount}`,
+        pageWidth / 2,
+        pageHeight - 10,
+        { align: 'center' }
+      );
+      doc.text(
+        'SoulWise Connect - Confidential Student Wellness Report',
+        pageWidth / 2,
+        pageHeight - 5,
+        { align: 'center' }
+      );
+    }
+
+    // Save the PDF
+    const fileName = `${studentProfile.name?.replace(/\s+/g, '_')}_Wellness_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
   };
 
   if (loading) {
@@ -446,13 +680,25 @@ const StudentWellnessInsights = () => {
       <Dialog open={selectedStudent !== null} onOpenChange={closeProfile}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-purple-600" />
-              Student Wellness Report
-            </DialogTitle>
-            <DialogDescription>
-              Comprehensive wellness analysis and student information
-            </DialogDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-purple-600" />
+                  Student Wellness Report
+                </DialogTitle>
+                <DialogDescription>
+                  Comprehensive wellness analysis and student information
+                </DialogDescription>
+              </div>
+              <Button
+                onClick={exportToPDF}
+                disabled={!studentProfile}
+                className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
+              >
+                <Download className="w-4 h-4" />
+                Export PDF
+              </Button>
+            </div>
           </DialogHeader>
 
           {profileLoading ? (
