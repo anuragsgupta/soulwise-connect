@@ -24,7 +24,9 @@ import {
   Activity,
   Clock,
   CheckCircle,
-  XCircle
+  XCircle,
+  MessageSquare,
+  UserCircle
 } from "lucide-react";
 import ManageSessions from "@/components/sessions/ManageSessions";
 import NotificationsPage from "@/components/notifications/NotificationsPage";
@@ -285,6 +287,42 @@ export default function FacultyDashboardNew() {
             <div className="text-2xl font-bold text-red-600">{analytics?.recentCrisisAlerts}</div>
             <p className="text-xs text-muted-foreground">High/Critical active</p>
           </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.location.href = '/faculty/anonymous-mentoring/requests'}>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-purple-100 rounded-lg">
+                  <UserCircle className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Anonymous Mentoring</CardTitle>
+                  <CardDescription>View pending anonymous requests</CardDescription>
+                </div>
+              </div>
+              <MessageSquare className="h-5 w-5 text-gray-400" />
+            </div>
+          </CardHeader>
+        </Card>
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.location.href = '/faculty/anonymous-mentoring/sessions'}>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-indigo-100 rounded-lg">
+                  <MessageSquare className="h-6 w-6 text-indigo-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Active Sessions</CardTitle>
+                  <CardDescription>Manage anonymous chat sessions</CardDescription>
+                </div>
+              </div>
+              <Activity className="h-5 w-5 text-gray-400" />
+            </div>
+          </CardHeader>
         </Card>
       </div>
 
