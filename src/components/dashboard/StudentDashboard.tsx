@@ -839,6 +839,9 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
               />
             )}
 
+            {/* Active Anonymous Sessions */}
+            <ActiveAnonymousSessions userType="STUDENT" />
+
             {/* Main Actions Grid - PhonePe Style */}
             <div className="space-y-3">
               <h2 className="text-lg font-semibold text-gray-800 px-1 flex items-center gap-2">
@@ -944,9 +947,6 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                 )}
               </div>
             </div>
-
-            {/* Active Anonymous Sessions */}
-            <ActiveAnonymousSessions userType="STUDENT" />
           </div>
         );
     }

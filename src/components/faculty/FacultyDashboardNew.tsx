@@ -332,6 +332,9 @@ export default function FacultyDashboardNew() {
         </Card>
       </div>
 
+      {/* Active Anonymous Sessions */}
+      <ActiveAnonymousSessions userType="FACULTY" />
+
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <Card
@@ -358,9 +361,6 @@ export default function FacultyDashboardNew() {
           </CardHeader>
         </Card>
       </div>
-
-      {/* Active Anonymous Sessions */}
-      <ActiveAnonymousSessions userType="FACULTY" />
 
       {/* Tabbed Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
