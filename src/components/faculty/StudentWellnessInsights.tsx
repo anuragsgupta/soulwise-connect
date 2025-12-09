@@ -21,10 +21,6 @@ interface WellnessData {
   studentId: string;
   studentName: string;
   overallScore: number;
-  moodScore: number;
-  phq9Score: number;
-  gad7Score: number;
-  chatbotScore: number;
   riskLevel: 'low' | 'medium' | 'high' | 'critical';
   lastUpdated: string;
 }
@@ -32,76 +28,38 @@ interface WellnessData {
 const StudentWellnessInsights = () => {
   const [studentsData, setStudentsData] = useState<WellnessData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data - Replace with actual API call
+  // Fetch real data from API
   useEffect(() => {
-    setTimeout(() => {
-      const mockData: WellnessData[] = [
-        {
-          studentId: "1",
-          studentName: "Aarav Sharma",
-          overallScore: 35,
-          moodScore: 2.1,
-          phq9Score: 18,
-          gad7Score: 16,
-          chatbotScore: 42,
-          riskLevel: 'critical',
-          lastUpdated: '2 hours ago'
-        },
-        {
-          studentId: "2",
-          studentName: "Priya Patel",
-          overallScore: 52,
-          moodScore: 3.2,
-          phq9Score: 12,
-          gad7Score: 10,
-          chatbotScore: 58,
-          riskLevel: 'medium',
-          lastUpdated: '5 hours ago'
-        },
-        {
-          studentId: "3",
-          studentName: "Rahul Gupta",
-          overallScore: 78,
-          moodScore: 4.1,
-          phq9Score: 5,
-          gad7Score: 4,
-          chatbotScore: 82,
-          riskLevel: 'low',
-          lastUpdated: '1 day ago'
-        },
-        {
-          studentId: "4",
-          studentName: "Sneha Reddy",
-          overallScore: 45,
-          moodScore: 2.8,
-          phq9Score: 14,
-          gad7Score: 13,
-          chatbotScore: 48,
-          riskLevel: 'high',
-          lastUpdated: '3 hours ago'
-        },
-        {
-          studentId: "5",
-          studentName: "Arjun Mehta",
-          overallScore: 85,
-          moodScore: 4.5,
-          phq9Score: 3,
-          gad7Score: 2,
-          chatbotScore: 90,
-          riskLevel: 'low',
-          lastUpdated: '6 hours ago'
+    const fetchWellnessData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/faculty/wellness-insights');
+        const data = await response.json();
+        
+        if (data.success && data.data.students) {
+          setStudentsData(data.data.students);
+        } else {
+          setError(data.message || 'Failed to load wellness data');
         }
-      ];
-      setStudentsData(mockData);
-      setLoading(false);
-    }, 500);
+      } catch (err) {
+        console.error('Error fetching wellness data:', err);
+        setError('Failed to load wellness data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWellnessData();
   }, []);
 
   // Calculate aggregate statistics
   const stats = {
     totalStudents: studentsData.length,
-    avgWellness: Math.round(studentsData.reduce((sum, s) => sum + s.overallScore, 0) / studentsData.length),
+    avgWellness: studentsData.length > 0 
+      ? Math.round(studentsData.reduce((sum, s) => sum + s.overallScore, 0) / studentsData.length)
+      : 0,
     criticalCount: studentsData.filter(s => s.riskLevel === 'critical').length,
     highRiskCount: studentsData.filter(s => s.riskLevel === 'high').length,
     mediumRiskCount: studentsData.filter(s => s.riskLevel === 'medium').length,
@@ -143,7 +101,36 @@ const StudentWellnessInsights = () => {
     return (
       <Card>
         <CardContent className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading wellness insights...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <p className="text-gray-600">{error}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (studentsData.length === 0) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600">No student wellness data available yet</p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -343,9 +330,16 @@ const StudentWellnessInsights = () => {
                   Key Insights
                 </h4>
                 <ul className="space-y-1 text-sm text-purple-800">
-                  <li>• {stats.criticalCount + stats.highRiskCount} students need immediate attention</li>
-                  <li>• Average wellness improved by 5% this week</li>
-                  <li>• {stats.lowRiskCount} students maintaining healthy scores</li>
+                  {stats.criticalCount + stats.highRiskCount > 0 && (
+                    <li>• {stats.criticalCount + stats.highRiskCount} {stats.criticalCount + stats.highRiskCount === 1 ? 'student needs' : 'students need'} immediate attention</li>
+                  )}
+                  <li>• Average wellness score: {stats.avgWellness}%</li>
+                  {stats.lowRiskCount > 0 && (
+                    <li>• {stats.lowRiskCount} {stats.lowRiskCount === 1 ? 'student is' : 'students are'} maintaining healthy scores</li>
+                  )}
+                  {stats.totalStudents === 0 && (
+                    <li>• No student data available yet</li>
+                  )}
                 </ul>
               </div>
             </div>
@@ -361,7 +355,7 @@ const StudentWellnessInsights = () => {
             Individual Student Wellness Scores
           </CardTitle>
           <CardDescription>
-            Detailed breakdown of wellness metrics for each student
+            Overall wellness scores for each student (sorted by priority)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -392,26 +386,6 @@ const StudentWellnessInsights = () => {
                         {student.overallScore}
                       </p>
                     </div>
-                  </div>
-                </div>
-
-                {/* Metric Breakdown */}
-                <div className="mt-4 grid grid-cols-4 gap-3">
-                  <div className="text-center p-2 bg-blue-50 rounded-lg">
-                    <p className="text-xs text-gray-600">Mood</p>
-                    <p className="text-lg font-bold text-blue-600">{student.moodScore.toFixed(1)}</p>
-                  </div>
-                  <div className="text-center p-2 bg-purple-50 rounded-lg">
-                    <p className="text-xs text-gray-600">PHQ-9</p>
-                    <p className="text-lg font-bold text-purple-600">{student.phq9Score}</p>
-                  </div>
-                  <div className="text-center p-2 bg-pink-50 rounded-lg">
-                    <p className="text-xs text-gray-600">GAD-7</p>
-                    <p className="text-lg font-bold text-pink-600">{student.gad7Score}</p>
-                  </div>
-                  <div className="text-center p-2 bg-green-50 rounded-lg">
-                    <p className="text-xs text-gray-600">AI Chat</p>
-                    <p className="text-lg font-bold text-green-600">{student.chatbotScore}</p>
                   </div>
                 </div>
               </div>
