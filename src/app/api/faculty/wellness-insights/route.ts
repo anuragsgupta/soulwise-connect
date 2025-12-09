@@ -54,73 +54,83 @@ export async function GET(request: NextRequest) {
     const wellnessData = await Promise.all(
       students.map(async (student) => {
         try {
-          // Get recent mood check-ins (last 7 days)
-          const sevenDaysAgo = new Date();
-          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+          // Use the same logic as /api/wellness-score endpoint
+          // Fetch mood check-ins from the last 30 days
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
           const moodCheckIns = await prisma.moodCheckIn.findMany({
             where: {
               studentId: student.id,
               checkInDate: {
-                gte: sevenDaysAgo,
+                gte: thirtyDaysAgo,
               },
             },
             orderBy: {
-              checkInDate: 'desc',
+              checkInDate: 'asc',
             },
-            take: 7,
           });
+
+          // Convert mood check-ins to the format expected by wellness score calculator
+          const moodEntries = moodCheckIns.map(checkIn => ({
+            score: checkIn.moodScore,
+            date: new Date(checkIn.checkInDate),
+          }));
 
           // Get most recent PHQ-9 score
-          const phq9Assessment = await prisma.pHQ9Survey.findFirst({
-            where: {
-              studentId: student.id,
-            },
-            orderBy: {
-              completedAt: 'desc',
-            },
-          });
+          let latestPHQ9 = null;
+          try {
+            latestPHQ9 = await prisma.pHQ9Survey.findFirst({
+              where: { studentId: student.id },
+              orderBy: { completedAt: 'desc' },
+            });
+          } catch (err) {
+            console.error('Error fetching PHQ9 survey:', err);
+          }
 
           // Get most recent GAD-7 score
-          const gad7Assessment = await prisma.gAD7Survey.findFirst({
-            where: {
-              studentId: student.id,
-            },
-            orderBy: {
-              completedAt: 'desc',
-            },
-          });
+          let latestGAD7 = null;
+          try {
+            latestGAD7 = await prisma.gAD7Survey.findFirst({
+              where: { studentId: student.id },
+              orderBy: { completedAt: 'desc' },
+            });
+          } catch (err) {
+            console.error('Error fetching GAD7 survey:', err);
+          }
 
-          // Get chatbot interactions (last 7 days) - need to go through ChatSession
+          // Fetch chatbot sentiment scores from recent sessions (last 30 days)
           const chatSessions = await prisma.chatSession.findMany({
             where: {
               studentId: student.id,
-              createdAt: {
-                gte: sevenDaysAgo,
+              sessionStart: {
+                gte: thirtyDaysAgo,
               },
+            },
+            orderBy: {
+              sessionStart: 'asc',
             },
             select: {
               sentimentScore: true,
             },
           });
 
-          // Extract sentiment scores (0-1 scale)
+          // Convert sentiment scores to array (default to 0.5 if null)
           const chatbotSentiments = chatSessions
-            .filter(session => session.sentimentScore !== null)
-            .map(session => Number(session.sentimentScore));
+            .map(session => session.sentimentScore ? parseFloat(session.sentimentScore.toString()) : 0.5)
+            .filter(score => score >= 0 && score <= 1);
 
-          // Prepare input for wellness score calculation
-          // Convert mood scores from 1-7 scale to 1-10 scale for wellness calculation
-          const moodEntries = moodCheckIns.map(mc => ({
-            score: Math.round(((mc.moodScore - 1) / 6) * 9 + 1), // Convert 1-7 to 1-10
-            date: new Date(mc.checkInDate),
-          }));
+          // If no chatbot data, provide a default neutral sentiment
+          if (chatbotSentiments.length === 0) {
+            chatbotSentiments.push(0.5);
+          }
 
+          // Prepare input for wellness score calculation (same as student dashboard)
           const input: WellnessScoreInput = {
-            moodEntries: moodEntries,
-            latestPHQ9Score: phq9Assessment?.totalScore ?? null,
-            latestGAD7Score: gad7Assessment?.totalScore ?? null,
-            chatbotSentiments: chatbotSentiments,
+            moodEntries,
+            latestPHQ9Score: latestPHQ9 ? latestPHQ9.totalScore : null,
+            latestGAD7Score: latestGAD7 ? latestGAD7.totalScore : null,
+            chatbotSentiments,
           };
 
           // Calculate wellness score
@@ -140,8 +150,8 @@ export async function GET(request: NextRequest) {
 
           // Get last update time
           const lastUpdate = moodCheckIns[0]?.createdAt || 
-                           phq9Assessment?.completedAt || 
-                           gad7Assessment?.completedAt || 
+                           latestPHQ9?.completedAt || 
+                           latestGAD7?.completedAt || 
                            new Date();
 
           const timeDiff = Date.now() - lastUpdate.getTime();
