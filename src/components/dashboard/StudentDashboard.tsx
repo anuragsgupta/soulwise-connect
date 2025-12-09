@@ -10,7 +10,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -34,18 +33,16 @@ import {
   User,
   Plus,
   X,
-  TrendingUp,
   ChevronDown,
   ChevronUp,
-  MoreHorizontal,
 } from "lucide-react";
 import mannMitraLogo from "@/assets/mann-mitra-logo.png";
 import MoodTracker from "./MoodTracker";
 import ChatBot from "./ChatBot";
-import AppointmentBooking from "./AppointmentBooking";
 import ResourceHub from "./ResourceHub";
 import PeerForum from "./PeerForum";
 import AnonymousMentorChat from "./AnonymousMentorChat";
+import ActiveAnonymousSessions from "./ActiveAnonymousSessions";
 import Diary from "./Diary";
 import TodoList from "./TodoList";
 import CalendarView from "./CalendarView";
@@ -56,7 +53,6 @@ import WellnessScoreWidget from "./WellnessScoreWidget";
 import WellnessRecommendations from "./WellnessRecommendations";
 import SettingsPage from "./Settings";
 import { useAuth } from "@/contexts/AuthContext";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 interface StudentDashboardProps {
   onLogout: () => void;
@@ -75,20 +71,15 @@ type DashboardTab =
   | "resources"
   | "forum"
   | "profile"
-  | "settings"
-  | "more";
+  | "settings";
 
 const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<DashboardTab>('dashboard');
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [wellnessScore, setWellnessScore] = useState<number | null>(null);
   const [isLoadingWellness, setIsLoadingWellness] = useState(true);
-  const [hasTodayMoodCheckIn, setHasTodayMoodCheckIn] = useState<
-    boolean | null
-  >(null);
   const [upcomingSessions, setUpcomingSessions] = useState<
     Array<{
       id: string;
@@ -135,7 +126,6 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
 
         if (data.success && data.data) {
           const hasCheckedIn = !!data.data.todayCheckIn;
-          setHasTodayMoodCheckIn(hasCheckedIn);
 
           // Directly redirect to mood check-in if not completed
           if (!hasCheckedIn) {
@@ -146,7 +136,6 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
         }
       } catch (error) {
         console.error("Error checking mood check-in:", error);
-        setHasTodayMoodCheckIn(true); // Don't block access on error
       }
     };
 
@@ -200,11 +189,11 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
           // Filter for upcoming approved sessions only
           const now = new Date();
           const upcoming = data.data.sessions
-            .filter((session: any) => {
+            .filter((session: { scheduledDate: string; status: string }) => {
               const sessionDate = new Date(session.scheduledDate);
               return session.status === "APPROVED" && sessionDate >= now;
             })
-            .sort((a: any, b: any) => {
+            .sort((a: { scheduledDate: string }, b: { scheduledDate: string }) => {
               const dateA = new Date(a.scheduledDate);
               const dateB = new Date(b.scheduledDate);
               return dateA.getTime() - dateB.getTime();
@@ -271,7 +260,6 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
         "notifications",
         "resources",
         "forum",
-        "more",
         "profile",
       ];
       if (allowedTabs.includes(targetTab)) {
@@ -588,9 +576,9 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   const renderContent = () => {
     switch (activeTab) {
       case 'mood':
-        return <MoodTracker onScoreUpdate={setWellnessScore} language={language} />;
+        return <MoodTracker onScoreUpdate={setWellnessScore} />;
       case 'chat':
-        return <ChatBot language={language} />;
+        return <ChatBot />;
       case 'mentor':
         return <AnonymousMentorChat />;
       case "diary":
@@ -610,11 +598,10 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             recommendedVideo={recommendedVideo}
             onGameClose={() => setRecommendedGame(null)}
             onVideoClose={() => setRecommendedVideo(null)}
-            language={language}
           />
         );
       case 'forum':
-        return <PeerForum language={language} />;
+        return <PeerForum />;
       case 'profile':
         return (
           <div className="space-y-6">
@@ -957,6 +944,9 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
                 )}
               </div>
             </div>
+
+            {/* Active Anonymous Sessions */}
+            <ActiveAnonymousSessions userType="STUDENT" />
           </div>
         );
     }
@@ -1120,7 +1110,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             { id: "mood", label: "Mood", icon: Smile },
             { id: "chat", label: "Chat", icon: MessageCircle },
             { id: "mentor", label: "Anonymous", icon: UserCircle },
-            { id: "more", label: "More", icon: MoreHorizontal },
+            { id: "settings", label: "Settings", icon: SettingsIcon },
           ].map((item) => (
             <button
               key={item.id}

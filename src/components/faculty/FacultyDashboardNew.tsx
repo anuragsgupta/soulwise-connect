@@ -27,6 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import ActiveAnonymousSessions from "../dashboard/ActiveAnonymousSessions";
 import {
   Users,
   Calendar,
@@ -336,7 +337,7 @@ export default function FacultyDashboardNew() {
         <Card
           className="hover:shadow-lg transition-shadow cursor-pointer"
           onClick={() =>
-            (window.location.href = "/faculty/anonymous-mentoring/requests")
+            (window.location.href = "/faculty/anonymous-mentoring")
           }
         >
           <CardHeader className="pb-3">
@@ -348,7 +349,7 @@ export default function FacultyDashboardNew() {
                 <div>
                   <CardTitle className="text-lg">Anonymous Mentoring</CardTitle>
                   <CardDescription>
-                    View pending anonymous requests
+                    Manage sessions and new requests
                   </CardDescription>
                 </div>
               </div>
@@ -356,30 +357,10 @@ export default function FacultyDashboardNew() {
             </div>
           </CardHeader>
         </Card>
-        <Card
-          className="hover:shadow-lg transition-shadow cursor-pointer"
-          onClick={() =>
-            (window.location.href = "/faculty/anonymous-mentoring/sessions")
-          }
-        >
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-indigo-100 rounded-lg">
-                  <MessageSquare className="h-6 w-6 text-indigo-600" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Active Sessions</CardTitle>
-                  <CardDescription>
-                    Manage anonymous chat sessions
-                  </CardDescription>
-                </div>
-              </div>
-              <Activity className="h-5 w-5 text-gray-400" />
-            </div>
-          </CardHeader>
-        </Card>
       </div>
+
+      {/* Active Anonymous Sessions */}
+      <ActiveAnonymousSessions userType="FACULTY" />
 
       {/* Tabbed Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>

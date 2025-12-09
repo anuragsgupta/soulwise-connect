@@ -22,7 +22,6 @@ import {
   Navigation,
   UserCircle,
   Square, // Added for Stop button
-  CheckCheck, // Added for context
   Plus // Added for new chat button
 } from "lucide-react";
 
@@ -776,8 +775,8 @@ const ChatBot = ({ language = 'en' }: { language?: SupportedLanguage }) => {
           );
         }
       }
-    } catch (error: any) {
-        if (error.name === 'AbortError') {
+    } catch (error: unknown) {
+        if (error instanceof Error && error.name === 'AbortError') {
             console.log('Fetch aborted by user');
             return []; // Return empty if aborted
         }
@@ -932,7 +931,9 @@ const ChatBot = ({ language = 'en' }: { language?: SupportedLanguage }) => {
     );
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const processUserMessage = async (messageContent: string, options: ProcessMessageOptions = {}) => {
+    // Options parameter reserved for future use (showSendToast, showResponseToast, origin)
     const trimmedMessage = messageContent.trim();
     if (!trimmedMessage) return;
 

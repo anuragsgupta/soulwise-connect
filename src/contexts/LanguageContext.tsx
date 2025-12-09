@@ -76,6 +76,9 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
       localStorage.setItem("preferred-language", lang);
       // Optionally set HTML lang attribute
       document.documentElement.lang = lang;
+      
+      // Dispatch custom event to notify components
+      window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language: lang } }));
     }
   };
 

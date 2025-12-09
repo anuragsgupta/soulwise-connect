@@ -1,9 +1,5 @@
-import FacultySelector from "@/components/anonymous-mentoring/student/FacultySelector";
+import StudentAnonymousMentoringHub from "@/components/anonymous-mentoring/student/StudentAnonymousMentoringHub";
 
 export default function AnonymousMentoringPage() {
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <FacultySelector />
-    </div>
-  );
+  return <StudentAnonymousMentoringHub />;
 }

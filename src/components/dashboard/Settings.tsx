@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  Key, 
   Eye, 
   EyeOff, 
   Save, 
@@ -19,18 +18,12 @@ import {
   Sparkles,
   Loader2,
   RefreshCw,
-  Palette,
-  Languages,
-  Sun,
-  Moon,
-  Monitor
+  Languages
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useTheme } from "next-themes";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getTranslation } from "@/locales/translations";
 
 interface SettingsProps {
   studentId: string;
@@ -38,9 +31,7 @@ interface SettingsProps {
 
 export default function Settings({ studentId }: SettingsProps) {
   const { toast } = useToast();
-  const { theme, setTheme } = useTheme();
-  const { language, setLanguage, languages } = useLanguage();
-  const [mounted, setMounted] = useState(false);
+  const { language, setLanguage, languages, t } = useLanguage();
   const [apiKey, setApiKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -49,12 +40,7 @@ export default function Settings({ studentId }: SettingsProps) {
   const [isValidating, setIsValidating] = useState(false);
   const [keyStatus, setKeyStatus] = useState<'valid' | 'invalid' | 'unknown'>('unknown');
 
-  // Ensure theme is mounted on client
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Load API key from database on mount
+  // Load API key on component mount
   useEffect(() => {
     const loadStoredKey = async () => {
       try {
@@ -96,7 +82,7 @@ export default function Settings({ studentId }: SettingsProps) {
             // Consider this acceptable for storage; the app can still use the key in eligible calls.
             return true;
           }
-        } catch (_) {
+        } catch {
           return true; // Conservative: accept 403 without body as likely valid
         }
       }
@@ -246,86 +232,24 @@ export default function Settings({ studentId }: SettingsProps) {
     <div className="w-full min-h-screen p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="space-y-1">
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
-          {getTranslation(language, 'settings', 'Settings')}
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          {t('settings', 'Settings')}
         </h2>
-        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+        <p className="text-sm sm:text-base text-gray-600">
           Configure your Mann Mitra experience
         </p>
       </div>
-
-      {/* Appearance Settings */}
-      <Card className="border-2 w-full">
-        <CardHeader>
-          <div className="flex items-start sm:items-center gap-3">
-            <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg flex-shrink-0">
-              <Palette className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <CardTitle className="text-lg sm:text-xl">
-                {getTranslation(language, 'appearance', 'Appearance')}
-              </CardTitle>
-              <CardDescription className="mt-1 text-sm">
-                Customize the look and feel of your interface
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Theme Selection */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium flex items-center gap-2">
-              <Palette className="w-4 h-4" />
-              {getTranslation(language, 'theme', 'Theme')}
-            </Label>
-            <div className="grid grid-cols-3 gap-3">
-              <Button
-                variant={theme === 'light' ? 'default' : 'outline'}
-                onClick={() => setTheme('light')}
-                className="flex flex-col items-center gap-2 h-auto py-4"
-                disabled={!mounted}
-              >
-                <Sun className="w-5 h-5" />
-                <span className="text-xs">{getTranslation(language, 'light', 'Light')}</span>
-              </Button>
-              <Button
-                variant={theme === 'dark' ? 'default' : 'outline'}
-                onClick={() => setTheme('dark')}
-                className="flex flex-col items-center gap-2 h-auto py-4"
-                disabled={!mounted}
-              >
-                <Moon className="w-5 h-5" />
-                <span className="text-xs">{getTranslation(language, 'dark', 'Dark')}</span>
-              </Button>
-              <Button
-                variant={theme === 'system' ? 'default' : 'outline'}
-                onClick={() => setTheme('system')}
-                className="flex flex-col items-center gap-2 h-auto py-4"
-                disabled={!mounted}
-              >
-                <Monitor className="w-5 h-5" />
-                <span className="text-xs">{getTranslation(language, 'system', 'System')}</span>
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {theme === 'system' 
-                ? 'Using your device\'s theme preference' 
-                : `Current theme: ${theme}`}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Language Settings */}
       <Card className="border-2 w-full">
         <CardHeader>
           <div className="flex items-start sm:items-center gap-3">
-            <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg flex-shrink-0">
-              <Languages className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
+            <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
+              <Languages className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
             </div>
             <div className="flex-1 min-w-0">
               <CardTitle className="text-lg sm:text-xl">
-                {getTranslation(language, 'language', 'Language')}
+                {t('language', 'Language')}
               </CardTitle>
               <CardDescription className="mt-1 text-sm">
                 Choose your preferred language for the interface
@@ -336,9 +260,21 @@ export default function Settings({ studentId }: SettingsProps) {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="language" className="text-sm font-medium">
-              {getTranslation(language, 'preferences', 'Preferences')}
+              {t('preferences', 'Preferences')}
             </Label>
-            <Select value={language} onValueChange={(value) => setLanguage(value as any)}>
+            <Select 
+              value={language} 
+              onValueChange={(value) => {
+                const newLang = value as 'en' | 'hi' | 'mr' | 'bn' | 'te' | 'ta' | 'gu' | 'kn' | 'ml' | 'pa' | 'or';
+                setLanguage(newLang);
+                const langInfo = languages.find(l => l.code === newLang);
+                toast({
+                  title: "Language Updated",
+                  description: `Interface language changed to ${langInfo?.nativeName || newLang}`,
+                  duration: 2000,
+                });
+              }}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>
@@ -356,12 +292,12 @@ export default function Settings({ studentId }: SettingsProps) {
             </Select>
           </div>
           
-          <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            <AlertTitle className="text-blue-900 dark:text-blue-100">
+          <Alert className="bg-blue-50 border-blue-200">
+            <Info className="h-4 w-4 text-blue-600" />
+            <AlertTitle className="text-blue-900">
               Language Support
             </AlertTitle>
-            <AlertDescription className="text-blue-800 dark:text-blue-200 text-sm">
+            <AlertDescription className="text-blue-800 text-sm">
               UI elements are translated to your selected language. Dynamic content from AI and user inputs will be shown in their original language.
             </AlertDescription>
           </Alert>
@@ -372,8 +308,8 @@ export default function Settings({ studentId }: SettingsProps) {
       <Card className="border-2 w-full">
         <CardHeader>
           <div className="flex items-start sm:items-center gap-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg flex-shrink-0">
-              <Key className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
+            <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
+              <Languages className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
             </div>
             <div className="flex-1 min-w-0">
               <CardTitle className="text-lg sm:text-xl">Google Gemini API Key</CardTitle>
@@ -528,9 +464,9 @@ export default function Settings({ studentId }: SettingsProps) {
       </Card>
 
       {/* Additional Settings Placeholder */}
-      <Card className="border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 w-full">
+      <Card className="border-2 border-dashed border-gray-200 bg-gray-50 w-full">
         <CardContent className="py-6 sm:py-8">
-          <div className="text-center text-gray-500 dark:text-gray-400">
+          <div className="text-center text-gray-500">
             <Info className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 opacity-50" />
             <p className="text-xs sm:text-sm">More settings coming soon...</p>
           </div>

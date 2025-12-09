@@ -23,7 +23,11 @@ interface Session {
   };
 }
 
-export default function AnonymousSessionHistory() {
+interface AnonymousSessionHistoryProps {
+  showOnlyActive?: boolean;
+}
+
+export default function AnonymousSessionHistory({ showOnlyActive = false }: AnonymousSessionHistoryProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -100,6 +104,95 @@ export default function AnonymousSessionHistory() {
 
   const activeSessions = sessions.filter((s) => s.status === "ACTIVE");
   const endedSessions = sessions.filter((s) => s.status === "ENDED");
+
+  // If showOnlyActive is true, render only active sessions without tabs
+  if (showOnlyActive) {
+    return (
+      <div className="space-y-4">
+        {activeSessions.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <MessageSquare className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600">No active sessions</p>
+              <p className="text-sm text-gray-500 mt-2">
+                Active sessions will appear here
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          activeSessions.map((session) => (
+            <Card
+              key={session.id}
+              className="hover:shadow-lg transition-shadow"
+            >
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <UserCircle className="h-10 w-10 text-purple-600" />
+                    <div>
+                      <CardTitle className="text-lg">
+                        {session.student_alias}
+                      </CardTitle>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Started{" "}
+                        {formatDistanceToNow(new Date(session.created_at), {
+                          addSuffix: true,
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Badge className={getStatusColor(session.status)}>
+                      {session.status}
+                    </Badge>
+                    <Badge className={getRiskLevelColor(session.risk_level)}>
+                      {session.risk_level}
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <MessageSquare className="h-4 w-4" />
+                      <span>
+                        {session._count.anonymous_mentor_messages} messages
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      <span>
+                        Last message{" "}
+                        {session.last_message_at
+                          ? formatDistanceToNow(
+                              new Date(session.last_message_at),
+                              {
+                                addSuffix: true,
+                              }
+                            )
+                          : "N/A"}
+                      </span>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() =>
+                      router.push(
+                        `/faculty/anonymous-mentoring/chat/${session.id}`
+                      )
+                    }
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    Open Chat
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
@@ -14,19 +13,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const student = await prisma.student.findUnique({
-      where: { id: decoded.id },
-      select: { geminiApiKey: true },
-    });
-
-    if (!student) {
-      return NextResponse.json({ error: "Student not found" }, { status: 404 });
-    }
-
-    // Return the API key or indicate it's using the default
+    // Return that custom API keys are not supported - use environment variable
     return NextResponse.json({
-      hasCustomKey: !!student.geminiApiKey,
-      apiKey: student.geminiApiKey || null,
+      hasCustomKey: false,
+      apiKey: null,
+      message: "Custom API keys are configured via environment variables"
     });
   } catch (error) {
     console.error("Get API key error:", error);
@@ -37,66 +28,16 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: NextRequest) {
-  try {
-    const token = req.cookies.get("auth-token")?.value;
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = verifyToken(token);
-    if (!decoded || decoded.role !== "STUDENT") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { apiKey } = await req.json();
-
-    // Update the student's API key
-    await prisma.student.update({
-      where: { id: decoded.id },
-      data: { geminiApiKey: apiKey || null },
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: apiKey ? "API key saved successfully" : "API key removed, using default",
-    });
-  } catch (error) {
-    console.error("Save API key error:", error);
-    return NextResponse.json(
-      { error: "Failed to save API key" },
-      { status: 500 }
-    );
-  }
+export async function POST() {
+  return NextResponse.json(
+    { error: "Custom API key storage is not supported. Please use environment variables." },
+    { status: 400 }
+  );
 }
 
-export async function DELETE(req: NextRequest) {
-  try {
-    const token = req.cookies.get("auth-token")?.value;
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = verifyToken(token);
-    if (!decoded || decoded.role !== "STUDENT") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Remove the student's API key
-    await prisma.student.update({
-      where: { id: decoded.id },
-      data: { geminiApiKey: null },
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: "API key removed, using default",
-    });
-  } catch (error) {
-    console.error("Delete API key error:", error);
-    return NextResponse.json(
-      { error: "Failed to remove API key" },
-      { status: 500 }
-    );
-  }
+export async function DELETE() {
+  return NextResponse.json(
+    { error: "Custom API key storage is not supported. Please use environment variables." },
+    { status: 400 }
+  );
 }
