@@ -82,6 +82,11 @@ export interface CommunityPostDB {
   createdAt: string;         // ISO date string
   updatedAt: string;         // ISO date string
   
+  // ✅ Media attachments
+  imageUrl?: string;         // Optional: Uploaded image URL
+  voiceNoteUrl?: string;     // Optional: Voice note audio URL
+  voiceNoteDuration?: number; // Optional: Duration in seconds
+  
   // ✅ NEW: Moderation & Tracking fields
   ipAddress?: string;        // Optional: User's IP for severe cases
   userAgent?: string;        // Optional: Browser info
@@ -106,6 +111,11 @@ export interface CommunityReplyDB {
   createdAt: string;
   updatedAt: string;
   
+  // ✅ Media attachments
+  imageUrl?: string;         // Optional: Uploaded image URL
+  voiceNoteUrl?: string;     // Optional: Voice note audio URL
+  voiceNoteDuration?: number; // Optional: Duration in seconds
+  
   // ✅ NEW: Moderation & Tracking fields
   ipAddress?: string;
   userAgent?: string;
@@ -126,6 +136,11 @@ export interface CommunityPostInput {
   author: string;
   instituteId: string;       // NEW: REQUIRED for filtering by institute
   
+  // ✅ Media attachments
+  imageUrl?: string;
+  voiceNoteUrl?: string;
+  voiceNoteDuration?: number;
+  
   // ✅ NEW: Optional metadata for tracking & moderation
   ipAddress?: string;
   userAgent?: string;
@@ -141,6 +156,11 @@ export interface CommunityReplyInput {
   authorId: string;          // ⚠️ REQUIRED: Never expose to public, admin only
   author: string;
   instituteId: string;       // NEW: REQUIRED for filtering by institute
+  
+  // ✅ Media attachments
+  imageUrl?: string;
+  voiceNoteUrl?: string;
+  voiceNoteDuration?: number;
   
   // ✅ NEW: Optional metadata for tracking & moderation
   ipAddress?: string;

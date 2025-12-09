@@ -47,6 +47,9 @@ export async function createCommunityPost(
     repliesCount: 0,
     createdAt,
     updatedAt: createdAt,
+    imageUrl: input.imageUrl,
+    voiceNoteUrl: input.voiceNoteUrl,
+    voiceNoteDuration: input.voiceNoteDuration,
   };
 
   await dynamoClient.send(
@@ -79,6 +82,9 @@ export async function createCommunityReply(
     likes: 0,
     createdAt,
     updatedAt: createdAt,
+    imageUrl: input.imageUrl,
+    voiceNoteUrl: input.voiceNoteUrl,
+    voiceNoteDuration: input.voiceNoteDuration,
   };
 
   // Save reply

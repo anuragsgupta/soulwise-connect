@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -32,6 +32,13 @@ import {
   Edit2,
   Trash2,
   MoreVertical,
+  Image as ImageIcon,
+  Mic,
+  X,
+  Loader2,
+  Play,
+  Pause,
+  Volume2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -67,6 +74,9 @@ interface ForumPost {
   likes: number;
   replies: number;
   isAnonymous: boolean;
+  imageUrl?: string;
+  voiceNoteUrl?: string;
+  voiceNoteDuration?: number;
 }
 
 interface Reply {
@@ -78,6 +88,9 @@ interface Reply {
   timestamp: Date;
   likes: number;
   isAnonymous: boolean;
+  imageUrl?: string;
+  voiceNoteUrl?: string;
+  voiceNoteDuration?: number;
 }
 
 // API response DTOs (shape from backend)
@@ -93,6 +106,9 @@ interface CommunityPostDTO {
   likes?: number;
   repliesCount?: number;
   isAnonymous?: boolean;
+  imageUrl?: string;
+  voiceNoteUrl?: string;
+  voiceNoteDuration?: number;
 }
 
 interface CommunityReplyDTO {
@@ -105,6 +121,9 @@ interface CommunityReplyDTO {
   createdAt?: string;
   likes?: number;
   isAnonymous?: boolean;
+  imageUrl?: string;
+  voiceNoteUrl?: string;
+  voiceNoteDuration?: number;
 }
 
 interface CommunityDataResponse {
@@ -137,6 +156,27 @@ const PeerForum = () => {
   const [showNewPostForm, setShowNewPostForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Media upload states for posts
+  const [postImageFile, setPostImageFile] = useState<File | null>(null);
+  const [postImagePreview, setPostImagePreview] = useState<string | null>(null);
+  const [postVoiceNote, setPostVoiceNote] = useState<Blob | null>(null);
+  const [postVoiceNoteDuration, setPostVoiceNoteDuration] = useState<number>(0);
+  const [isRecordingPost, setIsRecordingPost] = useState(false);
+  const [mediaRecorderPost, setMediaRecorderPost] = useState<MediaRecorder | null>(null);
+  const [recordingTimePost, setRecordingTimePost] = useState(0);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const recordingIntervalPost = useRef<NodeJS.Timeout | null>(null);
+
+  // Media upload states for replies
+  const [replyImageFile, setReplyImageFile] = useState<File | null>(null);
+  const [replyImagePreview, setReplyImagePreview] = useState<string | null>(null);
+  const [replyVoiceNote, setReplyVoiceNote] = useState<Blob | null>(null);
+  const [replyVoiceNoteDuration, setReplyVoiceNoteDuration] = useState<number>(0);
+  const [isRecordingReply, setIsRecordingReply] = useState(false);
+  const [mediaRecorderReply, setMediaRecorderReply] = useState<MediaRecorder | null>(null);
+  const [recordingTimeReply, setRecordingTimeReply] = useState(0);
+  const recordingIntervalReply = useRef<NodeJS.Timeout | null>(null);
+
   const categories = [
     "General",
     "Anxiety",
@@ -147,6 +187,246 @@ const PeerForum = () => {
     "Sleep Issues",
     "Relationships",
   ];
+
+  // ─────────────────────────────────────────
+  // Media Upload Helper Functions
+  // ─────────────────────────────────────────
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>, isReply: boolean = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Image must be less than 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (isReply) {
+        setReplyImageFile(file);
+        setReplyImagePreview(reader.result as string);
+      } else {
+        setPostImageFile(file);
+        setPostImagePreview(reader.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearImage = (isReply: boolean = false) => {
+    if (isReply) {
+      setReplyImageFile(null);
+      setReplyImagePreview(null);
+    } else {
+      setPostImageFile(null);
+      setPostImagePreview(null);
+    }
+  };
+
+  const startRecording = async (isReply: boolean = false) => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // Check for supported MIME types
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : 'audio/mp4';
+      
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
+      const audioChunks: Blob[] = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          audioChunks.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: mimeType });
+        
+        if (isReply) {
+          setReplyVoiceNote(audioBlob);
+          setReplyVoiceNoteDuration(recordingTimeReply);
+          if (recordingIntervalReply.current) {
+            clearInterval(recordingIntervalReply.current);
+            recordingIntervalReply.current = null;
+          }
+        } else {
+          setPostVoiceNote(audioBlob);
+          setPostVoiceNoteDuration(recordingTimePost);
+          if (recordingIntervalPost.current) {
+            clearInterval(recordingIntervalPost.current);
+            recordingIntervalPost.current = null;
+          }
+        }
+        
+        stream.getTracks().forEach(track => track.stop());
+        
+        toast({
+          title: "Voice note recorded",
+          description: `Recording saved (${isReply ? recordingTimeReply : recordingTimePost}s)`,
+        });
+      };
+
+      // Start recording with timeslice for better data collection
+      mediaRecorder.start(100); // Collect data every 100ms
+      
+      if (isReply) {
+        setMediaRecorderReply(mediaRecorder);
+        setIsRecordingReply(true);
+        setRecordingTimeReply(0);
+        
+        // Start timer
+        recordingIntervalReply.current = setInterval(() => {
+          setRecordingTimeReply(prev => {
+            const newTime = prev + 1;
+            if (newTime >= 120) {
+              stopRecording(true);
+            }
+            return newTime;
+          });
+        }, 1000);
+      } else {
+        setMediaRecorderPost(mediaRecorder);
+        setIsRecordingPost(true);
+        setRecordingTimePost(0);
+        
+        // Start timer
+        recordingIntervalPost.current = setInterval(() => {
+          setRecordingTimePost(prev => {
+            const newTime = prev + 1;
+            if (newTime >= 120) {
+              stopRecording(false);
+            }
+            return newTime;
+          });
+        }, 1000);
+      }
+
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      toast({
+        title: "Microphone access denied",
+        description: "Please allow microphone access to record voice notes",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopRecording = (isReply: boolean = false) => {
+    if (isReply && mediaRecorderReply && mediaRecorderReply.state === 'recording') {
+      mediaRecorderReply.stop();
+      setIsRecordingReply(false);
+      if (recordingIntervalReply.current) {
+        clearInterval(recordingIntervalReply.current);
+        recordingIntervalReply.current = null;
+      }
+    } else if (!isReply && mediaRecorderPost && mediaRecorderPost.state === 'recording') {
+      mediaRecorderPost.stop();
+      setIsRecordingPost(false);
+      if (recordingIntervalPost.current) {
+        clearInterval(recordingIntervalPost.current);
+        recordingIntervalPost.current = null;
+      }
+    }
+  };
+
+  const clearVoiceNote = (isReply: boolean = false) => {
+    if (isReply) {
+      setReplyVoiceNote(null);
+      setReplyVoiceNoteDuration(0);
+    } else {
+      setPostVoiceNote(null);
+      setPostVoiceNoteDuration(0);
+    }
+  };
+
+  const uploadFile = async (file: File | Blob, type: 'image' | 'audio'): Promise<string | null> => {
+    const formData = new FormData();
+    
+    // Create a proper File object if it's a Blob
+    if (file instanceof Blob && !(file instanceof File)) {
+      // For audio blobs, ensure proper MIME type
+      let mimeType = file.type || 'audio/webm';
+      let extension = 'webm';
+      
+      if (type === 'audio') {
+        // Ensure the MIME type is in the allowed list
+        if (!mimeType.startsWith('audio/')) {
+          mimeType = 'audio/webm';
+        }
+        // Extract extension from MIME type
+        if (mimeType.includes('webm')) {
+          extension = 'webm';
+        } else if (mimeType.includes('mp4')) {
+          extension = 'm4a';
+        } else if (mimeType.includes('mpeg') || mimeType.includes('mp3')) {
+          extension = 'mp3';
+        } else if (mimeType.includes('wav')) {
+          extension = 'wav';
+        } else if (mimeType.includes('ogg')) {
+          extension = 'ogg';
+        }
+      } else {
+        extension = 'jpg';
+        mimeType = 'image/jpeg';
+      }
+      
+      const fileName = `recording-${Date.now()}.${extension}`;
+      file = new File([file], fileName, { type: mimeType });
+    }
+    
+    formData.append('file', file);
+    formData.append('type', type);
+
+    try {
+      console.log('Uploading file:', { 
+        name: file instanceof File ? file.name : 'blob', 
+        type, 
+        size: file.size,
+        mimeType: file.type 
+      });
+      
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
+        console.error('Upload error:', errorData);
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const data = await response.json();
+      console.log('Upload successful:', data);
+      return data.url;
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: error instanceof Error ? error.message : "Failed to upload file. Please try again.",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
 
   // ─────────────────────────────────────────
   // Create Post  →  /api/community-memory (type: "post")
@@ -176,35 +456,37 @@ const PeerForum = () => {
       ? "Anonymous Student"
       : user.name;
 
-    // Debug: Check each field
-    console.log("User data:", {
-      userId: user.id,
-      name: user.name,
-      instituteId: user.instituteId,
-    });
-    console.log("New post data:", newPost);
-
-    const postData = {
-      type: "post" as const,
-      title: newPost.title,
-      content: newPost.content,
-      category: newPost.category || "General",
-      isAnonymous: newPost.isAnonymous || false,
-      authorId: postAuthorId,
-      author: postAuthorName,
-      instituteId: user.instituteId,
-    };
-
-    console.log("Creating post with data:", postData);
-    console.log("Validation check:", {
-      hasTitle: !!postData.title?.trim(),
-      hasContent: !!postData.content?.trim(),
-      hasAuthorId: !!postData.authorId,
-      hasAuthor: !!postData.author,
-      hasInstituteId: !!postData.instituteId,
-    });
+    setIsUploadingMedia(true);
 
     try {
+      // Upload media files if present
+      let imageUrl: string | null = null;
+      let voiceNoteUrl: string | null = null;
+
+      if (postImageFile) {
+        imageUrl = await uploadFile(postImageFile, 'image');
+      }
+
+      if (postVoiceNote) {
+        console.log('Uploading voice note:', { size: postVoiceNote.size, type: postVoiceNote.type });
+        voiceNoteUrl = await uploadFile(postVoiceNote, 'audio');
+        console.log('Voice note uploaded:', voiceNoteUrl);
+      }
+
+      const postData = {
+        type: "post" as const,
+        title: newPost.title,
+        content: newPost.content,
+        category: newPost.category || "General",
+        isAnonymous: newPost.isAnonymous || false,
+        authorId: postAuthorId,
+        author: postAuthorName,
+        instituteId: user.instituteId,
+        imageUrl: imageUrl || undefined,
+        voiceNoteUrl: voiceNoteUrl || undefined,
+        voiceNoteDuration: voiceNoteUrl ? postVoiceNoteDuration : undefined,
+      };
+
       const res = await fetch("/api/community-memory", {
         method: "POST",
         headers: {
@@ -227,13 +509,22 @@ const PeerForum = () => {
         title: saved.title || newPost.title,
         content: saved.content || newPost.content,
         authorId: saved.authorId || postAuthorId,
-        author: saved.author || postAuthorName,
+        author: saved.author ?? postAuthorName,
         timestamp: new Date(saved.timestamp || saved.createdAt || Date.now()),
         category: saved.category || newPost.category,
         likes: saved.likes ?? 0,
         replies: saved.repliesCount ?? 0,
         isAnonymous: saved.isAnonymous ?? newPost.isAnonymous,
+        imageUrl: saved.imageUrl,
+        voiceNoteUrl: saved.voiceNoteUrl,
+        voiceNoteDuration: saved.voiceNoteDuration,
       };
+
+      console.log('Created post with media:', { 
+        imageUrl: post.imageUrl, 
+        voiceNoteUrl: post.voiceNoteUrl,
+        voiceNoteDuration: post.voiceNoteDuration 
+      });
 
       setPosts((prev) => [post, ...prev]);
       setNewPost({
@@ -242,6 +533,11 @@ const PeerForum = () => {
         category: "General",
         isAnonymous: true,
       });
+      
+      // Clear media
+      clearImage(false);
+      clearVoiceNote(false);
+      
       setShowNewPostForm(false);
 
       toast({
@@ -255,6 +551,8 @@ const PeerForum = () => {
         description: "We couldn't save your post. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsUploadingMedia(false);
     }
   };
 
@@ -302,7 +600,23 @@ const PeerForum = () => {
       ? "Anonymous Student"
       : user.name;
 
+    setIsUploadingMedia(true);
+
     try {
+      // Upload media files if present
+      let imageUrl: string | null = null;
+      let voiceNoteUrl: string | null = null;
+
+      if (replyImageFile) {
+        imageUrl = await uploadFile(replyImageFile, 'image');
+      }
+
+      if (replyVoiceNote) {
+        console.log('Uploading reply voice note:', { size: replyVoiceNote.size, type: replyVoiceNote.type });
+        voiceNoteUrl = await uploadFile(replyVoiceNote, 'audio');
+        console.log('Reply voice note uploaded:', voiceNoteUrl);
+      }
+
       const res = await fetch("/api/community-memory", {
         method: "POST",
         headers: {
@@ -316,6 +630,9 @@ const PeerForum = () => {
           authorId: replyAuthorId,
           author: replyAuthorName,
           instituteId: user.instituteId,
+          imageUrl: imageUrl || undefined,
+          voiceNoteUrl: voiceNoteUrl || undefined,
+          voiceNoteDuration: voiceNoteUrl ? replyVoiceNoteDuration : undefined,
         }),
       });
 
@@ -331,10 +648,13 @@ const PeerForum = () => {
         postId: saved.postId || postId,
         content: saved.content || replyContent,
         authorId: saved.authorId || replyAuthorId,
-        author: saved.author || replyAuthorName,
+        author: saved.author ?? replyAuthorName,
         timestamp: new Date(saved.timestamp || saved.createdAt || Date.now()),
         likes: saved.likes ?? 0,
         isAnonymous: saved.isAnonymous ?? replyIsAnonymous,
+        imageUrl: saved.imageUrl,
+        voiceNoteUrl: saved.voiceNoteUrl,
+        voiceNoteDuration: saved.voiceNoteDuration,
       };
 
       setReplies((prev) => [newReply, ...prev]);
@@ -346,6 +666,10 @@ const PeerForum = () => {
 
       setReplyContent("");
       setActiveReplyPostId(null);
+      
+      // Clear media
+      clearImage(true);
+      clearVoiceNote(true);
 
       toast({
         title: "Reply posted ✅",
@@ -358,6 +682,8 @@ const PeerForum = () => {
         description: "We couldn't save your reply. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsUploadingMedia(false);
     }
   };
 
@@ -655,6 +981,9 @@ const PeerForum = () => {
             likes: p.likes ?? 0,
             replies: p.repliesCount ?? 0,
             isAnonymous: p.isAnonymous ?? false,
+            imageUrl: p.imageUrl,
+            voiceNoteUrl: p.voiceNoteUrl,
+            voiceNoteDuration: p.voiceNoteDuration,
           }))
         );
 
@@ -668,6 +997,9 @@ const PeerForum = () => {
             timestamp: new Date(r.timestamp || r.createdAt || Date.now()),
             likes: r.likes ?? 0,
             isAnonymous: r.isAnonymous ?? false,
+            imageUrl: r.imageUrl,
+            voiceNoteUrl: r.voiceNoteUrl,
+            voiceNoteDuration: r.voiceNoteDuration,
           }))
         );
       } catch (err) {
@@ -679,6 +1011,25 @@ const PeerForum = () => {
 
     loadCommunityData();
   }, [user?.instituteId]);
+
+  // Cleanup intervals on unmount
+  useEffect(() => {
+    return () => {
+      if (recordingIntervalPost.current) {
+        clearInterval(recordingIntervalPost.current);
+      }
+      if (recordingIntervalReply.current) {
+        clearInterval(recordingIntervalReply.current);
+      }
+      // Stop any active recordings
+      if (mediaRecorderPost && mediaRecorderPost.state === 'recording') {
+        mediaRecorderPost.stop();
+      }
+      if (mediaRecorderReply && mediaRecorderReply.state === 'recording') {
+        mediaRecorderReply.stop();
+      }
+    };
+  }, [mediaRecorderPost, mediaRecorderReply]);
 
   // ─────────────────────────────────────────
   // UI
@@ -800,6 +1151,113 @@ const PeerForum = () => {
                       className="min-h-[140px] resize-none rounded-xl"
                     />
                   </div>
+
+                  {/* Media Upload Section */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium block">Attachments (Optional)</label>
+                    <div className="flex flex-wrap gap-2">
+                      {/* Image Upload Button */}
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleImageSelect(e, false)}
+                          disabled={isUploadingMedia}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="rounded-xl"
+                          asChild
+                        >
+                          <span>
+                            <ImageIcon className="w-4 h-4 mr-2" />
+                            {postImageFile ? 'Change Image' : 'Add Image'}
+                          </span>
+                        </Button>
+                      </label>
+
+                      {/* Voice Note Button */}
+                      {!postVoiceNote && !isRecordingPost && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startRecording(false)}
+                          disabled={isUploadingMedia}
+                          className="rounded-xl"
+                        >
+                          <Mic className="w-4 h-4 mr-2" />
+                          Record Voice Note
+                        </Button>
+                      )}
+
+                      {isRecordingPost && (
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => stopRecording(false)}
+                          className="rounded-xl animate-pulse"
+                        >
+                          <Pause className="w-4 h-4 mr-2" />
+                          Stop Recording ({recordingTimePost}s)
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Image Preview */}
+                    {postImagePreview && (
+                      <div className="relative inline-block">
+                        <img
+                          src={postImagePreview}
+                          alt="Preview"
+                          className="max-h-48 rounded-xl border-2 border-gray-200"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute -top-2 -right-2 rounded-full h-8 w-8"
+                          onClick={() => clearImage(false)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Voice Note Preview */}
+                    {postVoiceNote && (
+                      <div className="flex items-center gap-2 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-3 rounded-xl border-2 border-green-200 dark:border-green-700">
+                        <Volume2 className="w-5 h-5 text-green-600 dark:text-green-400 animate-pulse" />
+                        <div className="flex-1">
+                          <span className="text-sm font-semibold text-green-800 dark:text-green-300 block mb-2">
+                            🎙️ Voice note recorded ({postVoiceNoteDuration}s)
+                          </span>
+                          <audio
+                            controls
+                            src={URL.createObjectURL(postVoiceNote)}
+                            className="w-full h-8"
+                            preload="metadata"
+                          >
+                            Your browser does not support audio playback.
+                          </audio>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:bg-red-100"
+                          onClick={() => clearVoiceNote(false)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex flex-col sm:flex-row gap-4">
                     <div className="flex-1">
                       <label className="text-sm font-medium mb-2 block">Category</label>
@@ -840,15 +1298,26 @@ const PeerForum = () => {
                   <Button
                     onClick={handleCreatePost}
                     size="lg"
+                    disabled={isUploadingMedia}
                     className="flex-1 bg-gradient-to-r from-primary to-wellness hover:from-primary/90 hover:to-wellness/90 h-12 rounded-xl shadow-md hover:shadow-lg transition-all duration-300"
                   >
-                    <Plus className="w-5 h-5 mr-2" />
-                    Create Post
+                    {isUploadingMedia ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-5 h-5 mr-2" />
+                        Create Post
+                      </>
+                    )}
                   </Button>
                   <Button
                     variant="outline"
                     size="lg"
                     onClick={() => setShowNewPostForm(false)}
+                    disabled={isUploadingMedia}
                     className="h-12 rounded-xl"
                   >
                     Cancel
@@ -1054,6 +1523,38 @@ const PeerForum = () => {
                           <p className="text-muted-foreground mb-4 line-clamp-3 leading-relaxed">
                             {post.content}
                           </p>
+
+                          {/* Media Display */}
+                          {post.imageUrl && (
+                            <div className="mb-4">
+                              <img
+                                src={post.imageUrl}
+                                alt="Post attachment"
+                                className="max-h-64 w-auto rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer hover:opacity-90 transition-opacity"
+                                onClick={() => window.open(post.imageUrl, '_blank')}
+                              />
+                            </div>
+                          )}
+
+                          {post.voiceNoteUrl && (
+                            <div className="mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-xl border border-blue-200 dark:border-blue-700">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Volume2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                <span className="text-sm font-semibold text-blue-800 dark:text-blue-300">
+                                  🎙️ Voice Note {post.voiceNoteDuration ? `(${post.voiceNoteDuration}s)` : ''}
+                                </span>
+                              </div>
+                              <audio
+                                controls
+                                src={post.voiceNoteUrl}
+                                className="w-full max-w-md rounded-lg"
+                                preload="metadata"
+                              >
+                                Your browser does not support the audio element.
+                              </audio>
+                            </div>
+                          )}
+
                           <div className="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
                             <Button
                               variant="ghost"
@@ -1090,6 +1591,112 @@ const PeerForum = () => {
                                 }
                                 className="min-h-[100px] resize-none rounded-xl border-gray-200 dark:border-gray-700"
                               />
+
+                              {/* Reply Media Upload Section */}
+                              <div className="space-y-3">
+                                <div className="flex flex-wrap gap-2">
+                                  {/* Image Upload Button */}
+                                  <label className="cursor-pointer">
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      onChange={(e) => handleImageSelect(e, true)}
+                                      disabled={isUploadingMedia}
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      className="rounded-xl"
+                                      asChild
+                                    >
+                                      <span>
+                                        <ImageIcon className="w-4 h-4 mr-2" />
+                                        {replyImageFile ? 'Change Image' : 'Add Image'}
+                                      </span>
+                                    </Button>
+                                  </label>
+
+                                  {/* Voice Note Button */}
+                                  {!replyVoiceNote && !isRecordingReply && (
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => startRecording(true)}
+                                      disabled={isUploadingMedia}
+                                      className="rounded-xl"
+                                    >
+                                      <Mic className="w-4 h-4 mr-2" />
+                                      Record Voice Note
+                                    </Button>
+                                  )}
+
+                                  {isRecordingReply && (
+                                    <Button
+                                      type="button"
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={() => stopRecording(true)}
+                                      className="rounded-xl animate-pulse"
+                                    >
+                                      <Pause className="w-4 h-4 mr-2" />
+                                      Stop ({recordingTimeReply}s)
+                                    </Button>
+                                  )}
+                                </div>
+
+                                {/* Reply Image Preview */}
+                                {replyImagePreview && (
+                                  <div className="relative inline-block">
+                                    <img
+                                      src={replyImagePreview}
+                                      alt="Preview"
+                                      className="max-h-32 rounded-xl border-2 border-gray-200"
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="destructive"
+                                      size="icon"
+                                      className="absolute -top-2 -right-2 rounded-full h-6 w-6"
+                                      onClick={() => clearImage(true)}
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                )}
+
+                                {/* Reply Voice Note Preview */}
+                                {replyVoiceNote && (
+                                  <div className="flex items-center gap-2 bg-white dark:bg-gray-800 p-2 rounded-xl border border-gray-200 dark:border-gray-700">
+                                    <Volume2 className="w-4 h-4 text-primary" />
+                                    <div className="flex-1">
+                                      <span className="text-xs block mb-1">
+                                        Voice note ({replyVoiceNoteDuration}s)
+                                      </span>
+                                      <audio
+                                        controls
+                                        src={URL.createObjectURL(replyVoiceNote)}
+                                        className="w-full h-7"
+                                        preload="metadata"
+                                      >
+                                        Your browser does not support audio playback.
+                                      </audio>
+                                    </div>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6"
+                                      onClick={() => clearVoiceNote(true)}
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+
                               <div className="flex items-center justify-between gap-3 pt-2">
                                 <label className="flex items-center space-x-2 cursor-pointer">
                                   <input
@@ -1109,14 +1716,23 @@ const PeerForum = () => {
                                   <Button
                                     size="sm"
                                     onClick={() => handleCreateReply(post.id)}
+                                    disabled={isUploadingMedia}
                                     className="bg-gradient-to-r from-primary to-wellness hover:from-primary/90 hover:to-wellness/90 rounded-lg"
                                   >
-                                    Post Reply
+                                    {isUploadingMedia ? (
+                                      <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Uploading...
+                                      </>
+                                    ) : (
+                                      'Post Reply'
+                                    )}
                                   </Button>
                                   <Button
                                     size="sm"
                                     variant="outline"
                                     onClick={() => setActiveReplyPostId(null)}
+                                    disabled={isUploadingMedia}
                                     className="rounded-lg"
                                   >
                                     Cancel
@@ -1243,6 +1859,38 @@ const PeerForum = () => {
                                     <p className="mb-2 text-foreground text-sm leading-relaxed">
                                       {reply.content}
                                     </p>
+
+                                    {/* Reply Media Display */}
+                                    {reply.imageUrl && (
+                                      <div className="mb-3">
+                                        <img
+                                          src={reply.imageUrl}
+                                          alt="Reply attachment"
+                                          className="max-h-48 w-auto rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:opacity-90 transition-opacity"
+                                          onClick={() => window.open(reply.imageUrl, '_blank')}
+                                        />
+                                      </div>
+                                    )}
+
+                                    {reply.voiceNoteUrl && (
+                                      <div className="mb-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-3 rounded-lg border border-purple-200 dark:border-purple-700">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <Volume2 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                                          <span className="text-xs font-semibold text-purple-800 dark:text-purple-300">
+                                            🎙️ Voice Reply {reply.voiceNoteDuration ? `(${reply.voiceNoteDuration}s)` : ''}
+                                          </span>
+                                        </div>
+                                        <audio
+                                          controls
+                                          src={reply.voiceNoteUrl}
+                                          className="w-full max-w-sm rounded-lg"
+                                          preload="metadata"
+                                        >
+                                          Your browser does not support the audio element.
+                                        </audio>
+                                      </div>
+                                    )}
+
                                     <Button
                                       variant="ghost"
                                       size="sm"

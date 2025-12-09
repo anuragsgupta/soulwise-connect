@@ -39,6 +39,9 @@ function mapPostToDTO(post: CommunityPostDB, includeAuthorId = false) {
     isAnonymous: post.isAnonymous,
     timestamp: post.createdAt,
     createdAt: post.createdAt,
+    imageUrl: post.imageUrl,
+    voiceNoteUrl: post.voiceNoteUrl,
+    voiceNoteDuration: post.voiceNoteDuration,
   };
 
   // ⚠️ ONLY include sensitive admin data for admin requests
@@ -64,6 +67,9 @@ function mapReplyToDTO(reply: CommunityReplyDB, includeAuthorId = false) {
     isAnonymous: reply.isAnonymous,
     timestamp: reply.createdAt,
     createdAt: reply.createdAt,
+    imageUrl: reply.imageUrl,
+    voiceNoteUrl: reply.voiceNoteUrl,
+    voiceNoteDuration: reply.voiceNoteDuration,
   };
 
   // ⚠️ ONLY include sensitive admin data for admin requests
