@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { Toaster } from "@/components/ui/toaster";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import AuthLoadingWrapper from "@/components/AuthLoadingWrapper";
@@ -44,7 +45,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={getFontVariables()}>
+    <html lang="en" className={getFontVariables()} suppressHydrationWarning>
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-152x152.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -52,13 +53,20 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="antialiased font-body">
-        <LanguageProvider>
-          <AuthProvider>
-            <AuthLoadingWrapper>
-              {children}
-            </AuthLoadingWrapper>
-          </AuthProvider>
-        </LanguageProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <LanguageProvider>
+            <AuthProvider>
+              <AuthLoadingWrapper>
+                {children}
+              </AuthLoadingWrapper>
+            </AuthProvider>
+          </LanguageProvider>
+        </ThemeProvider>
         <Toaster />
         <PWAInstallPrompt />
       </body>

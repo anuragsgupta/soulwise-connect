@@ -54,6 +54,7 @@ import WellnessScoreWidget from "./WellnessScoreWidget";
 import WellnessRecommendations from "./WellnessRecommendations";
 import SettingsPage from "./Settings";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface StudentDashboardProps {
   onLogout: () => void;
@@ -77,7 +78,11 @@ type DashboardTab =
 const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
+<<<<<<< HEAD
   const { t } = useLanguage();
+=======
+  const { t, language } = useLanguage();
+>>>>>>> 9a476c4 (feat: Add Language Context and Translation Utilities)
   const [activeTab, setActiveTab] = useState<DashboardTab>('dashboard');
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [wellnessScore, setWellnessScore] = useState<number | null>(null);
@@ -578,9 +583,9 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
   const renderContent = () => {
     switch (activeTab) {
       case 'mood':
-        return <MoodTracker onScoreUpdate={setWellnessScore} />;
+        return <MoodTracker onScoreUpdate={setWellnessScore} language={language} />;
       case 'chat':
-        return <ChatBot />;
+        return <ChatBot language={language} />;
       case 'mentor':
         return <AnonymousMentorChat />;
       case "diary":
@@ -594,6 +599,7 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       case "notifications":
         return <NotificationsPage />;
       case 'resources':
+<<<<<<< HEAD
         return (
           <ResourceHub
             recommendedGame={recommendedGame}
@@ -602,8 +608,11 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
             onVideoClose={() => setRecommendedVideo(null)}
           />
         );
+=======
+        return <ResourceHub recommendedGame={recommendedGame} recommendedVideo={recommendedVideo} onGameClose={() => setRecommendedGame(null)} onVideoClose={() => setRecommendedVideo(null)} language={language} />;
+>>>>>>> 9a476c4 (feat: Add Language Context and Translation Utilities)
       case 'forum':
-        return <PeerForum />;
+        return <PeerForum language={language} />;
       case 'profile':
         return (
           <div className="space-y-6">
