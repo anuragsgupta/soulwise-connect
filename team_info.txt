@@ -1,0 +1,82 @@
+================================================================================
+                        MANN MITRA - TEAM INFORMATION
+================================================================================
+
+Team Name: Vidhyut
+
+Institute: Lakshmi Narain College Of Technology, Bhopal (LNCT)
+
+Project: Mann Mitra - Digital Mental Health Companion
+Repository: https://github.com/anuragsgupta/soulwise-connect
+
+================================================================================
+                              TEAM MEMBERS
+================================================================================
+
+1. Anurag Gupta 
+2. Aryan Soni 
+3. Ayush Kumar
+4. Sundram Dhakad
+5. Shivanshi Sahu
+6. Vinayak Rajput
+
+
+
+
+================================================================================
+                         TECHNOLOGY STACK
+================================================================================
+
+Frontend:
+  - Next.js 15.5.7
+  - TypeScript
+  - Tailwind CSS
+  - Radix UI + shadcn/ui
+
+Backend:
+  - Next.js API Routes
+  - Prisma ORM
+  - PostgreSQL (Neon)
+  - AWS DynamoDB
+
+AI/ML:
+  - Google Gemini AI
+  - Sentiment Analysis
+
+DevOps:
+  - Vercel (Deployment)
+  - GitHub Actions (CI/CD)
+  - AWS (Optional)
+
+
+================================================================================
+                          CONTACT INFORMATION
+================================================================================
+
+Project Lead: Anurag Gupta
+Email: anuragsgupta9211@gmail.com
+GitHub: https://github.com/anuragsgupta/soulwise-connect
+Website: 
+
+For bug reports and feature requests:
+  GitHub Issues: https://github.com/anuragsgupta/soulwise-connect/issues
+
+For general inquiries:
+  Email: mannmitraofficial@gmail.com
+
+================================================================================
+                              LICENSE
+================================================================================
+
+This project is licensed under the MIT License.
+See LICENSE file for details.
+
+================================================================================
+                           LAST UPDATED
+================================================================================
+
+Date: 12 December 2025
+Updated By: Anurag Gupta
+Version: 1.0.0
+
+================================================================================
