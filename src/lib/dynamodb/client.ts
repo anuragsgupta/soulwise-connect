@@ -2,10 +2,10 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 
-const REGION = process.env.AWS_REGION;
+const REGION = process.env.NEXT_PUBLIC_AWS_REGION || process.env.AWS_REGION;
 
 if (!REGION) {
-  throw new Error("AWS_REGION is not set in .env");
+  throw new Error("NEXT_PUBLIC_AWS_REGION or AWS_REGION is not set in .env");
 }
 
 if (!process.env.DYNAMODB_CHAT_MEMORY_TABLE) {
@@ -16,14 +16,17 @@ if (!process.env.DYNAMODB_COMMUNITY_TABLE) {
   throw new Error("DYNAMODB_COMMUNITY_TABLE is not set in .env");
 }
 
+const ACCESS_KEY_ID = process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+const SECRET_ACCESS_KEY = process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+
 // It creates the DynamoDB Client with AWS credentials
 const baseClient = new DynamoDBClient({
   region: REGION,
   credentials:
-    process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY
+    ACCESS_KEY_ID && SECRET_ACCESS_KEY
       ? {
-          accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+          accessKeyId: ACCESS_KEY_ID,
+          secretAccessKey: SECRET_ACCESS_KEY,
         }
       : undefined,
 });
