@@ -1,0 +1,352 @@
+service: soulwise-connect
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-south-1
+  stage: ${opt:stage, 'production'}
+  
+  # Memory and timeout settings
+  memorySize: 1024
+  timeout: 30
+  
+  # Environment variables
+  environment:
+    DYNAMODB_CHAT_MEMORY_TABLE: chatbot-ai
+    AWS_REGION: ap-south-1
+    NEXT_PUBLIC_GEMINI_API_KEY: ${env:NEXT_PUBLIC_GEMINI_API_KEY}
+    FAST2SMS_API_KEY: ${env:FAST2SMS_API_KEY}
+    COUNSELOR_PHONE_NUMBER: ${env:COUNSELOR_PHONE_NUMBER}
+    DATABASE_URL: ${env:DATABASE_URL}
+    JWT_SECRET: ${env:JWT_SECRET}
+    NEXTAUTH_SECRET: ${env:NEXTAUTH_SECRET}
+  
+  # IAM permissions
+  iam:
+    role:
+      statements:
+        # DynamoDB permissions
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:BatchWriteItem
+            - dynamodb:BatchGetItem
+            - dynamodb:DescribeTable
+          Resource:
+            - arn:aws:dynamodb:ap-south-1:*:table/chatbot-ai
+        
+        # CloudWatch Logs permissions
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: arn:aws:logs:*:*:*
+        
+        # Secrets Manager (if using)
+        - Effect: Allow
+          Action:
+            - secretsmanager:GetSecretValue
+          Resource: arn:aws:secretsmanager:ap-south-1:*:secret:soulwise/*
+
+plugins:
+  - serverless-offline
+  - serverless-dotenv-plugin
+
+custom:
+  # Serverless Offline configuration for local testing
+  serverless-offline:
+    httpPort: 3001
+    websocketPort: 3002
+    lambdaPort: 3003
+  
+  # Stage-specific settings
+  stages:
+    production:
+      memorySize: 2048
+      timeout: 30
+    staging:
+      memorySize: 1024
+      timeout: 20
+    development:
+      memorySize: 512
+      timeout: 15
+
+functions:
+  # Chatbot API endpoint
+  chatbot:
+    handler: .serverless/chatbot.handler
+    description: AI chatbot with crisis detection and sentiment analysis
+    events:
+      - http:
+          path: /api/chatbot
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: false
+    environment:
+      FUNCTION_NAME: chatbot
+    layers:
+      - arn:aws:lambda:ap-south-1:580247275435:layer:LambdaInsightsExtension:35
+  
+  # Chat Memory API endpoints
+  chatMemory:
+    handler: .serverless/chat-memory.handler
+    description: DynamoDB chat history with sentiment tracking
+    events:
+      - http:
+          path: /api/chat-memory
+          method: get
+          cors: true
+      - http:
+          path: /api/chat-memory
+          method: post
+          cors: true
+      - http:
+          path: /api/chat-memory
+          method: delete
+          cors: true
+    environment:
+      FUNCTION_NAME: chatMemory
+  
+  # Analytics API endpoint
+  analytics:
+    handler: .serverless/analytics.handler
+    description: Analytics and usage tracking
+    events:
+      - http:
+          path: /api/analytics
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: analytics
+  
+  # Authentication endpoints
+  auth:
+    handler: .serverless/auth.handler
+    description: User authentication
+    events:
+      - http:
+          path: /api/auth/{proxy+}
+          method: any
+          cors: true
+    environment:
+      FUNCTION_NAME: auth
+
+resources:
+  Resources:
+    # S3 Bucket for static files
+    StaticFilesBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: soulwise-static-${self:provider.stage}
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          ErrorDocument: 404.html
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins:
+                - '*'
+              AllowedMethods:
+                - GET
+                - HEAD
+              AllowedHeaders:
+                - '*'
+              MaxAge: 3600
+    
+    # S3 Bucket Policy
+    StaticFilesBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref StaticFilesBucket
+        PolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal: '*'
+              Action: s3:GetObject
+              Resource: !Sub '${StaticFilesBucket.Arn}/*'
+    
+    # CloudFront Distribution
+    CloudFrontDistribution:
+      Type: AWS::CloudFront::Distribution
+      Properties:
+        DistributionConfig:
+          Enabled: true
+          Comment: SoulWise Connect CDN
+          DefaultRootObject: index.html
+          PriceClass: PriceClass_100
+          
+          Origins:
+            # S3 Origin for static files
+            - Id: S3Origin
+              DomainName: !GetAtt StaticFilesBucket.DomainName
+              S3OriginConfig:
+                OriginAccessIdentity: ''
+            
+            # API Gateway Origin
+            - Id: ApiOrigin
+              DomainName: !Sub '${ApiGatewayRestApi}.execute-api.${self:provider.region}.amazonaws.com'
+              OriginPath: /${self:provider.stage}
+              CustomOriginConfig:
+                HTTPPort: 80
+                HTTPSPort: 443
+                OriginProtocolPolicy: https-only
+                OriginSSLProtocols:
+                  - TLSv1.2
+          
+          # Default behavior (static files)
+          DefaultCacheBehavior:
+            TargetOriginId: S3Origin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            CachedMethods:
+              - GET
+              - HEAD
+            Compress: true
+            ForwardedValues:
+              QueryString: false
+              Cookies:
+                Forward: none
+            MinTTL: 0
+            DefaultTTL: 86400
+            MaxTTL: 31536000
+          
+          # API behavior
+          CacheBehaviors:
+            - PathPattern: /api/*
+              TargetOriginId: ApiOrigin
+              ViewerProtocolPolicy: https-only
+              AllowedMethods:
+                - DELETE
+                - GET
+                - HEAD
+                - OPTIONS
+                - PATCH
+                - POST
+                - PUT
+              CachedMethods:
+                - GET
+                - HEAD
+              Compress: true
+              ForwardedValues:
+                QueryString: true
+                Headers:
+                  - Authorization
+                  - Content-Type
+                  - Accept
+                Cookies:
+                  Forward: all
+              MinTTL: 0
+              DefaultTTL: 0
+              MaxTTL: 0
+          
+          CustomErrorResponses:
+            - ErrorCode: 404
+              ResponseCode: 200
+              ResponsePagePath: /index.html
+              ErrorCachingMinTTL: 300
+            - ErrorCode: 403
+              ResponseCode: 200
+              ResponsePagePath: /index.html
+              ErrorCachingMinTTL: 300
+    
+    # CloudWatch Log Group
+    ChatbotLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}-chatbot
+        RetentionInDays: 14
+    
+    # API Gateway CloudWatch Role
+    ApiGatewayCloudWatchRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: apigateway.amazonaws.com
+              Action: sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+    
+    # API Gateway Account
+    ApiGatewayAccount:
+      Type: AWS::ApiGateway::Account
+      Properties:
+        CloudWatchRoleArn: !GetAtt ApiGatewayCloudWatchRole.Arn
+    
+    # CloudWatch Alarm for errors
+    HighErrorRateAlarm:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmName: ${self:service}-${self:provider.stage}-high-error-rate
+        AlarmDescription: Alert when error rate is high
+        MetricName: Errors
+        Namespace: AWS/Lambda
+        Statistic: Sum
+        Period: 300
+        EvaluationPeriods: 2
+        Threshold: 10
+        ComparisonOperator: GreaterThanThreshold
+        Dimensions:
+          - Name: FunctionName
+            Value: ${self:service}-${self:provider.stage}-chatbot
+        TreatMissingData: notBreaching
+
+  Outputs:
+    # API Gateway URL
+    ApiGatewayUrl:
+      Description: API Gateway endpoint URL
+      Value: !Sub 'https://${ApiGatewayRestApi}.execute-api.${self:provider.region}.amazonaws.com/${self:provider.stage}'
+      Export:
+        Name: ${self:service}-${self:provider.stage}-api-url
+    
+    # CloudFront Distribution URL
+    CloudFrontUrl:
+      Description: CloudFront distribution URL
+      Value: !GetAtt CloudFrontDistribution.DomainName
+      Export:
+        Name: ${self:service}-${self:provider.stage}-cloudfront-url
+    
+    # CloudFront Distribution ID
+    CloudFrontId:
+      Description: CloudFront distribution ID
+      Value: !Ref CloudFrontDistribution
+      Export:
+        Name: ${self:service}-${self:provider.stage}-cloudfront-id
+    
+    # S3 Bucket Name
+    StaticBucketName:
+      Description: S3 bucket for static files
+      Value: !Ref StaticFilesBucket
+      Export:
+        Name: ${self:service}-${self:provider.stage}-static-bucket
+    
+    # S3 Bucket URL
+    StaticBucketUrl:
+      Description: S3 bucket website URL
+      Value: !GetAtt StaticFilesBucket.WebsiteURL
+      Export:
+        Name: ${self:service}-${self:provider.stage}-static-url

@@ -1,0 +1,1996 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Users,
+  Reply as ReplyIcon,
+  Plus,
+  Search,
+  Clock,
+  ThumbsUp,
+  Tag,
+  Shield,
+  Edit2,
+  Trash2,
+  MoreVertical,
+  Image as ImageIcon,
+  Mic,
+  X,
+  Loader2,
+  Play,
+  Pause,
+  Volume2,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+
+// ─────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────
+
+interface ForumPost {
+  id: string;
+  title: string;
+  content: string;
+  authorId: string;
+  author: string;
+  timestamp: Date;
+  category: string;
+  likes: number;
+  replies: number;
+  isAnonymous: boolean;
+  imageUrl?: string;
+  voiceNoteUrl?: string;
+  voiceNoteDuration?: number;
+}
+
+interface Reply {
+  id: string;
+  postId: string;
+  content: string;
+  authorId: string;
+  author: string;
+  timestamp: Date;
+  likes: number;
+  isAnonymous: boolean;
+  imageUrl?: string;
+  voiceNoteUrl?: string;
+  voiceNoteDuration?: number;
+}
+
+// API response DTOs (shape from backend)
+interface CommunityPostDTO {
+  id: string;
+  title: string;
+  content: string;
+  authorId: string;
+  author: string;
+  timestamp?: string;
+  createdAt?: string;
+  category?: string;
+  likes?: number;
+  repliesCount?: number;
+  isAnonymous?: boolean;
+  imageUrl?: string;
+  voiceNoteUrl?: string;
+  voiceNoteDuration?: number;
+}
+
+interface CommunityReplyDTO {
+  id: string;
+  postId: string;
+  content: string;
+  authorId: string;
+  author: string;
+  timestamp?: string;
+  createdAt?: string;
+  likes?: number;
+  isAnonymous?: boolean;
+  imageUrl?: string;
+  voiceNoteUrl?: string;
+  voiceNoteDuration?: number;
+}
+
+interface CommunityDataResponse {
+  posts?: CommunityPostDTO[];
+  replies?: CommunityReplyDTO[];
+}
+
+const PeerForum = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
+  const [posts, setPosts] = useState<ForumPost[]>([]);
+  const [replies, setReplies] = useState<Reply[]>([]);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+  const [editingPost, setEditingPost] = useState<string | null>(null);
+  const [editingReply, setEditingReply] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState({ title: "", content: "", category: "" });
+  const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'post' | 'reply' | null, id: string | null, postId?: string }>({ type: null, id: null });
+
+  const [newPost, setNewPost] = useState({
+    title: "",
+    content: "",
+    category: "General",
+    isAnonymous: true,
+  });
+
+  const [activeReplyPostId, setActiveReplyPostId] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState("");
+  const [replyIsAnonymous, setReplyIsAnonymous] = useState(true);
+
+  const [showNewPostForm, setShowNewPostForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Media upload states for posts
+  const [postImageFile, setPostImageFile] = useState<File | null>(null);
+  const [postImagePreview, setPostImagePreview] = useState<string | null>(null);
+  const [postVoiceNote, setPostVoiceNote] = useState<Blob | null>(null);
+  const [postVoiceNoteDuration, setPostVoiceNoteDuration] = useState<number>(0);
+  const [isRecordingPost, setIsRecordingPost] = useState(false);
+  const [mediaRecorderPost, setMediaRecorderPost] = useState<MediaRecorder | null>(null);
+  const [recordingTimePost, setRecordingTimePost] = useState(0);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const recordingIntervalPost = useRef<NodeJS.Timeout | null>(null);
+
+  // Media upload states for replies
+  const [replyImageFile, setReplyImageFile] = useState<File | null>(null);
+  const [replyImagePreview, setReplyImagePreview] = useState<string | null>(null);
+  const [replyVoiceNote, setReplyVoiceNote] = useState<Blob | null>(null);
+  const [replyVoiceNoteDuration, setReplyVoiceNoteDuration] = useState<number>(0);
+  const [isRecordingReply, setIsRecordingReply] = useState(false);
+  const [mediaRecorderReply, setMediaRecorderReply] = useState<MediaRecorder | null>(null);
+  const [recordingTimeReply, setRecordingTimeReply] = useState(0);
+  const recordingIntervalReply = useRef<NodeJS.Timeout | null>(null);
+
+  const categories = [
+    "General",
+    "Anxiety",
+    "Depression",
+    "Study Tips",
+    "Social Connection",
+    "Academic Stress",
+    "Sleep Issues",
+    "Relationships",
+  ];
+
+  // ─────────────────────────────────────────
+  // Media Upload Helper Functions
+  // ─────────────────────────────────────────
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>, isReply: boolean = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Image must be less than 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (isReply) {
+        setReplyImageFile(file);
+        setReplyImagePreview(reader.result as string);
+      } else {
+        setPostImageFile(file);
+        setPostImagePreview(reader.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearImage = (isReply: boolean = false) => {
+    if (isReply) {
+      setReplyImageFile(null);
+      setReplyImagePreview(null);
+    } else {
+      setPostImageFile(null);
+      setPostImagePreview(null);
+    }
+  };
+
+  const startRecording = async (isReply: boolean = false) => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // Check for supported MIME types
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : 'audio/mp4';
+      
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
+      const audioChunks: Blob[] = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          audioChunks.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: mimeType });
+        
+        if (isReply) {
+          setReplyVoiceNote(audioBlob);
+          setReplyVoiceNoteDuration(recordingTimeReply);
+          if (recordingIntervalReply.current) {
+            clearInterval(recordingIntervalReply.current);
+            recordingIntervalReply.current = null;
+          }
+        } else {
+          setPostVoiceNote(audioBlob);
+          setPostVoiceNoteDuration(recordingTimePost);
+          if (recordingIntervalPost.current) {
+            clearInterval(recordingIntervalPost.current);
+            recordingIntervalPost.current = null;
+          }
+        }
+        
+        stream.getTracks().forEach(track => track.stop());
+        
+        toast({
+          title: "Voice note recorded",
+          description: `Recording saved (${isReply ? recordingTimeReply : recordingTimePost}s)`,
+        });
+      };
+
+      // Start recording with timeslice for better data collection
+      mediaRecorder.start(100); // Collect data every 100ms
+      
+      if (isReply) {
+        setMediaRecorderReply(mediaRecorder);
+        setIsRecordingReply(true);
+        setRecordingTimeReply(0);
+        
+        // Start timer
+        recordingIntervalReply.current = setInterval(() => {
+          setRecordingTimeReply(prev => {
+            const newTime = prev + 1;
+            if (newTime >= 120) {
+              stopRecording(true);
+            }
+            return newTime;
+          });
+        }, 1000);
+      } else {
+        setMediaRecorderPost(mediaRecorder);
+        setIsRecordingPost(true);
+        setRecordingTimePost(0);
+        
+        // Start timer
+        recordingIntervalPost.current = setInterval(() => {
+          setRecordingTimePost(prev => {
+            const newTime = prev + 1;
+            if (newTime >= 120) {
+              stopRecording(false);
+            }
+            return newTime;
+          });
+        }, 1000);
+      }
+
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      toast({
+        title: "Microphone access denied",
+        description: "Please allow microphone access to record voice notes",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopRecording = (isReply: boolean = false) => {
+    if (isReply && mediaRecorderReply && mediaRecorderReply.state === 'recording') {
+      mediaRecorderReply.stop();
+      setIsRecordingReply(false);
+      if (recordingIntervalReply.current) {
+        clearInterval(recordingIntervalReply.current);
+        recordingIntervalReply.current = null;
+      }
+    } else if (!isReply && mediaRecorderPost && mediaRecorderPost.state === 'recording') {
+      mediaRecorderPost.stop();
+      setIsRecordingPost(false);
+      if (recordingIntervalPost.current) {
+        clearInterval(recordingIntervalPost.current);
+        recordingIntervalPost.current = null;
+      }
+    }
+  };
+
+  const clearVoiceNote = (isReply: boolean = false) => {
+    if (isReply) {
+      setReplyVoiceNote(null);
+      setReplyVoiceNoteDuration(0);
+    } else {
+      setPostVoiceNote(null);
+      setPostVoiceNoteDuration(0);
+    }
+  };
+
+  const uploadFile = async (file: File | Blob, type: 'image' | 'audio'): Promise<string | null> => {
+    const formData = new FormData();
+    
+    // Create a proper File object if it's a Blob
+    if (file instanceof Blob && !(file instanceof File)) {
+      // For audio blobs, ensure proper MIME type
+      let mimeType = file.type || 'audio/webm';
+      let extension = 'webm';
+      
+      if (type === 'audio') {
+        // Ensure the MIME type is in the allowed list
+        if (!mimeType.startsWith('audio/')) {
+          mimeType = 'audio/webm';
+        }
+        // Extract extension from MIME type
+        if (mimeType.includes('webm')) {
+          extension = 'webm';
+        } else if (mimeType.includes('mp4')) {
+          extension = 'm4a';
+        } else if (mimeType.includes('mpeg') || mimeType.includes('mp3')) {
+          extension = 'mp3';
+        } else if (mimeType.includes('wav')) {
+          extension = 'wav';
+        } else if (mimeType.includes('ogg')) {
+          extension = 'ogg';
+        }
+      } else {
+        extension = 'jpg';
+        mimeType = 'image/jpeg';
+      }
+      
+      const fileName = `recording-${Date.now()}.${extension}`;
+      file = new File([file], fileName, { type: mimeType });
+    }
+    
+    formData.append('file', file);
+    formData.append('type', type);
+
+    try {
+      console.log('Uploading file:', { 
+        name: file instanceof File ? file.name : 'blob', 
+        type, 
+        size: file.size,
+        mimeType: file.type 
+      });
+      
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
+        console.error('Upload error:', errorData);
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const data = await response.json();
+      console.log('Upload successful:', data);
+      return data.url;
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: error instanceof Error ? error.message : "Failed to upload file. Please try again.",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
+  // ─────────────────────────────────────────
+  // Create Post  →  /api/community-memory (type: "post")
+  // ─────────────────────────────────────────
+
+  const handleCreatePost = async () => {
+    if (!newPost.title.trim() || !newPost.content.trim()) {
+      toast({
+        title: "Please fill in all fields",
+        description: "Both title and content are required to create a post.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!user?.instituteId) {
+      toast({
+        title: "Error",
+        description: "Unable to determine your institute. Please log in again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const postAuthorId = user.id;
+    const postAuthorName = newPost.isAnonymous
+      ? "Anonymous Student"
+      : user.name;
+
+    setIsUploadingMedia(true);
+
+    try {
+      // Upload media files if present
+      let imageUrl: string | null = null;
+      let voiceNoteUrl: string | null = null;
+
+      if (postImageFile) {
+        imageUrl = await uploadFile(postImageFile, 'image');
+      }
+
+      if (postVoiceNote) {
+        console.log('Uploading voice note:', { size: postVoiceNote.size, type: postVoiceNote.type });
+        voiceNoteUrl = await uploadFile(postVoiceNote, 'audio');
+        console.log('Voice note uploaded:', voiceNoteUrl);
+      }
+
+      const postData = {
+        type: "post" as const,
+        title: newPost.title,
+        content: newPost.content,
+        category: newPost.category || "General",
+        isAnonymous: newPost.isAnonymous || false,
+        authorId: postAuthorId,
+        author: postAuthorName,
+        instituteId: user.instituteId,
+        imageUrl: imageUrl || undefined,
+        voiceNoteUrl: voiceNoteUrl || undefined,
+        voiceNoteDuration: voiceNoteUrl ? postVoiceNoteDuration : undefined,
+      };
+
+      const res = await fetch("/api/community-memory", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(postData),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: "Unknown error" }));
+        console.error("API Error:", errorData);
+        throw new Error(errorData.error || "Failed to save post");
+      }
+
+      const data = await res.json();
+      const saved = (data.post || {}) as CommunityPostDTO;
+
+      const post: ForumPost = {
+        id: saved.id || Date.now().toString(),
+        title: saved.title || newPost.title,
+        content: saved.content || newPost.content,
+        authorId: saved.authorId || postAuthorId,
+        author: saved.author ?? postAuthorName,
+        timestamp: new Date(saved.timestamp || saved.createdAt || Date.now()),
+        category: saved.category || newPost.category,
+        likes: saved.likes ?? 0,
+        replies: saved.repliesCount ?? 0,
+        isAnonymous: saved.isAnonymous ?? newPost.isAnonymous,
+        imageUrl: saved.imageUrl,
+        voiceNoteUrl: saved.voiceNoteUrl,
+        voiceNoteDuration: saved.voiceNoteDuration,
+      };
+
+      console.log('Created post with media:', { 
+        imageUrl: post.imageUrl, 
+        voiceNoteUrl: post.voiceNoteUrl,
+        voiceNoteDuration: post.voiceNoteDuration 
+      });
+
+      setPosts((prev) => [post, ...prev]);
+      setNewPost({
+        title: "",
+        content: "",
+        category: "General",
+        isAnonymous: true,
+      });
+      
+      // Clear media
+      clearImage(false);
+      clearVoiceNote(false);
+      
+      setShowNewPostForm(false);
+
+      toast({
+        title: "Post created successfully! 🎉",
+        description: "Your post has been shared with the community.",
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Something went wrong",
+        description: "We couldn't save your post. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingMedia(false);
+    }
+  };
+
+  // ─────────────────────────────────────────
+  // Reply open/close
+  // ─────────────────────────────────────────
+
+  const handleOpenReply = (postId: string) => {
+    if (!user?.id) {
+      toast({
+        title: "Please login to reply",
+        variant: "destructive",
+      });
+      return;
+    }
+    setActiveReplyPostId((prev) => (prev === postId ? null : postId));
+    setReplyContent("");
+    setReplyIsAnonymous(true);
+  };
+
+  // ─────────────────────────────────────────
+  // Create Reply  →  /api/community-memory (type: "reply")
+  // ─────────────────────────────────────────
+
+  const handleCreateReply = async (postId: string) => {
+    if (!replyContent.trim()) {
+      toast({
+        title: "Reply can't be empty",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!user?.instituteId) {
+      toast({
+        title: "Error",
+        description: "Unable to determine your institute. Please log in again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const replyAuthorId = user.id;
+    const replyAuthorName = replyIsAnonymous
+      ? "Anonymous Student"
+      : user.name;
+
+    setIsUploadingMedia(true);
+
+    try {
+      // Upload media files if present
+      let imageUrl: string | null = null;
+      let voiceNoteUrl: string | null = null;
+
+      if (replyImageFile) {
+        imageUrl = await uploadFile(replyImageFile, 'image');
+      }
+
+      if (replyVoiceNote) {
+        console.log('Uploading reply voice note:', { size: replyVoiceNote.size, type: replyVoiceNote.type });
+        voiceNoteUrl = await uploadFile(replyVoiceNote, 'audio');
+        console.log('Reply voice note uploaded:', voiceNoteUrl);
+      }
+
+      const res = await fetch("/api/community-memory", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "reply",
+          postId,
+          content: replyContent,
+          isAnonymous: replyIsAnonymous,
+          authorId: replyAuthorId,
+          author: replyAuthorName,
+          instituteId: user.instituteId,
+          imageUrl: imageUrl || undefined,
+          voiceNoteUrl: voiceNoteUrl || undefined,
+          voiceNoteDuration: voiceNoteUrl ? replyVoiceNoteDuration : undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to save reply");
+      }
+
+      const data = await res.json();
+      const saved = (data.reply || {}) as CommunityReplyDTO;
+
+      const newReply: Reply = {
+        id: saved.id || Date.now().toString(),
+        postId: saved.postId || postId,
+        content: saved.content || replyContent,
+        authorId: saved.authorId || replyAuthorId,
+        author: saved.author ?? replyAuthorName,
+        timestamp: new Date(saved.timestamp || saved.createdAt || Date.now()),
+        likes: saved.likes ?? 0,
+        isAnonymous: saved.isAnonymous ?? replyIsAnonymous,
+        imageUrl: saved.imageUrl,
+        voiceNoteUrl: saved.voiceNoteUrl,
+        voiceNoteDuration: saved.voiceNoteDuration,
+      };
+
+      setReplies((prev) => [newReply, ...prev]);
+      setPosts((prev) =>
+        prev.map((post) =>
+          post.id === postId ? { ...post, replies: post.replies + 1 } : post
+        )
+      );
+
+      setReplyContent("");
+      setActiveReplyPostId(null);
+      
+      // Clear media
+      clearImage(true);
+      clearVoiceNote(true);
+
+      toast({
+        title: "Reply posted ✅",
+        description: "Your reply has been added to the discussion.",
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Something went wrong",
+        description: "We couldn't save your reply. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingMedia(false);
+    }
+  };
+
+  // ─────────────────────────────────────────
+  // Edit Post Handler
+  // ─────────────────────────────────────────
+
+  const handleEditPost = async (postId: string) => {
+    if (!editContent.title.trim() || !editContent.content.trim()) {
+      toast({
+        title: "Please fill in all fields",
+        description: "Both title and content are required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/community-memory", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "post",
+          id: postId,
+          authorId: user?.id,
+          title: editContent.title,
+          content: editContent.content,
+          category: editContent.category,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update post");
+      }
+
+      const data = await res.json();
+      const updated = data.post;
+
+      setPosts((prev) =>
+        prev.map((post) =>
+          post.id === postId
+            ? { ...post, title: updated.title, content: updated.content, category: updated.category }
+            : post
+        )
+      );
+
+      setEditingPost(null);
+      setEditContent({ title: "", content: "", category: "" });
+
+      toast({
+        title: "Post updated ✅",
+        description: "Your post has been updated successfully.",
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Update failed",
+        description: "We couldn't update your post. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // ─────────────────────────────────────────
+  // Edit Reply Handler
+  // ─────────────────────────────────────────
+
+  const handleEditReply = async (replyId: string) => {
+    if (!editContent.content.trim()) {
+      toast({
+        title: "Reply can't be empty",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/community-memory", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "reply",
+          id: replyId,
+          authorId: user?.id,
+          content: editContent.content,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update reply");
+      }
+
+      const data = await res.json();
+      const updated = data.reply;
+
+      setReplies((prev) =>
+        prev.map((reply) =>
+          reply.id === replyId ? { ...reply, content: updated.content } : reply
+        )
+      );
+
+      setEditingReply(null);
+      setEditContent({ title: "", content: "", category: "" });
+
+      toast({
+        title: "Reply updated ✅",
+        description: "Your reply has been updated successfully.",
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Update failed",
+        description: "We couldn't update your reply. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // ─────────────────────────────────────────
+  // Delete Post Handler
+  // ─────────────────────────────────────────
+
+  const handleDeletePost = async (postId: string) => {
+    try {
+      const res = await fetch(
+        `/api/community-memory?type=post&id=${postId}&authorId=${user?.id}`,
+        { method: "DELETE" }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to delete post");
+      }
+
+      setPosts((prev) => prev.filter((post) => post.id !== postId));
+      setReplies((prev) => prev.filter((reply) => reply.postId !== postId));
+      setDeleteConfirm({ type: null, id: null });
+
+      toast({
+        title: "Post deleted ✅",
+        description: "Your post has been removed from the community.",
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Delete failed",
+        description: "We couldn't delete your post. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // ─────────────────────────────────────────
+  // Delete Reply Handler
+  // ─────────────────────────────────────────
+
+  const handleDeleteReply = async (replyId: string, postId: string) => {
+    try {
+      const res = await fetch(
+        `/api/community-memory?type=reply&id=${replyId}&authorId=${user?.id}`,
+        { method: "DELETE" }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to delete reply");
+      }
+
+      setReplies((prev) => prev.filter((reply) => reply.id !== replyId));
+      setPosts((prev) =>
+        prev.map((post) =>
+          post.id === postId ? { ...post, replies: Math.max(0, post.replies - 1) } : post
+        )
+      );
+      setDeleteConfirm({ type: null, id: null });
+
+      toast({
+        title: "Reply deleted ✅",
+        description: "Your reply has been removed from the discussion.",
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Delete failed",
+        description: "We couldn't delete your reply. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // ─────────────────────────────────────────
+  // Likes handlers
+  // ─────────────────────────────────────────
+
+  const handleLikeReply = (replyId: string) => {
+    setReplies((prev) =>
+      prev.map((reply) =>
+        reply.id === replyId ? { ...reply, likes: reply.likes + 1 } : reply
+      )
+    );
+  };
+
+  const handleLikePost = (postId: string) => {
+    setPosts((prev) =>
+      prev.map((post) =>
+        post.id === postId ? { ...post, likes: post.likes + 1 } : post
+      )
+    );
+  };
+
+  // ─────────────────────────────────────────
+  // Helpers
+  // ─────────────────────────────────────────
+
+  const filteredPosts = posts.filter(
+    (post) =>
+      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.category.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const getTimeAgo = (timestamp: Date) => {
+    const now = new Date();
+    const diff = now.getTime() - timestamp.getTime();
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    if (days > 0) return `${days}d ago`;
+    if (hours > 0) return `${hours}h ago`;
+    if (minutes > 0) return `${minutes}m ago`;
+    return "Just now";
+  };
+
+  const getCategoryColor = (category: string) => {
+    const colors: { [key: string]: string } = {
+      Anxiety: "bg-red-100 text-red-800",
+      Depression: "bg-purple-100 text-purple-800",
+      "Study Tips": "bg-blue-100 text-blue-800",
+      "Social Connection": "bg-green-100 text-green-800",
+      "Academic Stress": "bg-orange-100 text-orange-800",
+      "Sleep Issues": "bg-indigo-100 text-indigo-800",
+      Relationships: "bg-pink-100 text-pink-800",
+      General: "bg-gray-100 text-gray-800",
+    };
+    return colors[category] || colors["General"];
+  };
+
+  const getAuthorInitials = (authorName: string) => {
+    if (authorName === "Anonymous Student") return "?";
+    return authorName
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
+  };
+
+  // ─────────────────────────────────────────
+  // Initial load from backend
+  // ─────────────────────────────────────────
+
+  useEffect(() => {
+    const loadCommunityData = async () => {
+      if (!user?.instituteId) return; // Wait for user data
+      
+      setIsLoadingPosts(true);
+      try {
+        const res = await fetch(`/api/community-memory?instituteId=${user.instituteId}&limit=50`);
+
+        if (!res.ok) {
+          // Optional: inspect status
+          const text = await res.text().catch(() => "");
+          console.warn(
+            "Failed to load community data. Status:",
+            res.status,
+            text || "<no body>"
+          );
+          // User-facing message
+          // toast({ title: "Unable to load community posts", variant: "destructive" });
+          return;
+        }
+
+        const data = (await res.json()) as CommunityDataResponse;
+
+        setPosts(
+          (data.posts || []).map((p) => ({
+            id: p.id,
+            title: p.title,
+            content: p.content,
+            authorId: p.authorId,
+            author: p.author,
+            timestamp: new Date(p.timestamp || p.createdAt || Date.now()),
+            category: p.category || "General",
+            likes: p.likes ?? 0,
+            replies: p.repliesCount ?? 0,
+            isAnonymous: p.isAnonymous ?? false,
+            imageUrl: p.imageUrl,
+            voiceNoteUrl: p.voiceNoteUrl,
+            voiceNoteDuration: p.voiceNoteDuration,
+          }))
+        );
+
+        setReplies(
+          (data.replies || []).map((r) => ({
+            id: r.id,
+            postId: r.postId,
+            content: r.content,
+            authorId: r.authorId,
+            author: r.author,
+            timestamp: new Date(r.timestamp || r.createdAt || Date.now()),
+            likes: r.likes ?? 0,
+            isAnonymous: r.isAnonymous ?? false,
+            imageUrl: r.imageUrl,
+            voiceNoteUrl: r.voiceNoteUrl,
+            voiceNoteDuration: r.voiceNoteDuration,
+          }))
+        );
+      } catch (err) {
+        // Network level error only
+        console.warn("Error loading community data", err);
+        toast({ title: "Error loading posts", description: "Could not fetch community posts. Please try again.", variant: "destructive" });
+      } finally {
+        setIsLoadingPosts(false);
+      }
+    };
+
+    loadCommunityData();
+  }, [user?.instituteId]);
+
+  // Cleanup intervals on unmount
+  useEffect(() => {
+    return () => {
+      if (recordingIntervalPost.current) {
+        clearInterval(recordingIntervalPost.current);
+      }
+      if (recordingIntervalReply.current) {
+        clearInterval(recordingIntervalReply.current);
+      }
+      // Stop any active recordings
+      if (mediaRecorderPost && mediaRecorderPost.state === 'recording') {
+        mediaRecorderPost.stop();
+      }
+      if (mediaRecorderReply && mediaRecorderReply.state === 'recording') {
+        mediaRecorderReply.stop();
+      }
+    };
+  }, [mediaRecorderPost, mediaRecorderReply]);
+
+  // ─────────────────────────────────────────
+  // UI
+  // ─────────────────────────────────────────
+
+  return (
+    <div className="min-h-screen bg-iceBlue dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      {/* Header Section */}
+      <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-glacier/30 rounded-xl">
+                <Users className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-medicalBlue">
+                  Community
+                </h1>
+                <p className="text-sm text-muted-foreground">Connect, share, and support</p>
+              </div>
+            </div>
+            <Button
+              onClick={() => setShowNewPostForm(!showNewPostForm)}
+              size="lg"
+              className="bg-medicalBlue hover:bg-medicalBlue-dark shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              <span className="hidden sm:inline">New Post</span>
+              <span className="sm:hidden">Post</span>
+            </Button>
+          </div>
+
+          {/* Search Bar */}
+          <div className="mt-4 relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+            <Input
+              placeholder="Search discussions by title, content, or category..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 h-12 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+        {/* Community Guidelines Banner */}
+        <Card className="bg-glacier/20 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <CardContent className="pt-6">
+            <div className="flex items-start space-x-4">
+              <div className="p-3 bg-wellness/10 rounded-xl">
+                <Shield className="w-6 h-6 text-wellness" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg text-wellness mb-3 flex items-center">
+                  Community Guidelines
+                  <span className="ml-2 text-xs bg-wellness/10 text-wellness px-2 py-1 rounded-full">Safe Space</span>
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-muted-foreground">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-wellness"></div>
+                    <span>Be kind, respectful, and supportive</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-wellness"></div>
+                    <span>Maintain confidentiality and privacy</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-wellness"></div>
+                    <span>No personal attacks or discrimination</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-wellness"></div>
+                    <span>Share resources and encouragement</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* New Post Form */}
+        {showNewPostForm && (
+          <Card className="border-2 border-primary/20 shadow-xl animate-in slide-in-from-top duration-300">
+            <CardHeader className="bg-glacier/20">
+              <CardTitle className="text-xl flex items-center">
+                <div className="p-2 bg-primary/10 rounded-lg mr-3">
+                  <Plus className="w-5 h-5 text-primary" />
+                </div>
+                Start a New Discussion
+              </CardTitle>
+              <CardDescription className="text-base">
+                Share your thoughts or ask for support from the community
+              </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Title</label>
+                    <Input
+                      placeholder="What's on your mind?"
+                      value={newPost.title}
+                      onChange={(e) =>
+                        setNewPost({ ...newPost, title: e.target.value })
+                      }
+                      className="h-12 rounded-xl"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Description</label>
+                    <Textarea
+                      placeholder="Share your thoughts, experiences, or questions..."
+                      value={newPost.content}
+                      onChange={(e) =>
+                        setNewPost({ ...newPost, content: e.target.value })
+                      }
+                      className="min-h-[140px] resize-none rounded-xl"
+                    />
+                  </div>
+
+                  {/* Media Upload Section */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium block">Attachments (Optional)</label>
+                    <div className="flex flex-wrap gap-2">
+                      {/* Image Upload Button */}
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleImageSelect(e, false)}
+                          disabled={isUploadingMedia}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="rounded-xl"
+                          asChild
+                        >
+                          <span>
+                            <ImageIcon className="w-4 h-4 mr-2" />
+                            {postImageFile ? 'Change Image' : 'Add Image'}
+                          </span>
+                        </Button>
+                      </label>
+
+                      {/* Voice Note Button */}
+                      {!postVoiceNote && !isRecordingPost && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startRecording(false)}
+                          disabled={isUploadingMedia}
+                          className="rounded-xl"
+                        >
+                          <Mic className="w-4 h-4 mr-2" />
+                          Record Voice Note
+                        </Button>
+                      )}
+
+                      {isRecordingPost && (
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => stopRecording(false)}
+                          className="rounded-xl animate-pulse"
+                        >
+                          <Pause className="w-4 h-4 mr-2" />
+                          Stop Recording ({recordingTimePost}s)
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Image Preview */}
+                    {postImagePreview && (
+                      <div className="relative inline-block">
+                        <img
+                          src={postImagePreview}
+                          alt="Preview"
+                          className="max-h-48 rounded-xl border-2 border-gray-200"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute -top-2 -right-2 rounded-full h-8 w-8"
+                          onClick={() => clearImage(false)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Voice Note Preview */}
+                    {postVoiceNote && (
+                      <div className="flex items-center gap-2 bg-glacier/40 dark:from-emerald-900/20 dark:to-teal-900/20 p-3 rounded-xl">
+                        <Volume2 className="w-5 h-5 text-green-600 dark:text-green-400 animate-pulse" />
+                        <div className="flex-1">
+                          <span className="text-sm font-semibold text-green-800 dark:text-green-300 block mb-2">
+                            🎙️ Voice note recorded ({postVoiceNoteDuration}s)
+                          </span>
+                          <audio
+                            controls
+                            src={URL.createObjectURL(postVoiceNote)}
+                            className="w-full h-8"
+                            preload="metadata"
+                          >
+                            Your browser does not support audio playback.
+                          </audio>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:bg-red-100"
+                          onClick={() => clearVoiceNote(false)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex-1">
+                      <label className="text-sm font-medium mb-2 block">Category</label>
+                      <select
+                        value={newPost.category}
+                        onChange={(e) =>
+                          setNewPost({ ...newPost, category: e.target.value })
+                        }
+                        className="flex h-12 w-full rounded-xl border border-input bg-background px-4 py-2 text-sm"
+                      >
+                        {categories.map((category) => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex items-end">
+                      <label className="flex items-center space-x-3 cursor-pointer bg-gray-50 dark:bg-gray-800 px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <input
+                          type="checkbox"
+                          id="anonymous"
+                          checked={newPost.isAnonymous}
+                          onChange={(e) =>
+                            setNewPost({
+                              ...newPost,
+                              isAnonymous: e.target.checked,
+                            })
+                          }
+                          className="w-4 h-4 rounded accent-primary"
+                        />
+                        <span className="text-sm font-medium">Post anonymously</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    onClick={handleCreatePost}
+                    size="lg"
+                    disabled={isUploadingMedia}
+                    className="flex-1 bg-medicalBlue hover:bg-medicalBlue-dark h-12 rounded-xl shadow-md hover:shadow-lg transition-all duration-300"
+                  >
+                    {isUploadingMedia ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-5 h-5 mr-2" />
+                        Create Post
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => setShowNewPostForm(false)}
+                    disabled={isUploadingMedia}
+                    className="h-12 rounded-xl"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Posts List */}
+          <div className="space-y-5">
+            {isLoadingPosts ? (
+              // Loading skeleton animation
+              <>
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="rounded-2xl animate-pulse">
+                    <CardContent className="p-6">
+                      <div className="flex items-start space-x-4">
+                        <div className="w-12 h-12 rounded-full bg-healthGreen/20"></div>
+                        <div className="flex-1 space-y-3">
+                          <div className="flex items-center gap-2">
+                            <div className="h-4 w-24 bg-platinum rounded"></div>
+                            <div className="h-3 w-16 bg-iceBlue rounded"></div>
+                          </div>
+                          <div className="h-6 w-3/4 bg-medicalBlue/10 rounded"></div>
+                          <div className="space-y-2">
+                            <div className="h-4 w-full bg-platinum rounded"></div>
+                            <div className="h-4 w-5/6 bg-iceBlue rounded"></div>
+                            <div className="h-4 w-4/6 bg-glacier rounded"></div>
+                          </div>
+                          <div className="flex items-center gap-4 pt-2">
+                            <div className="h-8 w-16 bg-medicalBlue/20 rounded"></div>
+                            <div className="h-8 w-16 bg-healthGreen/20 rounded"></div>
+                            <div className="h-8 w-16 bg-calmPurple/20 rounded"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </>
+            ) : filteredPosts.length === 0 ? (
+              <Card className="border-dashed border-2">
+                <CardContent className="py-16">
+                  <div className="text-center">
+                    <div className="inline-flex p-4 bg-glacier/30 rounded-2xl mb-4">
+                      <Users className="w-12 h-12 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2">
+                      No discussions yet
+                    </h3>
+                    <p className="text-muted-foreground mb-6">
+                      Be the first to start a meaningful conversation!
+                    </p>
+                    <Button 
+                      onClick={() => setShowNewPostForm(true)}
+                      className="bg-medicalBlue"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create First Post
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              filteredPosts.map((post) => {
+                const postReplies = replies.filter(
+                  (r) => r.postId === post.id
+                );
+
+                return (
+                  <Card
+                    key={post.id}
+                    className="group hover:shadow-lg transition-all duration-300 bg-white dark:bg-gray-800 rounded-2xl"
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-start space-x-4">
+                        <Avatar className="w-12 h-12 ring-2 ring-primary/10 group-hover:ring-primary/30 transition-all">
+                          <AvatarFallback className="bg-healthGreen/20 text-healthGreen-dark font-semibold text-lg">
+                            {post.isAnonymous
+                              ? "?"
+                              : getAuthorInitials(post.author)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          {editingPost === post.id ? (
+                            /* EDIT MODE: Show edit form */
+                            <div className="space-y-3 bg-gray-50 dark:bg-gray-900 p-4 rounded-xl">
+                              <Input
+                                placeholder="Post title..."
+                                value={editContent.title}
+                                onChange={(e) =>
+                                  setEditContent((prev) => ({
+                                    ...prev,
+                                    title: e.target.value,
+                                  }))
+                                }
+                                className="font-semibold"
+                              />
+                              <Textarea
+                                placeholder="What's on your mind?"
+                                value={editContent.content}
+                                onChange={(e) =>
+                                  setEditContent((prev) => ({
+                                    ...prev,
+                                    content: e.target.value,
+                                  }))
+                                }
+                                className="min-h-[120px] resize-none"
+                              />
+                              <Select
+                                value={editContent.category}
+                                onValueChange={(value) =>
+                                  setEditContent((prev) => ({
+                                    ...prev,
+                                    category: value,
+                                  }))
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="General">
+                                    General Discussion
+                                  </SelectItem>
+                                  <SelectItem value="Mental Health">
+                                    Mental Health
+                                  </SelectItem>
+                                  <SelectItem value="Relationships">
+                                    Relationships
+                                  </SelectItem>
+                                  <SelectItem value="Academics">
+                                    Academics
+                                  </SelectItem>
+                                  <SelectItem value="Career">
+                                    Career
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleEditPost(post.id)}
+                                >
+                                  Save Changes
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setEditingPost(null);
+                                    setEditContent({
+                                      title: "",
+                                      content: "",
+                                      category: "",
+                                    });
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            /* VIEW MODE: Show post content */
+                            <>
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center flex-wrap gap-2">
+                                  <Badge
+                                    className={`${getCategoryColor(
+                                      post.category
+                                    )} text-xs font-medium px-3 py-1 rounded-full`}
+                                  >
+                                    <Tag className="w-3 h-3 mr-1" />
+                                    {post.category}
+                                  </Badge>
+                                  <span className="text-sm font-medium text-foreground">
+                                    {post.author}
+                                  </span>
+                                  <span className="text-gray-300 dark:text-gray-600">•</span>
+                                  <span className="text-sm text-muted-foreground flex items-center">
+                                    <Clock className="w-3.5 h-3.5 mr-1.5" />
+                                    {getTimeAgo(post.timestamp)}
+                                  </span>
+                                </div>
+
+                                {/* Dropdown menu for post author */}
+                                {post.authorId === user?.id && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                      >
+                                        <MoreVertical className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-40">
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          setEditingPost(post.id);
+                                          setEditContent({
+                                            title: post.title,
+                                            content: post.content,
+                                            category: post.category,
+                                          });
+                                        }}
+                                        className="cursor-pointer"
+                                      >
+                                        <Edit2 className="mr-2 h-4 w-4" />
+                                        Edit
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        className="text-destructive cursor-pointer focus:text-destructive"
+                                        onClick={() =>
+                                          setDeleteConfirm({
+                                            type: "post",
+                                            id: post.id,
+                                          })
+                                        }
+                                      >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                )}
+                              </div>
+                          <h3 className="font-semibold text-lg text-foreground mb-2 group-hover:text-primary transition-colors leading-snug">
+                            {post.title}
+                          </h3>
+                          <p className="text-muted-foreground mb-4 line-clamp-3 leading-relaxed">
+                            {post.content}
+                          </p>
+
+                          {/* Media Display */}
+                          {post.imageUrl && (
+                            <div className="mb-4">
+                              <img
+                                src={post.imageUrl}
+                                alt="Post attachment"
+                                className="max-h-64 w-auto rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer hover:opacity-90 transition-opacity"
+                                onClick={() => window.open(post.imageUrl, '_blank')}
+                              />
+                            </div>
+                          )}
+
+                          {post.voiceNoteUrl && (
+                            <div className="mb-4 bg-iceBlue dark:from-sky-900/20 dark:to-slate-900/20 p-4 rounded-xl">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Volume2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                <span className="text-sm font-semibold text-blue-800 dark:text-blue-300">
+                                  🎙️ Voice Note {post.voiceNoteDuration ? `(${post.voiceNoteDuration}s)` : ''}
+                                </span>
+                              </div>
+                              <audio
+                                controls
+                                src={post.voiceNoteUrl}
+                                className="w-full max-w-md rounded-lg"
+                                preload="metadata"
+                              >
+                                Your browser does not support the audio element.
+                              </audio>
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleLikePost(post.id)}
+                              className="text-muted-foreground hover:text-wellness hover:bg-wellness/10 rounded-xl transition-all"
+                            >
+                              <ThumbsUp className="w-4 h-4 mr-2" />
+                              <span className="font-medium">{post.likes}</span>
+                              <span className="hidden sm:inline ml-1">likes</span>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleOpenReply(post.id)}
+                              className="text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                            >
+                              <ReplyIcon className="w-4 h-4 mr-2" />
+                              <span className="font-medium">{postReplies.length}</span>
+                              <span className="hidden sm:inline ml-1">replies</span>
+                            </Button>
+                          </div>
+                          </>
+                          )}
+
+                          {/* Reply form (sirf active post ke niche) */}
+                          {activeReplyPostId === post.id && (
+                            <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-xl space-y-3">
+                              <Textarea
+                                placeholder="Share your thoughts..."
+                                value={replyContent}
+                                onChange={(e) =>
+                                  setReplyContent(e.target.value)
+                                }
+                                className="min-h-[100px] resize-none rounded-xl border-gray-200 dark:border-gray-700"
+                              />
+
+                              {/* Reply Media Upload Section */}
+                              <div className="space-y-3">
+                                <div className="flex flex-wrap gap-2">
+                                  {/* Image Upload Button */}
+                                  <label className="cursor-pointer">
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      onChange={(e) => handleImageSelect(e, true)}
+                                      disabled={isUploadingMedia}
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      className="rounded-xl"
+                                      asChild
+                                    >
+                                      <span>
+                                        <ImageIcon className="w-4 h-4 mr-2" />
+                                        {replyImageFile ? 'Change Image' : 'Add Image'}
+                                      </span>
+                                    </Button>
+                                  </label>
+
+                                  {/* Voice Note Button */}
+                                  {!replyVoiceNote && !isRecordingReply && (
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => startRecording(true)}
+                                      disabled={isUploadingMedia}
+                                      className="rounded-xl"
+                                    >
+                                      <Mic className="w-4 h-4 mr-2" />
+                                      Record Voice Note
+                                    </Button>
+                                  )}
+
+                                  {isRecordingReply && (
+                                    <Button
+                                      type="button"
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={() => stopRecording(true)}
+                                      className="rounded-xl animate-pulse"
+                                    >
+                                      <Pause className="w-4 h-4 mr-2" />
+                                      Stop ({recordingTimeReply}s)
+                                    </Button>
+                                  )}
+                                </div>
+
+                                {/* Reply Image Preview */}
+                                {replyImagePreview && (
+                                  <div className="relative inline-block">
+                                    <img
+                                      src={replyImagePreview}
+                                      alt="Preview"
+                                      className="max-h-32 rounded-xl border-2 border-gray-200"
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="destructive"
+                                      size="icon"
+                                      className="absolute -top-2 -right-2 rounded-full h-6 w-6"
+                                      onClick={() => clearImage(true)}
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                )}
+
+                                {/* Reply Voice Note Preview */}
+                                {replyVoiceNote && (
+                                  <div className="flex items-center gap-2 bg-white dark:bg-gray-800 p-2 rounded-xl border border-gray-200 dark:border-gray-700">
+                                    <Volume2 className="w-4 h-4 text-primary" />
+                                    <div className="flex-1">
+                                      <span className="text-xs block mb-1">
+                                        Voice note ({replyVoiceNoteDuration}s)
+                                      </span>
+                                      <audio
+                                        controls
+                                        src={URL.createObjectURL(replyVoiceNote)}
+                                        className="w-full h-7"
+                                        preload="metadata"
+                                      >
+                                        Your browser does not support audio playback.
+                                      </audio>
+                                    </div>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6"
+                                      onClick={() => clearVoiceNote(true)}
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex items-center justify-between gap-3 pt-2">
+                                <label className="flex items-center space-x-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    id={`reply-anon-${post.id}`}
+                                    checked={replyIsAnonymous}
+                                    onChange={(e) =>
+                                      setReplyIsAnonymous(e.target.checked)
+                                    }
+                                    className="w-4 h-4 rounded accent-primary"
+                                  />
+                                  <span className="text-sm text-muted-foreground">
+                                    Reply anonymously
+                                  </span>
+                                </label>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleCreateReply(post.id)}
+                                    disabled={isUploadingMedia}
+                                    className="bg-medicalBlue hover:bg-medicalBlue-dark rounded-lg"
+                                  >
+                                    {isUploadingMedia ? (
+                                      <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Uploading...
+                                      </>
+                                    ) : (
+                                      'Post Reply'
+                                    )}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setActiveReplyPostId(null)}
+                                    disabled={isUploadingMedia}
+                                    className="rounded-lg"
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Replies List */}
+                          {postReplies.length > 0 && (
+                            <div className="mt-6 space-y-4 border-t border-gray-100 dark:border-gray-700 pt-4">
+                              {postReplies.map((reply) => (
+                                <div
+                                  key={reply.id}
+                                  className="flex items-start space-x-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+                                >
+                                  <Avatar className="w-9 h-9 ring-2 ring-wellness/10">
+                                    <AvatarFallback className="bg-calmPurple/20 text-calmPurple-dark text-xs font-semibold">
+                                      {reply.isAnonymous
+                                        ? "?"
+                                        : getAuthorInitials(reply.author)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1">
+                                    {editingReply === reply.id ? (
+                                      /* EDIT MODE for reply */
+                                      <div className="space-y-2">
+                                        <Textarea
+                                          placeholder="Edit your reply..."
+                                          value={editContent.content}
+                                          onChange={(e) =>
+                                            setEditContent((prev) => ({
+                                              ...prev,
+                                              content: e.target.value,
+                                            }))
+                                          }
+                                          className="min-h-[80px] resize-none text-sm"
+                                        />
+                                        <div className="flex gap-2">
+                                          <Button
+                                            size="sm"
+                                            onClick={() =>
+                                              handleEditReply(reply.id)
+                                            }
+                                          >
+                                            Save
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => {
+                                              setEditingReply(null);
+                                              setEditContent({
+                                                title: "",
+                                                content: "",
+                                                category: "",
+                                              });
+                                            }}
+                                          >
+                                            Cancel
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      /* VIEW MODE for reply */
+                                      <>
+                                        <div className="flex items-center justify-between gap-2 mb-1">
+                                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                            <span>
+                                              {reply.isAnonymous
+                                                ? "Anonymous Student"
+                                                : reply.author}
+                                            </span>
+                                            <span>•</span>
+                                            <span>
+                                              {getTimeAgo(reply.timestamp)}
+                                            </span>
+                                          </div>
+
+                                          {/* Dropdown for reply author */}
+                                          {reply.authorId === user?.id && (
+                                            <DropdownMenu>
+                                              <DropdownMenuTrigger asChild>
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="h-6 w-6 p-0"
+                                                >
+                                                  <MoreVertical className="h-3 w-3" />
+                                                </Button>
+                                              </DropdownMenuTrigger>
+                                              <DropdownMenuContent align="end">
+                                                <DropdownMenuItem
+                                                  onClick={() => {
+                                                    setEditingReply(reply.id);
+                                                    setEditContent({
+                                                      title: "",
+                                                      content: reply.content,
+                                                      category: "",
+                                                    });
+                                                  }}
+                                                >
+                                                  <Edit2 className="mr-2 h-4 w-4" />
+                                                  Edit
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                  className="text-destructive"
+                                                  onClick={() =>
+                                                    setDeleteConfirm({
+                                                      type: "reply",
+                                                      id: reply.id,
+                                                      postId: post.id,
+                                                    })
+                                                  }
+                                                >
+                                                  <Trash2 className="mr-2 h-4 w-4" />
+                                                  Delete
+                                                </DropdownMenuItem>
+                                              </DropdownMenuContent>
+                                            </DropdownMenu>
+                                          )}
+                                        </div>
+                                    <p className="mb-2 text-foreground text-sm leading-relaxed">
+                                      {reply.content}
+                                    </p>
+
+                                    {/* Reply Media Display */}
+                                    {reply.imageUrl && (
+                                      <div className="mb-3">
+                                        <img
+                                          src={reply.imageUrl}
+                                          alt="Reply attachment"
+                                          className="max-h-48 w-auto rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:opacity-90 transition-opacity"
+                                          onClick={() => window.open(reply.imageUrl, '_blank')}
+                                        />
+                                      </div>
+                                    )}
+
+                                    {reply.voiceNoteUrl && (
+                                      <div className="mb-3 bg-platinum dark:from-slate-900/20 dark:to-cyan-900/20 p-3 rounded-lg">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <Volume2 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                                          <span className="text-xs font-semibold text-purple-800 dark:text-purple-300">
+                                            🎙️ Voice Reply {reply.voiceNoteDuration ? `(${reply.voiceNoteDuration}s)` : ''}
+                                          </span>
+                                        </div>
+                                        <audio
+                                          controls
+                                          src={reply.voiceNoteUrl}
+                                          className="w-full max-w-sm rounded-lg"
+                                          preload="metadata"
+                                        >
+                                          Your browser does not support the audio element.
+                                        </audio>
+                                      </div>
+                                    )}
+
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        handleLikeReply(reply.id)
+                                      }
+                                      className="text-muted-foreground hover:text-wellness hover:bg-wellness/10 rounded-lg h-7 px-2"
+                                    >
+                                      <ThumbsUp className="w-3 h-3 mr-1.5" />
+                                      <span className="text-xs font-medium">{reply.likes}</span>
+                                    </Button>
+                                    </>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={deleteConfirm.type !== null}
+        onOpenChange={(open) =>
+          !open && setDeleteConfirm({ type: null, id: null })
+        }
+      >
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl">Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription className="text-base">
+              This will permanently delete this{" "}
+              {deleteConfirm.type === "post" ? "post" : "reply"}. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90 rounded-xl"
+              onClick={() => {
+                if (deleteConfirm.type === "post" && deleteConfirm.id) {
+                  handleDeletePost(deleteConfirm.id);
+                } else if (
+                  deleteConfirm.type === "reply" &&
+                  deleteConfirm.id &&
+                  deleteConfirm.postId
+                ) {
+                  handleDeleteReply(deleteConfirm.id, deleteConfirm.postId);
+                }
+              }}
+            >
+              Delete Permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+};
+
+export default PeerForum;
