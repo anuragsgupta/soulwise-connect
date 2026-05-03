@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar, TrendingUp, Brain, Heart, Activity, Moon, Zap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import StatisticsCharts from "../StatisticsCharts";
+import { getDemoMoodCheckIns } from "@/lib/demoDB";
 
 interface MoodCheckIn {
   id: string;
@@ -59,12 +60,28 @@ export default function MoodDashboard({ onStartCheckIn, todayCheckIn }: MoodDash
     if (!user?.id) return;
 
     try {
-      const response = await fetch(`/api/mood-checkin/enhanced?studentId=${user.id}&days=30`);
-      const result = await response.json();
+      if (user.id === 'demo-student-123') {
+        const demoData = await getDemoMoodCheckIns(30);
+        // Translate DemoMoodCheckIn to API MoodCheckIn structure
+        const mappedData = demoData.map(c => ({
+          id: c.id,
+          moodScore: c.moodLevel,
+          moodLabel: c.moodLabel || 'Neutral',
+          factors: c.moodFactors || {},
+          notes: c.journal,
+          checkInDate: c.checkInDate,
+          createdAt: c.createdAt instanceof Date ? c.createdAt.toISOString() : c.createdAt
+        }));
+        setMoodHistory(mappedData);
+        calculateInsights(mappedData);
+      } else {
+        const response = await fetch(`/api/mood-checkin/enhanced?studentId=${user.id}&days=30`);
+        const result = await response.json();
 
-      if (result.success && result.data.moodCheckIns) {
-        setMoodHistory(result.data.moodCheckIns);
-        calculateInsights(result.data.moodCheckIns);
+        if (result.success && result.data.moodCheckIns) {
+          setMoodHistory(result.data.moodCheckIns);
+          calculateInsights(result.data.moodCheckIns);
+        }
       }
     } catch (error) {
       console.error("Failed to fetch mood history:", error);

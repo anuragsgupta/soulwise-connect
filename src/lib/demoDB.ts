@@ -507,6 +507,71 @@ export async function getDemoMoodCheckIns(days: number = 3): Promise<DemoMoodChe
 }
 
 /**
+ * Add a new mood check-in for the demo student
+ */
+export async function addDemoMoodCheckIn(checkInData: any): Promise<void> {
+  const db = await initializeDemoDatabase();
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORES.MOOD_CHECKINS], 'readwrite');
+    const store = transaction.objectStore(STORES.MOOD_CHECKINS);
+
+    const now = new Date();
+    
+    // Map mood score to label
+    const moodLabels = ['Terrible', 'Bad', 'Okay', 'Neutral', 'Good', 'Great', 'Amazing'];
+    const labelIdx = Math.max(0, Math.min(6, checkInData.moodLevel - 1));
+
+    const newCheckIn = {
+      id: `mood-today-${Date.now()}`,
+      studentId: checkInData.studentId || 'demo-student-123',
+      moodLevel: checkInData.moodLevel,
+      moodLabel: moodLabels[labelIdx],
+      moodFactors: checkInData.moodFactors || {},
+      journal: checkInData.journal || null,
+      checkInDate: now.toISOString().split('T')[0],
+      createdAt: now,
+    };
+
+    const request = store.add(newCheckIn);
+
+    request.onsuccess = () => {
+      console.log('✅ Demo mood check-in added successfully');
+      resolve();
+    };
+
+    request.onerror = () => {
+      reject(new Error('Failed to add demo mood check-in'));
+    };
+  });
+}
+
+/**
+ * Check if demo user has a mood check-in for today
+ */
+export async function getTodayDemoMoodCheckIn(studentId: string = 'demo-student-123'): Promise<any | null> {
+  const checkIns = await getDemoMoodCheckIns(1); // Get last 1 day
+  const todayDateStr = new Date().toISOString().split('T')[0];
+  
+  const todayCheckIn = checkIns.find(c => c.checkInDate === todayDateStr && c.studentId === studentId);
+  
+  if (todayCheckIn) {
+    // Transform to match API format expected by components
+    return {
+      id: todayCheckIn.id,
+      moodScore: todayCheckIn.moodLevel,
+      moodLabel: todayCheckIn.moodLabel || 'Neutral',
+      factors: todayCheckIn.moodFactors || {},
+      notes: todayCheckIn.journal,
+      checkInDate: todayCheckIn.checkInDate,
+      createdAt: todayCheckIn.createdAt
+    };
+  }
+  
+  return null;
+}
+
+/**
  * Get community posts
  */
 export async function getCommunityposts(): Promise<any[]> {

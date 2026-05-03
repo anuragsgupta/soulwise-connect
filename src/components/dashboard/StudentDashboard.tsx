@@ -49,6 +49,7 @@ import WellnessScoreWidget from "./WellnessScoreWidget";
 import WellnessRecommendations from "./WellnessRecommendations";
 import SettingsPage from "./Settings";
 import { useAuth } from "@/contexts/AuthContext";
+import { getTodayDemoMoodCheckIn } from "@/lib/demoDB";
 
 interface StudentDashboardProps {
   onLogout: () => void;
@@ -94,18 +95,25 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       if (!user?.id || user.userType !== 'STUDENT') return;
 
       try {
-        const response = await fetch(`/api/mood-checkin/enhanced?studentId=${user.id}&days=1`);
-        const data = await response.json();
+        let hasCheckedIn = false;
+        
+        if (user.id === 'demo-student-123') {
+          const todayCheckIn = await getTodayDemoMoodCheckIn(user.id);
+          hasCheckedIn = !!todayCheckIn;
+        } else {
+          const response = await fetch(`/api/mood-checkin/enhanced?studentId=${user.id}&days=1`);
+          const data = await response.json();
 
-        if (data.success && data.data) {
-          const hasCheckedIn = !!data.data.todayCheckIn;
-          
-          // Directly redirect to mood check-in if not completed
-          if (!hasCheckedIn) {
-            setTimeout(() => {
-              setActiveTab('mood');
-            }, 500);
+          if (data.success && data.data) {
+            hasCheckedIn = !!data.data.todayCheckIn;
           }
+        }
+        
+        // Directly redirect to mood check-in if not completed
+        if (!hasCheckedIn) {
+          setTimeout(() => {
+            setActiveTab('mood');
+          }, 500);
         }
       } catch (error) {
         console.error('Error checking mood check-in:', error);
@@ -484,13 +492,13 @@ const StudentDashboard = ({ onLogout }: StudentDashboardProps) => {
       color: "from-primary to-support",
       action: () => setActiveTab('chat')
     },
-    {
-      title: "Institutional First-aid",
-      description: "Schedule session with faculty/counsellor",
-      icon: Calendar,
-      color: "from-blue-500 to-blue-600",
-      action: () => setActiveTab('appointments')
-    },
+    // {
+    //   title: "Institutional First-aid",
+    //   description: "Schedule session with faculty/counsellor",
+    //   icon: Calendar,
+    //   color: "from-blue-500 to-blue-600",
+    //   action: () => setActiveTab('appointments')
+    // },
     {
       title: "Wellness Resources",
       description: "Access guides, videos & tools",

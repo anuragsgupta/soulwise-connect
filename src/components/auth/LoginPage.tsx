@@ -194,9 +194,9 @@ export default function LoginPage() {
         description: 'Demo account loaded with 3 days of sample data, including mood checkins, notifications, sessions, and community posts!',
       });
 
-      // Redirect to dashboard
+      // Redirect to dashboard (hard navigation to rehydrate auth context)
       setTimeout(() => {
-        router.replace('/dashboard');
+        window.location.href = '/dashboard';
       }, 500);
     } catch (error) {
       console.error('❌ Demo login error:', error);
@@ -225,12 +225,12 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <Tabs defaultValue="admin" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="admin" className="flex items-center gap-2">
+        <Tabs defaultValue="student" className="w-full">
+          <TabsList className="grid w-full grid-cols-1 mb-6">
+            {/* <TabsTrigger value="admin" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Administrator Login
-            </TabsTrigger>
+            </TabsTrigger> */}
             <TabsTrigger value="student" className="flex items-center gap-2">
               <GraduationCap className="w-4 h-4" />
               Student Login

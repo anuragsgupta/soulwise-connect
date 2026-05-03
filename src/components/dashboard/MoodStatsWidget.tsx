@@ -37,26 +37,26 @@ export default function MoodStatsWidget({ isDemoUser = true }: { isDemoUser?: bo
         if (moodData && moodData.length > 0) {
           // Sort by date descending (most recent first)
           const sorted = [...moodData].sort(
-            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           );
 
           // Last 3 days
           const lastThreeDays: MoodEntry[] = sorted.slice(0, 3).map((entry) => ({
-            date: formatDate(entry.date),
-            mood: entry.mood,
-            label: moodLabels[Math.max(0, Math.min(6, entry.mood - 1))] || 'Neutral',
-            emoji: moodEmojis[Math.max(0, Math.min(6, entry.mood - 1))] || '😐',
+            date: formatDate(entry.checkInDate),
+            mood: entry.moodLevel,
+            label: moodLabels[Math.max(0, Math.min(6, entry.moodLevel - 1))] || 'Neutral',
+            emoji: moodEmojis[Math.max(0, Math.min(6, entry.moodLevel - 1))] || '😐',
           }));
 
           // Calculate average
           const averageMood =
-            moodData.reduce((sum, entry) => sum + entry.mood, 0) / moodData.length;
+            moodData.reduce((sum, entry) => sum + entry.moodLevel, 0) / moodData.length;
 
           // 7-day trend
           const sevenDayTrend = sorted
             .slice(0, 7)
             .reverse()
-            .map((entry) => entry.mood);
+            .map((entry) => entry.moodLevel);
 
           // Determine trend
           let trend: 'improving' | 'declining' | 'stable' = 'stable';

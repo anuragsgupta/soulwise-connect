@@ -6,6 +6,7 @@ import MoodFactorsScreen from "./MoodFactorsScreen";
 import JournalScreen from "./JournalScreen";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { addDemoMoodCheckIn } from "@/lib/demoDB";
 
 interface MoodCheckInData {
   moodLevel: number;
@@ -77,22 +78,40 @@ export default function MoodCheckInFlow({ onComplete, onScoreUpdate, existingChe
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/mood-checkin/enhanced', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      let isSuccess = false;
+      
+      if (user.id === 'demo-student-123') {
+        await addDemoMoodCheckIn({
           studentId: user.id,
           moodLevel: data.moodLevel,
           moodFactors: data.moodFactors,
           journal: data.journal
-        }),
-      });
+        });
+        isSuccess = true;
+      } else {
+        const response = await fetch('/api/mood-checkin/enhanced', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            studentId: user.id,
+            moodLevel: data.moodLevel,
+            moodFactors: data.moodFactors,
+            journal: data.journal
+          }),
+        });
 
-      const result = await response.json();
+        const result = await response.json();
+        
+        if (result.success) {
+          isSuccess = true;
+        } else {
+          throw new Error(result.message);
+        }
+      }
 
-      if (result.success) {
+      if (isSuccess) {
         // Show completion animation
         setShowCompletion(true);
         
@@ -109,8 +128,6 @@ export default function MoodCheckInFlow({ onComplete, onScoreUpdate, existingChe
           setShowCompletion(false);
           onComplete();
         }, 2500);
-      } else {
-        throw new Error(result.message);
       }
     } catch (error) {
       console.error('Failed to submit mood check-in:', error);

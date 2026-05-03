@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import MoodCheckInFlow from "./mood-checkin/MoodCheckInFlow";
 import MoodDashboard from "./mood-checkin/MoodDashboard";
+import { getTodayDemoMoodCheckIn } from "@/lib/demoDB";
 
 interface MoodCheckIn {
   id: string;
@@ -49,11 +50,17 @@ const MoodTracker = ({ onScoreUpdate }: MoodTrackerProps) => {
 
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/mood-checkin/enhanced?studentId=${user.id}&days=7`);
-      const result = await response.json();
       
-      if (result.success) {
-        setTodayCheckIn(result.data.todayCheckIn);
+      if (user.id === 'demo-student-123') {
+        const todayCheckIn = await getTodayDemoMoodCheckIn(user.id);
+        setTodayCheckIn(todayCheckIn);
+      } else {
+        const response = await fetch(`/api/mood-checkin/enhanced?studentId=${user.id}&days=7`);
+        const result = await response.json();
+        
+        if (result.success) {
+          setTodayCheckIn(result.data.todayCheckIn);
+        }
       }
     } catch (error) {
       console.error('Failed to load mood data:', error);
