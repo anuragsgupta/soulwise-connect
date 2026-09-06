@@ -124,6 +124,7 @@ export default function PHQ9SurveyForm({ studentId, onComplete }: PHQ9FormProps)
           totalScore,
           severity,
         });
+        window.dispatchEvent(new Event("demo-data-updated"));
         const demoResult = { id: `phq9-${Date.now()}`, totalScore, severity, completedAt: new Date().toISOString() };
         setResult(demoResult);
         setSubmitted(true);

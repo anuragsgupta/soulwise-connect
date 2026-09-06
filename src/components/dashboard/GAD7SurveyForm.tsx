@@ -101,6 +101,7 @@ export default function GAD7SurveyForm({ studentId, onComplete }: GAD7FormProps)
         const totalScore = Object.values(answers).reduce((sum, answer) => sum + answer, 0);
         const severity = totalScore <= 4 ? "MINIMAL" : totalScore <= 9 ? "MILD" : totalScore <= 14 ? "MODERATE" : "SEVERE";
         await saveDemoGad7Survey({ studentId, ...answers, totalScore, severity });
+        window.dispatchEvent(new Event("demo-data-updated"));
         const demoResult = { id: `gad7-${Date.now()}`, totalScore, severity, completedAt: new Date().toISOString() };
         setResult(demoResult);
         setSubmitted(true);

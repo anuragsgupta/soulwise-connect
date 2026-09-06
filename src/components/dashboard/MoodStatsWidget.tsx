@@ -27,6 +27,10 @@ export default function MoodStatsWidget({ isDemoUser = true }: { isDemoUser?: bo
 
   useEffect(() => {
     loadMoodStats();
+    const handleDemoDataUpdated = () => loadMoodStats();
+    window.addEventListener('demo-data-updated', handleDemoDataUpdated);
+
+    return () => window.removeEventListener('demo-data-updated', handleDemoDataUpdated);
   }, []);
 
   const loadMoodStats = async () => {

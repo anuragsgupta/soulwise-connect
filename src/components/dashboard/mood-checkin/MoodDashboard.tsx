@@ -53,6 +53,10 @@ export default function MoodDashboard({ onStartCheckIn, todayCheckIn }: MoodDash
 
   useEffect(() => {
     fetchMoodHistory();
+    const handleDemoDataUpdated = () => fetchMoodHistory();
+    window.addEventListener('demo-data-updated', handleDemoDataUpdated);
+
+    return () => window.removeEventListener('demo-data-updated', handleDemoDataUpdated);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, todayCheckIn]);
 
@@ -100,6 +104,16 @@ export default function MoodDashboard({ onStartCheckIn, todayCheckIn }: MoodDash
     const avgMood = checkIns.reduce((sum, c) => sum + c.moodScore, 0) / checkIns.length;
 
     // Calculate trend (compare first half vs second half)
+    if (checkIns.length < 2) {
+      setInsights({
+        averageMood: avgMood,
+        trend: "stable",
+        topFactors: [],
+        streak: 0,
+      });
+      return;
+    }
+
     const midpoint = Math.floor(checkIns.length / 2);
     const recentAvg = checkIns.slice(0, midpoint).reduce((sum, c) => sum + c.moodScore, 0) / midpoint;
     const olderAvg = checkIns.slice(midpoint).reduce((sum, c) => sum + c.moodScore, 0) / (checkIns.length - midpoint);
@@ -156,7 +170,7 @@ export default function MoodDashboard({ onStartCheckIn, todayCheckIn }: MoodDash
         );
         
         // Count consecutive days going backwards from most recent check-in
-        let checkDate = new Date(mostRecentDate);
+        const checkDate = new Date(mostRecentDate);
         while (checkInDates.has(checkDate.toDateString())) {
           streak++;
           checkDate.setDate(checkDate.getDate() - 1);
@@ -170,18 +184,6 @@ export default function MoodDashboard({ onStartCheckIn, todayCheckIn }: MoodDash
       topFactors,
       streak
     });
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    if (date.toDateString() === today.toDateString()) return "Today";
-    if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
-    
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
   // Prepare mood chart data for StatisticsCharts component

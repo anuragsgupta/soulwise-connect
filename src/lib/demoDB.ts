@@ -626,7 +626,7 @@ export async function addDemoMoodCheckIn(checkInData: any): Promise<void> {
     const labelIdx = Math.max(0, Math.min(6, checkInData.moodLevel - 1));
 
     const newCheckIn = {
-      id: `mood-today-${Date.now()}`,
+      id: `mood-today-${checkInData.studentId || 'demo-student-123'}`,
       studentId: checkInData.studentId || 'demo-student-123',
       moodLevel: checkInData.moodLevel,
       moodLabel: moodLabels[labelIdx],
@@ -636,7 +636,7 @@ export async function addDemoMoodCheckIn(checkInData: any): Promise<void> {
       createdAt: now,
     };
 
-    const request = store.add(newCheckIn);
+    const request = store.put(newCheckIn);
 
     request.onsuccess = () => {
       console.log('✅ Demo mood check-in added successfully');

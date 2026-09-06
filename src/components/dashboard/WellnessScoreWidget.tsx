@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
@@ -15,6 +15,8 @@ import {
   Info
 } from "lucide-react";
 import { getWellnessCategory } from "@/lib/wellness-score";
+import { calculateWellnessScore } from "@/lib/wellness-score";
+import { getDemoGad7Surveys, getDemoMoodCheckIns, getDemoPhq9Surveys, initializeDemoData } from "@/lib/demoDB";
 
 interface WellnessScoreData {
   overallScore: number;
@@ -51,12 +53,37 @@ export default function WellnessScoreWidget({
 
   useEffect(() => {
     fetchWellnessScore();
+    const handleDemoDataUpdated = () => fetchWellnessScore();
+    window.addEventListener('demo-data-updated', handleDemoDataUpdated);
+
+    return () => window.removeEventListener('demo-data-updated', handleDemoDataUpdated);
   }, [studentId]);
 
   const fetchWellnessScore = async () => {
     try {
       setLoading(true);
       setError(null);
+
+      if (studentId === 'demo-student-123') {
+        await initializeDemoData(studentId);
+        const [moodCheckIns, phq9Surveys, gad7Surveys] = await Promise.all([
+          getDemoMoodCheckIns(30),
+          getDemoPhq9Surveys(studentId),
+          getDemoGad7Surveys(studentId),
+        ]);
+        const latestPhq9 = [...phq9Surveys].sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())[0];
+        const latestGad7 = [...gad7Surveys].sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())[0];
+        const localWellnessScore = calculateWellnessScore({
+          moodEntries: moodCheckIns
+            .map((entry) => ({ score: entry.moodLevel, date: new Date(entry.createdAt) }))
+            .sort((a, b) => a.date.getTime() - b.date.getTime()),
+          latestPHQ9Score: latestPhq9?.totalScore ?? null,
+          latestGAD7Score: latestGad7?.totalScore ?? null,
+          chatbotSentiments: [0.5],
+        });
+        setWellnessData(localWellnessScore);
+        return;
+      }
 
       const response = await fetch(`/api/wellness-score?studentId=${studentId}`);
       const data = await response.json();

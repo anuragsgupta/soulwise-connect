@@ -112,6 +112,7 @@ export default function MoodCheckInFlow({ onComplete, onScoreUpdate, existingChe
       }
 
       if (isSuccess) {
+        window.dispatchEvent(new Event('demo-data-updated'));
         // Show completion animation
         setShowCompletion(true);
         
