@@ -82,7 +82,9 @@ export class GeminiProvider implements IAIProvider {
   }
 
   isAvailable(): boolean {
-    return !!this.apiKey && this.apiKey !== 'your-gemini-api-key';
+    return !!this.apiKey && 
+           !this.apiKey.includes('your-gemini') && 
+           this.apiKey.length > 20; // Gemini keys are typically long
   }
 
 

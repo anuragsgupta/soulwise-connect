@@ -15,6 +15,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { getDemoNotifications, markDemoNotificationsAsRead } from "@/lib/demoDB";
 
 interface Notification {
   id: string;
@@ -46,6 +47,20 @@ export default function NotificationBell() {
 
   const loadNotifications = async () => {
     try {
+      if (localStorage.getItem('auth-user')?.includes('demo-student-123')) {
+        const demoNotifications = await getDemoNotifications();
+        setNotifications(demoNotifications.map((notification) => ({
+          ...notification,
+          type: notification.type.toUpperCase(),
+          relatedId: null,
+          relatedType: null,
+          actionUrl: null,
+          createdAt: new Date(notification.createdAt).toISOString(),
+        })));
+        setUnreadCount(demoNotifications.filter((notification) => !notification.isRead).length);
+        return;
+      }
+
       const response = await fetch('/api/notifications?limit=10', {
         credentials: 'include', // Include HTTP-only cookies
       });
@@ -68,6 +83,12 @@ export default function NotificationBell() {
 
   const markAsRead = async (notificationId: string) => {
     try {
+      if (localStorage.getItem('auth-user')?.includes('demo-student-123')) {
+        await markDemoNotificationsAsRead(notificationId);
+        await loadNotifications();
+        return;
+      }
+
       await fetch(`/api/notifications/${notificationId}`, {
         method: 'PATCH',
         credentials: 'include',
@@ -86,6 +107,13 @@ export default function NotificationBell() {
   const markAllAsRead = async () => {
     try {
       setLoading(true);
+      if (localStorage.getItem('auth-user')?.includes('demo-student-123')) {
+        await markDemoNotificationsAsRead();
+        await loadNotifications();
+        toast({ title: "Success", description: "All notifications marked as read" });
+        return;
+      }
+
       const response = await fetch('/api/notifications/mark-all-read', {
         method: 'POST',
         credentials: 'include',

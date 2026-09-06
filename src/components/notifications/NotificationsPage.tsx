@@ -18,6 +18,7 @@ import {
   Info,
   CheckCheck,
 } from "lucide-react";
+import { getDemoNotifications, markDemoNotificationsAsRead } from "@/lib/demoDB";
 
 interface Notification {
   id: string;
@@ -43,6 +44,16 @@ export default function NotificationsPage() {
   const loadNotifications = async () => {
     try {
       setLoading(true);
+
+      if (localStorage.getItem('auth-user')?.includes('demo-student-123')) {
+        const demoNotifications = await getDemoNotifications();
+        setNotifications(demoNotifications.map((notification) => ({
+          ...notification,
+          type: notification.type.toUpperCase() as Notification['type'],
+          createdAt: new Date(notification.createdAt).toISOString(),
+        })));
+        return;
+      }
       
       const response = await fetch('/api/notifications', {
         credentials: 'include',
@@ -67,6 +78,12 @@ export default function NotificationsPage() {
 
   const markAsRead = async (notificationId: string) => {
     try {
+      if (localStorage.getItem('auth-user')?.includes('demo-student-123')) {
+        await markDemoNotificationsAsRead(notificationId);
+        setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n));
+        return;
+      }
+
       const response = await fetch(`/api/notifications/${notificationId}`, {
         method: 'PATCH',
         credentials: 'include',
@@ -89,6 +106,13 @@ export default function NotificationsPage() {
 
   const markAllAsRead = async () => {
     try {
+      if (localStorage.getItem('auth-user')?.includes('demo-student-123')) {
+        await markDemoNotificationsAsRead();
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        toast({ title: "Success", description: "All notifications marked as read" });
+        return;
+      }
+
       const response = await fetch('/api/notifications/mark-all-read', {
         method: 'POST',
         credentials: 'include',

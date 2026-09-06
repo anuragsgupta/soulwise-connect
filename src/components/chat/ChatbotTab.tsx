@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Send, Settings, Eye, EyeOff, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { getDemoGeminiApiKey, saveDemoGeminiApiKey } from '@/lib/demoDB';
+import type { Components } from 'react-markdown';
 
 interface Message {
   id: string;
@@ -27,6 +28,20 @@ export default function ChatbotTab({ studentId = 'demo-student-123', isDemoUser 
   const [showApiKey, setShowApiKey] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Markdown components with proper styling
+  const markdownComponents: Components = {
+    p: ({ children }) => <p className="my-1">{children}</p>,
+    li: ({ children }) => <li className="my-0">{children}</li>,
+    ul: ({ children }) => <ul className="my-1 list-disc list-inside">{children}</ul>,
+    ol: ({ children }) => <ol className="my-1 list-decimal list-inside">{children}</ol>,
+    h1: ({ children }) => <h1 className="text-lg font-bold my-2">{children}</h1>,
+    h2: ({ children }) => <h2 className="text-base font-bold my-2">{children}</h2>,
+    h3: ({ children }) => <h3 className="text-sm font-bold my-1">{children}</h3>,
+    code: ({ children }) => <code className="bg-gray-100 px-1 rounded text-xs">{children}</code>,
+    pre: ({ children }) => <pre className="bg-gray-100 p-2 rounded my-1 overflow-x-auto text-xs">{children}</pre>,
+    blockquote: ({ children }) => <blockquote className="border-l-4 border-gray-300 pl-2 my-1 italic">{children}</blockquote>,
+  };
 
   // Load API key on mount
   useEffect(() => {
@@ -228,7 +243,7 @@ export default function ChatbotTab({ studentId = 'demo-student-123', isDemoUser 
                 {msg.role === 'user' ? (
                   <p className="whitespace-pre-wrap">{msg.content}</p>
                 ) : (
-                  <ReactMarkdown className="prose prose-sm max-w-none prose-p:my-1 prose-li:my-0 prose-ul:my-1 prose-ol:my-1">
+                  <ReactMarkdown components={markdownComponents}>
                     {msg.content}
                   </ReactMarkdown>
                 )}

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Brain, CheckCircle2, Clock, AlertCircle, TrendingUp } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
+import { getDemoPhq9Surveys } from "@/lib/demoDB";
 
 // Define interfaces for type safety
 interface Survey {
@@ -47,6 +48,13 @@ function PHQ9SurveyContent() {
 
   const fetchSurveyStatus = async (id: string) => {
     try {
+      if (id === "demo-student-123") {
+        const surveys = await getDemoPhq9Surveys(id);
+        const sortedSurveys = surveys.sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
+        setSurveyData({ success: true, surveys: sortedSurveys, completedSurveys: sortedSurveys.length, latestSurvey: sortedSurveys[0] || null });
+        return;
+      }
+
       const response = await fetch(`/api/phq9-survey?studentId=${id}`);
       const data = await response.json();
       

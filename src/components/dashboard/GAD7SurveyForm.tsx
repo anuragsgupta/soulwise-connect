@@ -7,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, CheckCircle2, Heart } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { saveDemoGad7Survey } from "@/lib/demoDB";
 
 interface SurveyResult {
   id: string;
@@ -96,6 +97,17 @@ export default function GAD7SurveyForm({ studentId, onComplete }: GAD7FormProps)
     setError(null);
 
     try {
+      if (studentId === "demo-student-123") {
+        const totalScore = Object.values(answers).reduce((sum, answer) => sum + answer, 0);
+        const severity = totalScore <= 4 ? "MINIMAL" : totalScore <= 9 ? "MILD" : totalScore <= 14 ? "MODERATE" : "SEVERE";
+        await saveDemoGad7Survey({ studentId, ...answers, totalScore, severity });
+        const demoResult = { id: `gad7-${Date.now()}`, totalScore, severity, completedAt: new Date().toISOString() };
+        setResult(demoResult);
+        setSubmitted(true);
+        onComplete?.({ success: true, survey: demoResult });
+        return;
+      }
+
       const response = await fetch("/api/gad7-survey", {
         method: "POST",
         headers: {

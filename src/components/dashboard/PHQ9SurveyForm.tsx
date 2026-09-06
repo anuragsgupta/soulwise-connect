@@ -7,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, CheckCircle2, Heart } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { saveDemoPhq9Survey } from "@/lib/demoDB";
 
 interface SurveyResult {
   id: string;
@@ -106,6 +107,30 @@ export default function PHQ9SurveyForm({ studentId, onComplete }: PHQ9FormProps)
     setError(null);
 
     try {
+      if (studentId === "demo-student-123") {
+        const totalScore = Object.values(answers).reduce((sum, answer) => sum + answer, 0);
+        const severity = totalScore <= 4 ? "NONE" : totalScore <= 9 ? "MILD" : totalScore <= 14 ? "MODERATE" : totalScore <= 19 ? "MODERATELY_SEVERE" : "SEVERE";
+        await saveDemoPhq9Survey({
+          studentId,
+          q1_little_interest: answers.q1_interest,
+          q2_depressed: answers.q2_depressed,
+          q3_sleep_trouble: answers.q3_sleep,
+          q4_tired: answers.q4_energy,
+          q5_appetite: answers.q5_appetite,
+          q6_bad_about_self: answers.q6_failure,
+          q7_concentration: answers.q7_concentration,
+          q8_restless: answers.q8_movement,
+          q9_suicide_thoughts: answers.q9_harm,
+          totalScore,
+          severity,
+        });
+        const demoResult = { id: `phq9-${Date.now()}`, totalScore, severity, completedAt: new Date().toISOString() };
+        setResult(demoResult);
+        setSubmitted(true);
+        onComplete?.({ success: true, survey: demoResult });
+        return;
+      }
+
       const response = await fetch("/api/phq9-survey", {
         method: "POST",
         headers: {

@@ -5,9 +5,10 @@ import { useSearchParams } from "next/navigation";
 import GAD7SurveyForm from "@/components/dashboard/GAD7SurveyForm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Brain, CheckCircle2, Clock, AlertCircle, TrendingUp } from "lucide-react";
+import { Brain, CheckCircle2, Clock } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
+import { getDemoGad7Surveys, initializeDemoData } from "@/lib/demoDB";
 
 // Define interfaces for type safety
 interface Survey {
@@ -31,6 +32,7 @@ function GAD7SurveyContent() {
   const [loading, setLoading] = useState(true);
   const [surveyData, setSurveyData] = useState<SurveyData | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [lastCompletedSurvey, setLastCompletedSurvey] = useState<Survey | null>(null);
 
   useEffect(() => {
     // Get student ID from search params or session
@@ -47,6 +49,14 @@ function GAD7SurveyContent() {
 
   const fetchSurveyStatus = async (id: string) => {
     try {
+      if (id === "demo-student-123") {
+        await initializeDemoData(id);
+        const surveys = await getDemoGad7Surveys(id);
+        const sortedSurveys = surveys.sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
+        setSurveyData({ success: true, surveys: sortedSurveys, completedSurveys: sortedSurveys.length, latestSurvey: sortedSurveys[0] || null });
+        return;
+      }
+
       const response = await fetch(`/api/gad7-survey?studentId=${id}`);
       const data = await response.json();
       
@@ -60,7 +70,8 @@ function GAD7SurveyContent() {
     }
   };
 
-  const handleSurveyComplete = async () => {
+  const handleSurveyComplete = async (result: { survey: Survey }) => {
+    setLastCompletedSurvey(result.survey);
     // Refresh survey data
     if (studentId) {
       await fetchSurveyStatus(studentId);
@@ -118,7 +129,6 @@ function GAD7SurveyContent() {
   }
 
   const completedSurveys = surveyData?.completedSurveys || 0;
-  const latestSurvey = surveyData?.latestSurvey;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green/10 to-blue/10 flex items-center justify-center p-4">
@@ -193,6 +203,16 @@ function GAD7SurveyContent() {
           </div>
 
           {/* Action Buttons */}
+          {lastCompletedSurvey && (
+            <Alert>
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <AlertTitle>GAD-7 assessment saved</AlertTitle>
+              <AlertDescription>
+                Your latest score is {lastCompletedSurvey.totalScore}/21 ({lastCompletedSurvey.severity.toLowerCase().replace('_', ' ')}).
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
             <Button
               onClick={() => setShowForm(true)}
@@ -210,6 +230,30 @@ function GAD7SurveyContent() {
               Back to Dashboard
             </Button>
           </div>
+
+          {completedSurveys > 0 && surveyData?.surveys && (
+            <div className="pt-6 border-t">
+              <h3 className="text-lg font-semibold font-heading mb-4">Past GAD-7 Reports</h3>
+              <div className="space-y-3">
+                {surveyData.surveys.map((survey) => (
+                  <div
+                    key={survey.id}
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border p-4"
+                  >
+                    <div>
+                      <p className="font-medium">Score: {survey.totalScore}/21</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(survey.completedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <span className="text-sm font-semibold text-primary">
+                      {survey.severity.replace('_', ' ')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Privacy Notice */}
           <p className="text-xs text-muted-foreground text-center">

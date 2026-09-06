@@ -133,7 +133,10 @@ export async function initializeDemoData(studentId: string = 'demo-student-123')
 
   // Check if already initialized
   const hasData = await checkIfDemoDataExists();
-  if (hasData) return;
+  if (hasData) {
+    await ensureDemoSurveySamples(studentId);
+    return;
+  }
 
   console.log('📊 Initializing demo data for demo student...');
 
@@ -148,6 +151,7 @@ export async function initializeDemoData(studentId: string = 'demo-student-123')
 
   // Generate community posts
   const communityPosts = generateDemoCommunityPosts();
+  const { gad7Surveys, phq9Surveys } = generateDemoSurveySamples(studentId);
 
   // Save all data
   const transaction = db.transaction(
@@ -156,6 +160,8 @@ export async function initializeDemoData(studentId: string = 'demo-student-123')
       STORES.NOTIFICATIONS,
       STORES.SESSIONS,
       STORES.COMMUNITY_POSTS,
+      STORES.GAD7_SURVEYS,
+      STORES.PHQ9_SURVEYS,
       STORES.USER,
     ],
     'readwrite'
@@ -176,6 +182,12 @@ export async function initializeDemoData(studentId: string = 'demo-student-123')
   // Save community posts
   const communityStore = transaction.objectStore(STORES.COMMUNITY_POSTS);
   communityPosts.forEach((post) => communityStore.add(post));
+
+  const gad7Store = transaction.objectStore(STORES.GAD7_SURVEYS);
+  gad7Surveys.forEach((survey) => gad7Store.add(survey));
+
+  const phq9Store = transaction.objectStore(STORES.PHQ9_SURVEYS);
+  phq9Surveys.forEach((survey) => phq9Store.add(survey));
 
   // Save user
   const userStore = transaction.objectStore(STORES.USER);
@@ -200,6 +212,55 @@ export async function initializeDemoData(studentId: string = 'demo-student-123')
       reject(new Error('Failed to initialize demo data'));
     };
   });
+}
+
+/**
+ * Keep a small assessment history available in the demo account.
+ */
+async function ensureDemoSurveySamples(studentId: string): Promise<void> {
+  const db = await initializeDemoDatabase();
+  const [gad7Surveys, phq9Surveys] = await Promise.all([
+    getDemoGad7Surveys(studentId),
+    getDemoPhq9Surveys(studentId),
+  ]);
+
+  if (gad7Surveys.length > 0 && phq9Surveys.length > 0) return;
+
+  const samples = generateDemoSurveySamples(studentId);
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORES.GAD7_SURVEYS, STORES.PHQ9_SURVEYS], 'readwrite');
+
+    if (gad7Surveys.length === 0) {
+      const gad7Store = transaction.objectStore(STORES.GAD7_SURVEYS);
+      samples.gad7Surveys.forEach((survey) => gad7Store.put(survey));
+    }
+
+    if (phq9Surveys.length === 0) {
+      const phq9Store = transaction.objectStore(STORES.PHQ9_SURVEYS);
+      samples.phq9Surveys.forEach((survey) => phq9Store.put(survey));
+    }
+
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(new Error('Failed to initialize sample survey data'));
+  });
+}
+
+function generateDemoSurveySamples(studentId: string) {
+  const now = Date.now();
+  const completedAt = (daysAgo: number) => new Date(now - daysAgo * 24 * 60 * 60 * 1000).toISOString();
+
+  return {
+    gad7Surveys: [
+      { id: 'demo-gad7-1', studentId, q1Nervous: 1, q2Control: 1, q3Worrying: 1, q4Relaxing: 0, q5Restless: 1, q6Irritable: 0, q7Afraid: 0, totalScore: 4, severity: 'MINIMAL', completedAt: completedAt(14) },
+      { id: 'demo-gad7-2', studentId, q1Nervous: 2, q2Control: 1, q3Worrying: 2, q4Relaxing: 1, q5Restless: 1, q6Irritable: 1, q7Afraid: 1, totalScore: 9, severity: 'MILD', completedAt: completedAt(7) },
+      { id: 'demo-gad7-3', studentId, q1Nervous: 1, q2Control: 1, q3Worrying: 1, q4Relaxing: 1, q5Restless: 0, q6Irritable: 1, q7Afraid: 1, totalScore: 6, severity: 'MILD', completedAt: completedAt(2) },
+    ],
+    phq9Surveys: [
+      { id: 'demo-phq9-1', studentId, q1LittleInterest: 1, q2Depressed: 0, q3SleepTrouble: 1, q4Tired: 1, q5Appetite: 0, q6BadAboutSelf: 0, q7Concentration: 1, q8Restless: 0, q9SuicideThoughts: 0, totalScore: 4, severity: 'NONE', completedAt: completedAt(14) },
+      { id: 'demo-phq9-2', studentId, q1LittleInterest: 1, q2Depressed: 1, q3SleepTrouble: 1, q4Tired: 2, q5Appetite: 1, q6BadAboutSelf: 0, q7Concentration: 1, q8Restless: 0, q9SuicideThoughts: 0, totalScore: 7, severity: 'MILD', completedAt: completedAt(7) },
+      { id: 'demo-phq9-3', studentId, q1LittleInterest: 0, q2Depressed: 1, q3SleepTrouble: 1, q4Tired: 1, q5Appetite: 0, q6BadAboutSelf: 0, q7Concentration: 1, q8Restless: 0, q9SuicideThoughts: 0, totalScore: 5, severity: 'MILD', completedAt: completedAt(2) },
+    ],
+  };
 }
 
 /**
@@ -324,6 +385,48 @@ function generateDemoNotifications(): DemoNotification[] {
       createdAt: new Date(Date.now() - 60 * 60 * 1000),
     },
   ];
+}
+
+/**
+ * Read demo notifications from IndexedDB.
+ */
+export async function getDemoNotifications(studentId: string = 'demo-student-123'): Promise<DemoNotification[]> {
+  const db = await initializeDemoDatabase();
+  await initializeDemoData(studentId);
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORES.NOTIFICATIONS], 'readonly');
+    const request = transaction.objectStore(STORES.NOTIFICATIONS).getAll();
+
+    request.onsuccess = () => {
+      const notifications = (request.result as DemoNotification[])
+        .filter((notification) => notification.studentId === studentId)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      resolve(notifications);
+    };
+    request.onerror = () => reject(new Error('Failed to fetch demo notifications'));
+  });
+}
+
+/**
+ * Mark one or all demo notifications as read locally.
+ */
+export async function markDemoNotificationsAsRead(notificationId?: string): Promise<void> {
+  const db = await initializeDemoDatabase();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORES.NOTIFICATIONS], 'readwrite');
+    const store = transaction.objectStore(STORES.NOTIFICATIONS);
+    const request = notificationId ? store.get(notificationId) : store.getAll();
+
+    request.onsuccess = () => {
+      const notifications = notificationId ? [request.result] : request.result;
+      notifications.filter(Boolean).forEach((notification: DemoNotification) => {
+        store.put({ ...notification, isRead: true });
+      });
+    };
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(new Error('Failed to update demo notifications'));
+  });
 }
 
 /**
