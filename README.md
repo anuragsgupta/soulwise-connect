@@ -43,6 +43,9 @@ The platform bridges the gap between students struggling with mental health issu
 
 ## 🔍 Problem Statement & Solution
 
+### Problem Statement Title
+Development of a Digital Mental Health and Psychological Support System for Students in Higher Education
+
 ### The Problem
 - **1 in 4** Indian college students experience mental health issues
 - **60%** of students report high stress levels during exams
